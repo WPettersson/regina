@@ -1,0 +1,106 @@
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="../regina.css">
+    <title>Regina for Ubuntu:  Precise (Ubuntu 12.04&nbsp;LTS)</title>
+</head>
+<body bgcolor="#FFFFFF" text="#000000"
+    link="#0000EE" vlink="#551A8B" alink="#FF0000">
+
+<h1><a name="contents">Regina for Ubuntu:  Precise (Ubuntu 12.04&nbsp;LTS)</a></h1>
+
+<p>
+If you use Precise Pangolin (the Ubuntu 12.04&nbsp;LTS release), you can obtain
+packages from the official Regina repository on people.debian.org.
+</p>
+<p>
+This means that Ubuntu will automatically fetch dependencies for you, and
+your package manager will know when new versions of Regina are released.
+</p>
+<ol>
+<li>
+<p>
+Add Regina's location to your list of repositories.  To do this,
+open the Ubuntu Software Centre and select
+<i>Edit&nbsp;&rarr;&nbsp;Software Sources</i>.
+</p>
+<ul>
+<li><p>
+Under <i>Authentication</i>, import Regina's cryptographic signing key.
+This helps keep your machine secure, and Ubuntu may refuse to install
+Regina without it.  You can
+<a href="http://people.debian.org/~bab/regina-key.txt">download
+ Regina's cryptographic signing key here</a>.
+</p>
+<p align="center"><img src="precise/ubuntu-importkey.png"></p>
+<p>
+When you import this key file, it should show up in the list of
+trusted software providers as &ldquo;Ben Burton &lt;bab@debian.org&gt;&rdquo;.
+After the import, you can delete <tt>regina-key.txt</tt> if you like.
+</p>
+<p align="center"><img src="precise/ubuntu-withkey.png"></p>
+</li>
+<li><p>
+Under <i>Other Software</i>, click the <i>Add...</i> button.  When Ubuntu
+asks you for an APT line, type:
+</p>
+<div class="example"><p>
+<tt>deb http://people.debian.org/~bab/regina precise/</tt>
+</p></div>
+<p align="center"><img src="precise/ubuntu-aptline.png"></p>
+</li>
+<li><p>
+Under <i>Ubuntu Software</i>, enable the Community-Maintained Open Source
+Software (universe) if this has not been done before.
+</p>
+<p align="center"><img src="precise/ubuntu-universe.png"></p>
+</li>
+</ul>
+</li>
+<li><p>
+Unfortunately, <b>the 12.04 Ubuntu Software Centre
+<a href="https://bugs.launchpad.net/ubuntu/+source/software-center/+bug/782953">has a bug</a></b>
+which means you will need to finish the installation by typing
+commands into a terminal window.
+</p>
+<ul>
+<li><p>
+Update the list of available packages.  In a terminal window, type:
+</p>
+<div class="example"><p>
+<tt>sudo apt-get update</tt>
+</p></div>
+</p>
+<p align="center"><img src="precise/ubuntu-update.png"></p>
+<p>
+Now you can install Regina.  In the same terminal window, type:
+</p>
+<div class="example"><p>
+<tt>sudo apt-get install regina-normal</tt>
+</p></div>
+</p>
+<p align="center"><img src="precise/ubuntu-install.png"></p>
+</li>
+</ul>
+</ol>
+<p>
+If you are a C++ programmer and you wish to build Regina into your own
+projects, you should also install the package <tt>regina-normal-dev</tt>.
+</p>
+<p>
+If you want the MPI-enabled utilities for use on high-performance clusters,
+you should install the package <tt>regina-normal-mpi</tt>.
+</p>
+<p>
+You might notice that Precise Pangolin already offers Regina as part of its
+universe section.  However, this is the older version 4.90.  For the latest
+version of Regina, you should follow the steps outlined above.
+</p>
+<p class="return">
+<a href="../index.html#download"><img src="../return.jpg"
+    alt="Back to main page ..."
+    border="0" width="32" height="32" align="middle"></a>
+<a href="../index.html#download">Back to main page ...</a></p>
+
+</body>
+</html>
+

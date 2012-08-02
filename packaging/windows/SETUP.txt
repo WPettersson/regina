@@ -1,0 +1,83 @@
+Build dependencies from mingw:
+  mingw-get install mingw32-libz
+  mingw-get install mingw32-gmp
+  mingw-get install mingw32-libpopt
+
+Build dependencies with standalone installers:
+  CMake
+  Doxygen
+  Python
+  Qt SDK
+  Wix
+
+Other helpful stuff from mingw:
+  mingw-get install msys-wget
+  mingw-get install msys-unzip
+  mingw-get install msys-zip
+
+Other helpful stuff with standalone installers:
+  Graphviz
+  TortoiseSVN
+
+To build boost:
+  Download .zip (not .tar.gz)
+  ./bootstrap.sh --with-toolset=mingw
+    --with-python=c:\\Python27\\python
+    --with-libraries=python,regex
+    --prefix=c:\\Boost
+  Edit project-config.jam:
+    Replace all instances of mingw with gcc
+    Replace c:\Python27 with c:\\Python27
+    Replace c:\Boost with c:\\Boost
+  Edit tools/build/v2/tools/python.jam:
+    Comment out the version.check-jam-version block
+  ./b2 variant=release link=shared
+  ./b2 install variant=release link=shared
+
+To build libxml2:
+  MinGW's libxml2 (2.7.6) is broken, and libxml2 must be hand-rolled.
+  ./configure --prefix=/home/bab/software --with-threads=win32
+
+To build libxslt:
+  Don't.  Just use -DREGINA_DOCS=path/to/docs.zip instead.
+  Build docs.zip so that handbooks are stored as docs/en/regina{,-xml}.
+
+To build source-highlight:
+  Patch to change NO_ERROR to NO_RANGE_ERROR (see source-highlight.patch).
+  ./configure --prefix=/home/bab/software --with-boost=/c/Boost
+
+To build cppunit:
+  ./configure --prefix=/home/bab/software
+
+To build the python system library for shipping:
+  cd /c/Python27/Lib
+  zip -r path/to/python27.zip . -x distutils/\* -x \*.pyc
+  Also copy python27.dll from /c/Windows/System32
+
+To build regina:
+  cmake -G 'MSYS Makefiles'
+    -DCMAKE_INCLUDE_PATH=/mingw/include:/include:/home/bab/software/include:/c/Boost/include/boost-1_49
+    -DCMAKE_LIBRARY_PATH=/mingw/lib:/lib:/home/bab/software/lib:/c/Boost/lib
+    -DCMAKE_INSTALL_PREFIX=/home/bab/software
+    -DQT_QMAKE_EXECUTABLE=/c/QtSDK/Desktop/Qt/4.8.0/mingw/bin/qmake
+    -DREGINA_DOCS=/home/bab/docs.zip
+    ..
+
+To prepare WiX for use:
+  If WiX is not on the path, add aliases to ~/.bashrc:
+    alias candle='"/c/Program Files/Windows Installer XML v3.6/bin/candle"'
+    alias light='"/c/Program Files/Windows Installer XML v3.6/bin/light"'
+
+To generate unique IDs for the windows installer:
+  Build UUIDgen (gcc UUIDgen.c -lole32 -o UUIDgen)
+
+To help fill documentation entries in regina.wsx:
+  ls -1 ~/foo/MinGW/msys/1.0/home/bab/software/share/regina/docs/en/regina |
+    sed -e "s#^#                        <File Name='#"
+        -e "s#\$#'/>#" 
+    > /tmp/foo
+
+To build the installer:
+  candle Regina.wxs WixUI_Regina.wxs
+  light -ext WixUIExtension -o 'Regina 4.93.msi' Regina.wixobj WixUI_Regina.wixobj
+

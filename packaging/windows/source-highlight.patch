@@ -1,0 +1,48 @@
+diff -ru source-highlight-3.1.6.orig//lib/srchilite/lineranges.cpp source-highlight-3.1.6/lib/srchilite/lineranges.cpp
+--- source-highlight-3.1.6.orig//lib/srchilite/lineranges.cpp	2011-12-17 03:10:11 +1000
++++ source-highlight-3.1.6/lib/srchilite/lineranges.cpp	2012-03-19 12:45:40 +1000
+@@ -48,7 +48,7 @@
+         return INVALID_RANGE_NUMBER;
+     }
+ 
+-    return NO_ERROR;
++    return NO_RANGE_ERROR;
+ }
+ 
+ RangeResult LineRanges::isInRange(const RangeElemType e) {
+diff -ru source-highlight-3.1.6.orig//lib/srchilite/lineranges.h source-highlight-3.1.6/lib/srchilite/lineranges.h
+--- source-highlight-3.1.6.orig//lib/srchilite/lineranges.h	2011-12-17 03:10:11 +1000
++++ source-highlight-3.1.6/lib/srchilite/lineranges.h	2012-03-19 12:45:35 +1000
+@@ -16,7 +16,7 @@
+ 
+ /// a possible error in specifying a range
+ enum RangeError {
+-    NO_ERROR = 0, INVALID_RANGE_NUMBER
++    NO_RANGE_ERROR = 0, INVALID_RANGE_NUMBER
+ };
+ 
+ /// result for a check whether a number is in a range (or in a context)
+diff -ru source-highlight-3.1.6.orig//lib/tests/test_lineranges_main.cpp source-highlight-3.1.6/lib/tests/test_lineranges_main.cpp
+--- source-highlight-3.1.6.orig//lib/tests/test_lineranges_main.cpp	2011-12-17 03:10:12 +1000
++++ source-highlight-3.1.6/lib/tests/test_lineranges_main.cpp	2012-03-19 12:45:52 +1000
+@@ -25,7 +25,7 @@
+ void check_add_range(LineRanges &lineranges, const string &range) {
+     RangeError result = lineranges.addRange(range);
+     cout << "checking " << range << "..." << endl;
+-    assertTrue(result == NO_ERROR);
++    assertTrue(result == NO_RANGE_ERROR);
+ }
+ 
+ void check_wrong_add_range(LineRanges &lineranges, const string &range,
+diff -ru source-highlight-3.1.6.orig//src/source-highlight.cc source-highlight-3.1.6/src/source-highlight.cc
+--- source-highlight-3.1.6.orig//src/source-highlight.cc	2011-12-17 03:10:13 +1000
++++ source-highlight-3.1.6/src/source-highlight.cc	2012-03-19 12:46:00 +1000
+@@ -134,7 +134,7 @@
+     if (args_info.line_range_given) {
+         lineRanges = boost::shared_ptr<LineRanges>(new LineRanges);
+         for (unsigned int i = 0; i < args_info.line_range_given; ++i) {
+-            if (lineRanges->addRange(args_info.line_range_arg[i]) != NO_ERROR) {
++            if (lineRanges->addRange(args_info.line_range_arg[i]) != NO_RANGE_ERROR) {
+                 string invalid_range = args_info.line_range_arg[i];
+                 cmdline_parser_free(&args_info);
+                 exitError("invalid line range: " + invalid_range);

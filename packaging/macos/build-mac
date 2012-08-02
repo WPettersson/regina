@@ -1,0 +1,45 @@
+#!/bin/bash
+set -e
+
+allow64=`sysctl -n hw.optional.x86_64`
+if [ "x$allow64" = "x1" ]; then
+  # 64-bit Nokia build of Qt
+  qmake=/Users/bab/QtSDK/Desktop/Qt/4.8.0/gcc/bin/qmake
+else
+  # 32-bit fink build of Qt
+  qmake=/sw/lib/qt4-mac/bin/qmake
+fi
+
+# Extract the default python version on MacOS and rewrite it as a
+# version-specific pythonX.Y, so newer platforms will use the same
+# (older) version against which it was built.
+pyver=`/usr/bin/python --version 2>&1 | cut -d' ' -f2`
+pymaj=`echo "$pyver" | cut -d. -f1`
+pymin=`echo "$pyver" | cut -d. -f2`
+pybin=/usr/bin/python$pymaj.$pymin
+if [ "$pybin" = /usr/bin/python ]; then
+  echo "Could not detect version-specific python binary"
+  exit 1
+fi
+if [ ! -e "$pybin" ]; then
+  echo "Broken python: $pybin"
+  exit 1
+fi
+
+mkdir build
+cd build
+
+rm -rf /Users/bab/Regina.app
+
+cmake \
+  -DCMAKE_INSTALL_PREFIX=/Users/bab \
+  -DPYTHON_EXECUTABLE="$pybin" \
+  -DQT_QMAKE_EXECUTABLE="$qmake" \
+  -DPACKAGING_MODE=1 \
+  -DDISABLE_MPI=1 \
+  ..
+
+make
+make test ARGS=-V
+make install
+

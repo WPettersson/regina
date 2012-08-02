@@ -1,0 +1,266 @@
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="regina.css">
+    <title>Building Regina on Different Systems</title>
+</head>
+<body bgcolor="#FFFFFF" text="#000000"
+    link="#0000EE" vlink="#551A8B" alink="#FF0000">
+
+<h1><a name="contents">Building Regina on Different Systems</a></h1>
+
+<p>
+<table class="contentswrapper" cellspacing=0>
+<tbody>
+<tr><td valign="top">
+    <table class="contents" cellspacing=0><tbody>
+    <tr><td><a href="#linux">GNU/Linux</a></td></tr>
+    <tr><td><a href="#macosx">MacOS X</a></td></tr>
+    <tr><td><a href="#windows">Windows</a></td></tr>
+    <tr><td><a href="#cluster">Cluster environments</a></td></tr>
+    <tr><td><a href="index.html">Back to main page ...</a></td></tr>
+    </tbody></table>
+</td></tr>
+</tbody>
+</table>
+</p>
+<p>
+This page offers tips and tricks for building Regina successfully on
+various operating systems.
+</p>
+<p>
+As always, it is
+<b>much simpler to download and install a ready-made package</b> if you can.
+Check out the
+<a href="http://sourceforge.net/project/showfiles.php?group_id=19698">Regina
+download site</a> and see if your distribution is supported.
+</p>
+<p>
+Please also see the page on <a href="source.html">building from sources</a>,
+which lists the system requirements and gives a general overview of the
+build process.
+</p>
+<p>
+If these tips do not work for you, please
+<a href="mailto:regina-devel@lists.sourceforge.net">mail us</a>
+(including your <tt>CMakeCache.txt</tt> if possible) so that we can
+update the build scripts (and this page) to reflect systems like yours.
+</p>
+
+<h2><a name="linux">GNU/Linux</a></h2>
+
+<p>
+Since version&nbsp;4.92, Regina can be installed anywhere (it does not
+need to live directly beneath <tt>/usr</tt> as in the past).
+The default is to install in <tt>/usr/local</tt>, though you can change this
+if you like by passing the argument <tt>CMAKE_INSTALL_PREFIX</tt> to cmake:
+</p>
+<div class="example"><p>
+<tt>example$ cmake -DCMAKE_INSTALL_PREFIX=/home/bab/software ..</tt>
+</p></div>
+<p>
+If you run a 64-bit version of linux (the <tt>x86_64</tt> or
+<tt>amd64</tt> architectures) and you use an RPM-based distribution
+(such as Fedora, Mandriva or SuSE),
+you may wish to set <tt>LIB_SUFFIX</tt>:
+</p>
+<div class="example"><p>
+<tt>example$ cmake -DLIB_SUFFIX=64 ..</tt>
+</p></div>
+<p>
+This ensures that Regina's libraries are installed in a 64-bit directory
+such as <tt>/usr/local/lib64/</tt>.
+</p>
+<p>
+Debian-based distributions (such as Debian or Ubuntu) do not use special
+directory names for 64-bit systems, and you should
+<b>not set <tt>LIB_SUFFIX</tt></b> on such machines.
+</p>
+
+<h2><a name="macosx">MacOS X</a></h2>
+
+<p>
+Although you do not need Fink to <i>run</i> Regina on MacOS&nbsp;X,
+you will still need Fink to <i>build</i> Regina in order to satisfy
+the <a href="source.html#sysreq">many build dependencies</a>.
+You can install Fink from
+<a href="http://finkproject.org/">finkproject.org</a>.
+</p>
+<p>
+You will need to pass several arguments to cmake:
+<ul>
+<li>To help Fink find your Qt installation, set
+<tt>QT_QMAKE_EXECUTABLE</tt> to the location of the <tt>qmake</tt>
+executable.</li>
+<li>To ensure that cmake picks up the system python installation instead
+of Fink's, set <tt>PYTHON_EXECUTABLE</tt> to <tt>/usr/bin/python</tt>.</li>
+<li>You will probably want to change the installation prefix from the
+default <tt>/usr/local</tt> by setting <tt>CMAKE_INSTALL_PREFIX</tt>.
+This controls where the application bundle will appear when you run
+<tt>make&nbsp;install</tt>.</li>
+</ul>
+</p>
+<p>
+A complete example of a cmake line that installs the application bundle
+on the user's desktop:
+</p>
+<div class="example">
+<p>
+<tt>example$ cmake -DQT_QMAKE_EXECUTABLE=/sw/lib/qt4-mac/bin/qmake -DPYTHON_EXECUTABLE=/usr/bin/python -DCMAKE_INSTALL_PREFIX=/Users/bab/Desktop ..</tt>
+</p>
+</div>
+
+<h2><a name="windows">Windows</a></h2>
+
+<p>
+Building Regina under Windows is possible but extremely messy.
+If you are working with Regina's sources, we highly recommend that
+you do this under GNU/Linux or MacOS&nbsp;X.
+</p>
+<p>
+If you really need to get a Windows build running, please mail the
+authors for assistance.
+</p>
+
+<h2><a name="cluster">Cluster environments</a></h2>
+
+<p>
+If you plan to use Regina in a high-performance computing environment
+such as a university cluster, there are several complications.
+</p>
+<h4>Disabling the graphical user interface</h4>
+<p>
+You will probably <i>not</i> want to
+build the graphical user interface (in fact the cluster may well
+not have the Qt development libraries installed, which would cause
+cmake to fail).
+To fix this, set the argument <tt>DISABLE_GUI</tt>:
+</p>
+<div class="example"><p>
+<tt>example$ cmake -DDISABLE_GUI=1 ..</tt>
+</p></div>
+<h4>Installing beneath your home directory</h4>
+<p>
+You will almost certainly not have root access
+to the cluster, which means you will need to install Regina beneath your
+home directory.  You do this by creating a top-level install directory
+(say <tt>/home/bab/software</tt>) and then passing it as the install prefix
+to cmake:
+</p>
+<div class="example"><p>
+<tt>example$ cmake -DDISABLE_GUI=1
+-DCMAKE_INSTALL_PREFIX=/home/bab/software ..</tt>
+</p></div>
+<p>
+Regina will now install its various components in the subdirectories
+<tt>/home/bab/software/bin</tt>,
+<tt>/home/bab/software/lib</tt>,
+<tt>/home/bab/software/share</tt> and so on.
+</p>
+<p>
+You should pass an <b>absolute path</b> as your install prefix
+(not <tt>~/software</tt> or <tt>../software</tt>, for instance).
+It is best if this is not the directory in which
+you unpacked Regina's sources, since otherwise you may find it hard to
+untangle sources from binaries later on.
+</p>
+<!--h4>Finding library dependencies</h4>
+<p>
+You may find that some of Regina's dependencies (such as
+<i>gmp</i>, <i>popt</i>, <i>libxml2</i> or <i>cppunit</i>)
+are not installed on the cluster.
+The easy solution is to mail the sysadmin and ask her to install these
+dependencies for you (remember to ask for the development files, not
+just the runtime libraries).  However, this is not always an option.  In
+this case you will need to install the dependencies beneath your
+home directory.  This involves two steps:
+</p>
+<ul>
+<li><p>Build and install the dependencies, using the same prefix as before.
+For instance, if you are building <i>popt</i> then pass your prefix to
+the <i>popt</i> configure script:</p>
+<div class="example"><p>
+<tt>example:~/sources/popt-1.7$ ./configure --prefix=/home/bab/software</tt>
+</p></div>
+<p>
+You should now find the dependencies installed across
+<tt>/home/bab/software/lib</tt>,
+<tt>/home/bab/software/include</tt> and so on.
+</p>
+</li>
+<li><p>Tell Regina where to find this software.  For generic libraries
+this involves passing the configure arguments
+<tt>--with-extra-libs</tt> and <tt>--with-extra-includes</tt>,
+giving the <tt>lib</tt> and <tt>include</tt> subdirectories of your
+prefix:
+</p>
+<div class="example"><p>
+<tt>example:~/sources/regina-4.6$ ./configure
+--with-extra-libs=/home/bab/software/lib
+--with-extra-includes=/home/bab/software/include</tt>
+</p></div>
+<p>Some specific libraries (specifically <i>libxml2</i> and
+<i>cppunit</i>) have their own configure arguments, which take the
+prefix instead (not its subdirectories):
+</p>
+<div class="example"><p>
+<tt>example:~/sources/regina-4.6$ ./configure
+--with-xml-prefix=/home/bab/software
+--with-cppunit-prefix=/home/bab/software</tt>
+</p></div></li>
+</ul>
+<p>
+For reference, the full configure line used by the author to build
+Regina on the <a href="http://www.vpac.org/">VPAC clusters</a> is:
+</p>
+<div class="example"><p>
+<tt>example$ ./configure
+--disable-kdeui
+--prefix=/home/bab/software
+--with-extra-libs=/home/bab/software/lib
+--with-extra-includes=/home/bab/software/include
+--with-cppunit-prefix=/home/bab/software</tt>
+</p></div>
+<p>
+Depending on the GNU/Linux distribution used on your cluster, it may
+also be worth reading other sections of this page
+(including the section on <a href="#64bit">64-bit systems</a>).
+</p-->
+<h4>Compiling your own software against Regina</h4>
+<p>
+Once Regina is built and installed, you may wish to compile it
+into your own C++ programs.  The helper script <tt>regina-engine-config</tt>
+gives you all of the necessary compiler and linker options for doing this.
+You can find this script with the other programs in
+<tt><i>prefix</i>/bin</tt>, where <tt><i>prefix</i></tt> is your
+installation prefix.
+</p>
+<p>
+To obtain a full set of compiler options:
+</p>
+<div class="example"><p>
+<tt>example$ regina-engine-config --cflags</tt>
+</p></div>
+<p>
+To obtain a full set of linker options:
+</p>
+<div class="example"><p>
+<tt>example$ regina-engine-config --libs</tt>
+</p></div>
+<p>
+You can use this script directly on the command-line (or in your
+Makefile).  So, for instance, to compile the program <tt>myprog.cpp</tt>
+against Regina:
+</p>
+<div class="example"><p>
+<tt>example$ g++ `regina-engine-config --cflags --libs` myprog.cpp
+-o myprog</tt>
+</p></div>
+
+<p class="return">
+<a href="index.html"><img src="return.jpg" alt="Back to main page ..."
+    border="0" width="32" height="32" align="middle"></a>
+<a href="index.html">Back to main page ...</a></p>
+
+</body>
+</html>
+

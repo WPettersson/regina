@@ -1,0 +1,13 @@
+When trying to run a 64-bit app on a 32-bit architecture:
+
+You can't open the application "Regina" because it is not supported on
+this architecture.
+
+When trying to run "neato -V" from the command-line on a broken
+leopard/2.28.0 installation:
+
+dyld: Library not loaded: /opt/local/lib/libltdl.7.dylib
+  Referenced from: /usr/local/bin/neato
+  Reason: image not found
+Trace/BPT trap
+

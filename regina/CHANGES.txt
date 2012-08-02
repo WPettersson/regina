@@ -1,0 +1,2418 @@
+
+Regina - A Normal Surface Theory Calculator
+
+    This file gives a detailed list of changes between releases,
+    including all changes to the C++/Python API.
+
+    For just the key highlights, see the (far more readable) file
+    HIGHLIGHTS.txt.
+
+Version 4.94  [ (under development) ]
+
+    ENGINE:
+        Class Dim2Census, Dim2EdgePairing, Dim2GluingPerms,
+                Dim2GluingPermSearcher:
+            - New classes for building a census of 2-manifold triangulations.
+        Class Dim2TriangleEdge:
+            - New convenience typedef for NFacetSpec<2>.
+        Class Dim2Triangulation:
+            - New 2-manifold triangulation class.  This is a new packet
+              type that can be independently stored in data files.
+        Class Dim2BoundaryComponent, Dim2Component, Dim2Edge, Dim2EdgeEmbedding,
+                  Dim2Isomorphism, Dim2Triangle, Dim2Vertex,
+                  Dim2VertexEmbedding, NXMLDim2TriangulationReader:
+            - New classes to support Dim2Triangulation.
+        Class DimTraits:
+            - New template class to assist with dimension-agnostic code.
+        Class NAbelianGroup:
+            - New convenience routines isZ() and isZn().
+        Class NClosedPrimeMinSearcher, NCompactSearcher:
+            - Improved the way in which cones and L(3,1) spines are
+              detected and pruned during census enumeration.
+            - Improved the way in which too many high degree edges are
+              detected and pruned during census enumeration.
+        Class NFacePairing:
+            - Now derives from the template base class NGenericFacetPairing<3>.
+            - Renamed getNumberOfTetrahedra() to size().  The old name
+              is deprecated, and will be removed in a future release.
+        Class NGenericFacetPairing:
+            - New template base class that contains dimension-agnostic
+              code for representing face/facet pairings.
+        Class NGenericIsomorphism:
+            - New template base class that contains dimension-agnostic
+              code for representing isomorphisms between triangulations.
+        Class NIsomorphism:
+            - Now a subclass of NGenericIsomorphism<3>, with inherited
+              dimension-agnostic aliases for several routines.
+        Class NLargeInteger:
+            - Made the destructor non-virtual to avoid the unwanted class
+              overhead that comes with polymorphism.
+            - Added constructor and assignment operator that take a
+              reference to the new NLazyInteger class.
+        Class NLazyInteger:
+            - New fast class for finite arbitrary precision integer arithmetic.
+              This class works with native C/C++ integers for as long as
+              possible, and only switches to GMP large integers when it
+              becomes unavoidable.
+        Class NPacket:
+            - Fix crash when sortChildren() is run on the root packet.
+        Class NPerm3, NPerm4, NPerm5:
+            - New dimension-agnostic alias Sn that refers to S3, S4 and S5 in
+              NPerm3, NPerm4 and NPerm5 respectively.
+            - New dimension-agnostic alias Sn_1 that refers to S2, S3 and S4 in
+              NPerm3, NPerm4 and NPerm5 respectively.
+            - New dimension-agnostic enum constants nPerms and nPerms_1 that
+              contain the number of permutations in Sn and Sn_1 respectively.
+            - New construtors that take an array of images.
+            - NPerm3 and NPerm5 now have a copy of S2 (which NPerm4 already
+              had).  Likewise, NPerm5 now has a copy of S3, orderedS3,
+              S4 and orderedS4 (which NPerm4 again already had).
+            - NPerm4::invS2 and NPerm4::invS3 are deprecated: the former
+              is unnecessary, and the latter is identical to NPerm3::invS3.
+            - NPerm3 now has a transposition constructor: NPerm3(a,b).
+        Class NQitmask1, NQitmask2:
+            - Fast classes for working with 0/1/2/3 "qits", i.e., "base 4 bits".
+        Class NTetrahedron:
+            - New dimension-agnostic aliases adjacentSimplex() and
+              adjacentFacet().  These are identical to adjacentTetrahedron()
+              and adjacentFace() respectively, and can help with
+              writing code that works with more than one dimension.
+        Class NTriangulation:
+            - New routine drillEdge() to drill out a regular
+              neighbourhood of an edge.
+            - Rewrote barycentricSubdivision(): the code is now clearer,
+              but note that the precise labelling of the new tetrahedra has
+              changed from earlier versions of Regina.
+            - New dimension-agnostic aliases getNumberOfSimplices(),
+              getSimplices(), getSimplex(), simplexIndex(), newSimplex(),
+              removeSimplex(), removeSimplexAt() and removeAllSimplices().
+              These are identical to the corresponding routines for
+              operating on tetrahedra, and can help with writing code that
+              works with more than one dimension.
+        Class NTritmask1, NTritmask2:
+            - Fast classes for working with 0/1/2 trits, i.e., "ternary bits".
+        Class NVertex:
+            - New routine buildLink() to triangulate the vertex link.
+        Typedef NFacePairingIsoList, UseFacePairing:
+            - These typedefs have been renamed as NFacePairing::IsoList
+              and NFacePairing::Use respectively.  The old typedefs are
+              deprecated, and will be removed in some future release.
+    UTILITIES:
+        tricensus:
+            - Now takes an optional argument -2/--dim2 to enumerate
+              2-manifold triangulations.
+    TEST SUITE:
+        - Added thorough tests for barycentric subdivision.
+        - Added enumeration tests for Dim2EdgePairing.
+        - Additional tests for facet pairing classes.
+        - Additional tests for permutation databases Sk and orderedSk.
+
+Version 4.93  [ 30 May, 2012 ]
+
+    ENGINE:
+        Class NAngleStructure:
+            - New routine isVeering() to test for veering structures.
+            - Flags (taut/strict/veering) are no longer stored in data files.
+        Class NBlockedSFSLoop, NBlockedSFSTriple, NPluggedTorusBundle:
+            - Corrected an off-by-one error in computing the genus of certain
+              non-orientable base orbifolds for Seifert fibred pieces.
+              This only affects census manifolds with >= 12 tetrahedra;
+              in particular, no existing census data is affected.
+        Class NExampleTriangulation:
+            - New routine weeks() to build the Weeks manifold.
+        Class NNormalSurface:
+            - Routines isOrientable(), isTwoSided() and isConnected() now
+              return bool instead of NTriBool.  This helps avoid unintended
+              errors in scripts, but be warned: these properties can only be
+              computed for compact surfaces (not spun normal surfaces).
+            - Routines isIncompressible() and isCompressingDisc() likewise
+              now return bool instead of NTriBool.
+        Class NTriangulation:
+            - New routines isSolidTorus() and knowsSolidTorus()
+              for "one-click unknot recognition".
+            - Routine hasCompressingDisc() now returns bool instead of NTriBool.
+        Class NTriBool:
+            - Deprecated.  This class has been replaced with ordinary (two-way)
+              bool throughout Regina, and will be removed in a future release.
+        Routine writeRecogniser():
+            - Added to support sending triangulations to Matveev's
+              3-manifold recogniser software.
+    USER INTERFACE:
+        - Restored File -> Save and File ->Save As, which were missing from
+          the main menu in version 4.92.
+        - In the triangulation viewer, the old "Surfaces" tab has been renamed
+          as the "Recognition" tab, and includes high-level algorithms such as
+          3-sphere recognition as well as "opportunistic" combinatorial
+          recognition.
+        - Replaced the python icon with a generic terminal icon.
+        - GUI python consoles now set the variable "item", not "selected".
+          This is easier to type, and avoids the misconception that selecting
+          a different packet in the tree might change the variable (which it
+          doesn't).  The variable "selected" is also set for backward
+          compability, though this will be removed in a future release.
+        - GUI python consoles will now set item=None if there is
+          nothing selected in the packet tree.
+        - Simplified the cut/copy/paste behaviour in graphical Python consoles.
+        - The knot/link census is now explicitly called the *hyperbolic*
+          knot/link census, since non-hyperbolic knots or links are excluded.
+    DOCUMENTATION:
+        - Layout and navigation improvements in the user handbook.
+    TEST SUITE:
+        - Added several tests related to Hakenness testing.
+
+Version 4.92  [ 12 April, 2012 ] - The "hello Windows!" release.
+
+    INSTALLATION:
+        - Regina now builds and runs under Windows!
+        - MacOS users now have a drag-and-drop app bundle, and do not
+          need fink at runtime.
+        - Linux (and indeed all) users no longer need KDE, since the user
+          interface is now Qt-only.
+    ENGINE:
+        Class NBitmask:
+            - Make NBitmask more suitable for use in containers.  Specifically,
+              the assignment operator can now be used to initialise an
+              uninitialised bitmask or to reset an already-initialised
+              bitmask to a different length, and one or both of its
+              operands may be invalid.
+        Class NBitmask, NBitmask1, NBitmask2:
+            - New function lessThan() for lexicographical comparisons.
+        Class NDoubleDescription:
+            - Removed the inner class LexComp, and replaced it with the new
+              global class NPosOrder (see below).  A deprecated typedef
+              NDoubleDescription::LexOrder is kept for backward compatibility.
+        Class NFacePairing:
+            - Function writeDot() can now optionally label graph
+              vertices with the corresponding tetrahedron numbers.
+            - Added graphviz export routines dot() and dotHeader(), which
+              are like writeDot() and writeDotHeader() but return strings
+              instead of writing to standard output.
+        Class NFacetSpec:
+            - New template class that generalises NTetFace to arbitrary
+              dimensions.  NTetFace is retained as a convenience typedef,
+              but with changes; see the NTetFace notes below.
+        Class NGlobalDirs:
+            - New routine setDirs() to be used when an application has
+              been moved from the cmake-configured installation directory.
+        Class NHilbertCD:
+            - New class that implements a modified Contejean-Devie algorithm
+              for Hilbert basis enumeration, based on the original algorithm in
+              "An efficient incremental algorithm for solving systems of
+              linear Diophantine equations", Contejean and Devie,
+              Inform. and Comput. 113 (1994), 143-172.
+        Class NHilbertDual:
+            - New class that implements a modified dual algorithm for
+              Hilbert basis enumeration, based on the dual algorithm in
+              "Normaliz: Algorithms for affine monoids and rational cones",
+              W. Bruns and B. Ichim, J. Algebra 324 (2010), 1098-1113.
+        Class NHilbertPrimal:
+            - New class that enumerates Hilbert bases by decomposing into
+              maximal admissible faces and running the primal algorithm from
+              Normaliz on each such face.  For details, see
+              "Fundamental normal surfaces and the enumeration of Hilbert
+              bases", B. Burton, arXiv:1111.7055, November 2011.
+        Class NLargeInteger:
+            - Made separate constructors and assignment operators for
+              arguments of type int, unsigned int, long, and unsigned long.
+            - Added ++ and -- operators.
+            - Added (long + NLargeInteger) and (long * NLargeInteger) operators.
+            - New routines setRaw() and rawData() for interacting directly
+              with libgmp and libgmpxx.
+        Class NMaxAdmissible:
+            - New class for enumerating maximal admissible faces of the
+              normal surface solution cone.
+        Class NNormalSurface:
+            - New routine boundarySlopes() that calculates boundary slopes
+              for spun normal surfaces.
+            - New routines getOrientedTriangleCoord() and
+              getOrientedQuadCoord() for transversely oriented normal surfaces.
+        Class NNormalSurfaceList:
+            - New routines enumerateFundPrimal() and enumerateFundDual() to
+              enumerate fundamental normal surfaces, as well as slower routines
+              enumerateFundFullCone() and enumerateFundCD() for comparing
+              different enumeration algorithms.
+            - New coordinate systems ORIENTED and ORIENTED_QUAD to
+              support transverse oriented normal surfaces.
+            - New routines beginVectors() and endVectors() and new inner class
+              VectorIterator for iterating through raw normal surface vectors.
+            - New routine allowsOriented(), indicating whether the underlying
+              coordinate system supports transverse orientations.
+        Class NNormalSurfaceVector:
+            - New routines getOrientedTriangleCoord() and
+              getOrientedQuadCoord() for transversely oriented normal surfaces.
+            - New routine allowsOriented(), indicating whether the underlying
+              coordinate system supports transverse orientations.
+        Class NNormalSurfaceVectorOriented, NNormalSurfaceVectorOrientedQuad:
+            - New coordinate systems for transversely oriented normal surfaces.
+        Class NPacket:
+            - Fixed potential crash in fireDestructionEvent().
+        Class NPerm3:
+            - New routine compareWith() for sorting permutations.
+        Class NPerm5:
+            - New class describing permutations of five elements.
+        Class NPosOrder:
+            - Class for sorting hyperplanes during vertex enumeration.
+              This is the new name for the old NDoubleDescription::LexComp.
+        Class NSnapPeaTriangulation:
+            - New routine slopeEquations() that uses code from SnapPy to
+              compute boundary slope matrices for cusps.
+            - New routine verifyTriangulation() for ensuring that
+              SnapPea has not retriangulated unexpectedly.
+        Class NSurfaceSet:
+            - New routine allowsOriented(), indicating whether the underlying
+              coordinate system supports transverse orientations.
+        Class NTetFace:
+            - Now an instance of the arbitrary-dimension template class
+              NFacetSpec.  NTetFace is retained as a typedef, but the fields
+              have been renamed from tet/face to the more general simp/facet.
+        Class XMLPropertyDict:
+            - Removed the optional defaultVal argument from lookup();
+              the default is now always the empty string.
+        Routines perm4to5, perm5to4, perm3to4, perm4to3:
+            - New routines for converting between permutation classes.
+        Routine makeEmbeddedConstraints():
+            - Added to help generate admissibility constraints based on a
+              flavour constant, instead of an NNormalSurfaceVector subclass.
+        Routines writeCSVStandard, writeCSVEdgeWeight:
+            - Included boundary slopes of spun-normal surfaces in CSV output.
+        Macro REGISTER_FLAVOUR:
+            - Now requires an additional argument, indicating whether
+              the coordinate system supports transverse orientations.
+    USER INTERFACE:
+        - Ported from KDE to Qt-only.
+        - Moved from a single monolithic window to lots of small windows
+          (one for the tree, one for each open packets). The old
+          interface can be re-enabled through Regina's preferences.
+        - Continued the user interface overhaul, again with many more
+          improvements that give cleaner and more sensible behaviour
+          (too many changes to list individually).
+        - Graphical Python consoles now execute "from regina import *"
+          automatically.
+    UTILITIES:
+        regina-python:
+            - Now executes "from regina import *" automatically.  You
+              can suppress this with the argument --noautoimport.
+            - For MacOS users: make sure 32-bit python is called when running
+              32-bit fink on a 64-bit machine.
+        tricensus:
+            - Now outputs all face pairings as it runs, instead of periodic
+              snapshots of where the census is up to.
+
+Version 4.91: Internal development version.
+
+Version 4.90  [ 12 September, 2011 ] - First prerelease for version 5.0.
+
+    OVERALL:
+        - The graphical user interface has been ported from KDE3 to KDE4.
+        - The build system has been ported from autotools to cmake.
+        - The built-in portions of the SnapPea kernel have been re-synced
+          with the September 2009 version of SnapPea.
+    DOCUMENTATION:
+        - The users' handbook has undergone a thorough overhaul.  It is
+          cleaner, more streamlined, and now full of screenshots.
+        - The data file format has been split out of the users' handbook
+          and placed in its own separate reference manual.
+    ENGINE:
+        Typedef AcceptTriangulation:
+            - This global typedef has been deprecated.  Please use the
+              class typedef NCensus::AcceptTriangulation instead.
+        Class BitManipulator, GenericBitManipulator:
+            - BitManipulator has new routines firstBit() and lastBit(), which
+              return the positions of the first and last true bit respectively.
+              This has required the addition of a new non-optimised base class
+              GenericBitManipulator, which end users need never use directly.
+        Class NAbelianGroup:
+            - Routine addRank() now takes a signed integer, so that you
+              can subtract from the rank as well as add to it.
+            - Two new constructors to compute the homology of a chain complex
+              with integer or mod-p coefficients.  Thanks to Ryan Budney.
+        Class NAngleStructureList:
+            - There is now an option to enumerate only taut angle structures,
+              which is significantly faster than enumerating all vertex angle
+              structures.  As a result, enumerate() now takes three arguments,
+              there is a new routine isTautOnly(), and the data file format
+              for angle structure lists contains a new element "angleparams".
+            - Renamed allowsStrict() and allowsTaut() to spansStrict() and
+              spansTaut().  The old routines are now deprecated but have been
+              preserved (for now) for backward compatibility.
+        Class NAngleStructureVector:
+            - Removed clone().  Just use the copy constructor instead.
+        Class NBitmask, NBitmask1, NBitmask2:
+            - New operators ^= (XOR), -= (set difference) and = (assignment).
+            - New routine truncate(), which truncates a bitmask to a given
+              number of bits by setting all subsequent bits to zero.
+            - New routines firstBit() and lastBit(), which return the
+              positions of the first and last true bit respectively.
+            - New convenience typedefs NBitmaskLen8, NBitmaskLen16,
+              NBitmaskLen32 and NBitmaskLen64 for fast-and-small bitmasks
+              of predetermined sizes.
+        Class NCensus:
+            - New class typedef NCensus::AcceptTriangulation to replace the
+              old global typedef AcceptTriangulation.
+        Class NDiscSetTetData:
+            - Added assertions in data() to ensure that the given disc
+              type and number are valid.  These can be circumvented by
+              compiling with -DNDEBUG.
+        Class NDoubleDescription:
+            - Method enumerateExtremalRays() no longer has the "base" argument
+              (which was used for cloning vectors); instead the method takes a
+              new template argument specifying a vector class, and new vectors
+              are created using the corresponding class constructors.
+            - Improved the speed of adjacency testing by using an
+              NTrieSet instead of a linear search through all vertices.
+              See the NNormalSurfaceList notes below for further information.
+            - Method enumerateExtremalRays() now takes an optional argument
+              initialRows, allowing the user to force certain hyperplanes
+              to be processed first.
+        Class NExampleTriangulation:
+            - New routine bingsHouse() returning the dual triangulation to
+              Bing's house with two rooms.
+            - Renamed seifertWeber() to weberSeifert(), for consistency with
+              the original paper.  The old routine is now deprecated, but has
+              being preserved (for the time being) for backward compatibility.
+        Class NFacePairing:
+            - Fixed the human-readable output for boundary faces in toString().
+              Previously boundary faces were displayed as "n:0"; now they
+              are displayed as "bdry".
+        Class NFastRay:
+            - Merged into the NRay class; see the NRay and NVector changes for
+              details.  Because typedefs cannot be templated, there is no
+              legacy typedef; instead NFastRay has been removed completely.
+        Class NFastVector:
+            - Merged into the NVector class; see the NVector changes for
+              details.  Because typedefs cannot be templated, there is no
+              legacy typedef; instead NFastVector has been removed completely.
+        Class NGlobalDirs:
+            - New routine data() to return the internal data directory.
+        Class NGroupPresentation:
+            - Fixed a memory leak in intelligentSimplify().
+        Class NIsomorphism:
+            - New routine applyInPlace() to directly modify a triangulation.
+            - Routine apply() now copies tetrahedron descriptions as
+              well as gluings (and so does the new routine applyInPlace()).
+        Class NLayeredSurfaceBundle:
+            - In isLayeredTorusBundle(), extend the search for possible
+              cores to 11 and 12 tetrahedra.
+        Class NLargeInteger:
+            - New routines randomBoundedByThis(), randomBinary() and
+              randomCornerBinary() for pseudo-random number generation.
+            - Faster (GMP-native) implementation of swap().
+        Class NMarkedAbelianGroup, NHomMarkedAbelianGroup:
+            - Both of these classes have much richer interfaces than before,
+              and some old routines have now been deprecated.  See the class
+              documentation for full details.  Thanks to Ryan Budney.
+        Class NMarkedVector:
+            - Added swap() to swap the contents of two vectors.
+        Class NNormalSurface:
+            - New routines isCompressingDisc() and isIncompressible() for
+              testing incompressibility.
+            - Fixed a memory leak in crush().
+        Class NNormalSurfaceList:
+            - Sped up enumeration (again), this time by using a
+              trie-like structure for adjacency testing.  For the
+              Weber-Seifert space this improves speed threefold (roughly).
+              Many thanks to Jonathan Shewchuk for encouraging me to
+              focus on the adjacency testing bottleneck.
+            - New filtering routines filterForLocallyCompatiblePairs() and
+              filterForDisjointPairs().
+            - New routine filterForPotentiallyIncompressible() to assist with
+              bulk incompressibility testing; see arXiv:0909.4625 for details.
+            - New routine allowsSpun() to easily identify coordinate systems
+              that support spun normal surfaces.
+        Class NNormalSurfaceVector:
+            - Due to the changes in the NVector hierarchy, clone() is
+              now introduced as a virtual function of NNormalSurfaceVector
+              (not NVector), and it now returns an NNormalSurfaceVector*.
+        Class NPacket:
+            - In the python interface, makeOrphan() now returns the packet
+              itself and the ownership becomes the responsibility of whoever
+              takes this return value.  If nobody takes this return value
+              then the packet and its descendants are automatically destroyed.
+            - ChangeEventBlock has been renamed to ChangeEventSpan, it
+              fires both packetToBeChanged() and packetWasChanged() (on
+              construction and destruction respectively), and the
+              optional boolean argument is gone (events are now fired always).
+              The old class name ChangeEventBlock remains as a
+              deprecated typedef for ChangeEventSpan.
+            - The protected routine fireChangedEvent() has been removed.  The
+              only way to fire a "packet changed" event now is to declare a
+              local ChangeEventSpan.
+        Class NPacketListener:
+            - All events (except for destruction) now come with both future
+              and past events: packetToBeChanged() and packetWasChanged(),
+              childToBeAdded() and childrenWereAdded(), and so on.
+        Class NPerm:
+            - Renamed to NPerm4.  The C++ header has also moved from
+              triangulation/nperm.h to maths/nperm4.h .  Both the old
+              class name and the old header are now deprecated.
+            - There are many other changes; see the NPerm4 notes below.
+        Class NPerm3:
+            - New class describing permutations of three elements.  This
+              is extremely fast, using lookup tables for all calculations.
+        Class NPerm4:
+            - This is the new name for the old class NPerm (see above).
+            - New routines S4Index() and orderedS4Index() for reverse
+              lookups into the arrays NPerm4::S4 and NPerm4::orderedS4.
+            - The constructor that takes an internal permutation code is
+              now private, and is replaced by a new static routine
+              NPerm4::fromPermCode().  This new routine is easier to
+              spot and grep for.
+            - The internal permutation codes have changed.  As a result,
+              NPerm4 operations are significantly faster.  The old codes
+              are now referred to as "first-generation", and the new codes
+              are referred to as "second-generation".
+            - Routines getPermCode(), setPermCode(), isPermCode() and
+              fromPermCode() continue to refer to first-generation codes.
+              These old routines are not recommended, since they now incur
+              additional overhead.  To replace them, the new (and faster)
+              routines getPermCode2(), setPermCode2(), isPermCode2() and
+              fromPermCode2() work with second-generation codes instead.
+            - The XML data file format continues to use first-generation
+              permutation codes (for backward compatibility).
+        Class NRational:
+            - New STL-compatible routine swap().
+        Class NRay:
+            - Like the vector hierarchy, NFastRay and NRay are now merged
+              into a single NRay class.  The result is that NRay is now
+              cleaner and faster, but methods are no longer virtual.
+              See the NVector class notes for full details of the changes
+              (including important changes in the parent NVector class).
+            - Removed the old intersect() function, which was based on
+              virtual methods.
+        Class NScript:
+            - Fixed a bug that lost script variables when reading ancient
+              binary files (i.e., files created before Regina 3.0, around
+              mid-2002).  This bug only showed up on some compilers.
+        Class NSnapPeaCensusManifold, NSnapPeaCensusTri:
+            - Routines getHomologyH1() (for both classes) and construct()
+              (for NSnapPeaCensusManifold) are now implemented for all SnapPea
+              census manifolds/triangulations, not just the smallest few.
+        Class NSnapPeaTriangulation:
+            - Kernel messages are now disabled by default.
+        Class NSurfaceSet, NSurfaceSubset:
+            - New routine allowsSpun() to easily identify coordinate systems
+              that support spun normal surfaces.
+        Class NTetrahedron:
+            - Tetrahedra should now always belong to a triangulation, from
+              creation until destruction.  In particular:
+              + Tetrahedra should be created by calling
+                NTriangulation::newTetrahedron(), which will insert them
+                into a triangulation immediately.  There is no need to
+                call NTriangulation::addTetrahedron() any more.
+              + NTetrahedron::joinTo() now recursively adds adjacent
+                tetrahedra to the relevant triangulation (but if you use
+                NTriangulation::newTetrahedron() as described above then
+                this is fast and changes nothing).
+            - Users no longer need to call NTriangulation::gluingsHaveChanged()
+              after gluing or ungluing tetrahedron faces; this is now handled
+              automatically.
+            - The NTetrahedron constructors are now deprecated in favour
+              of NTriangulation::newTetrahedron(), as described above.
+            - New routine getVertexMapping(), which facilitates a
+              consistent orientation around the given vertex for the
+              three remaining vertices in each tetrahedron.
+            - Added assertions in joinTo() and unjoin() to ensure that
+              the preconditions are met.  These can be circumvented by
+              compiling with -DNDEBUG.
+            - Routines that need the triangulation skeleton (e.g., getVertex(),
+              getEdgeMapping(), orientation(), etc.) will now compute the
+              skeleton automatically if this has not already been done.
+            - New routine getTriangulation() to return the enclosing
+              triangulation.
+        Class NTriangulation:
+            - Add new routines newTetrahedron() and
+              newTetrahedron(const std::string&).  This is now the
+              preferred way of creating tetrahedra (see the NTetrahedron
+              notes above).  The old addTetrahedron() is now deprecated.
+            - Users no longer need to call gluingsHaveChanged(), which
+              is likewise deprecated.  Again, see the NTetrahedron notes above.
+            - Routines removeTetrahedron() and removeTetrahedronAt() now
+              destroy the tetrahedron immediately and return nothing.
+            - New routines hasCompressingDisc() and hasSimpleCompressingDisc()
+              to search for compressing discs; see arXiv:0909.4625 for details.
+            - The "legality conditions" on closeBook() are now simpler, since
+              some of the conditions were automatic consequences of others.
+              Practically, nothing has changed (i.e., the new conditions will
+              be satisfied if and only if the old conditions were satisfied).
+            - The "legality conditions" on twoOneMove() were originally too
+              conservative, and are now weaker.  In particular, the endpoints
+              of the edge may now both be boundary.  Practically, this means
+              that 2-1 moves may now be legal where they were not legal before.
+            - New static routine rehydrate() to rehydrate a new triangulation
+              from a Callahan-Hildebrand-Weeks dehydration string.  This is a
+              more convenient version of insertRehydration().
+            - New routines isoSig() and fromIsoSig() for detecting and hashing
+              combinatorial isomorphism classes of triangulations.
+            - New routines isOriented() and orient() to relabel tetrahedron
+              vertices for consistent orientation.  Thanks to Matthias Goerner.
+            - New routines isOrdered() and order() to relabel tetrahedron
+              vertices so that they are ordered consistently across adjacent
+              faces.  Thanks again to Matthias Goerner.
+            - New routines swapContents() and moveContentsTo() for
+              moving tetrahedra between triangulations.
+            - Fixed a memory leak in shellBoundary().
+        Class NTrieSet:
+            - A new class for storing and querying a large number of sets,
+              where the elements of these sets are taken from a small universe.
+              The underlying data structure is essentially a trie of bitmasks.
+        Class NVector:
+            - Streamlined the vector hierarchy by merging NFastVector and
+              NVectorDense into a single NVector class, and removing NVectorUnit
+              and NVectorMatrix entirely.  The result is that NVector
+              is now cleaner and faster, but methods are no longer virtual.
+              See the NVector class notes for full details of the changes.
+            - Removed the old virtual clone() and makeLinComb() methods.
+        Class NVectorDense:
+            - Merged into the NVector class; see the NVector changes for
+              details.  Because typedefs cannot be templated, there is no
+              legacy typedef; instead NFastVector has been removed completely.
+        Class NVectorMatrix, NVectorUnit:
+            - Removed.  Use NVector instead.
+        Class NVertexEmbedding:
+            - New routine getVertices(), which facilitates a consistent
+              orientation for the three remaining vertices in each tetrahedron.
+        Class XMLPropertyDict:
+            - The interface for this class is now much more restricted.
+              The class now derives from std::map instead of stdhash::hash_map,
+              and it allows access to only a few inherited members of std::map.
+        Routine metricalSmithNormalForm():
+            - New alternative Smith normal form routine that is better for
+              working with extremely large matrices.  Thanks to Ryan Budney.
+        Routine readIsoSigList():
+            - New routine that reads a text file filled with isomorphism
+              signatures and returns a container filled with triangulations.
+        Routine readSnapPea():
+            - Allows additional text on the first line following the
+              "% Triangulation" marker (thanks to Matthias Goerner).
+        Routine torsionAutInverse():
+            - New routine for inverting automorphisms, thanks to Ryan Budney.
+        Routines writeCSVStandard(), writeCSVEdgeWeight():
+            - Changed the text that is written to the "boundary" field,
+              to be consistent with changes to the user interface.
+              Possible values are now "spun", "real" or "none".
+        File surfaces/flavourregistry.h:
+            - The final "pre_test" argument (which is never used) has been
+              removed.  As a result, REGISTER_FLAVOUR now takes five arguments,
+              not six.
+    USER INTERFACE:
+        - Ported from KDE3 to KDE4.  Finally!
+        - The user interface has had a thorough overhaul, and includes
+          many usability updates to help new users find their way around.
+          Overall, the behaviour is generally cleaner and more sensible.
+          A full list of changes is omitted for reasons of space and sanity.
+        - There is now an option to enable or disable diagnostic
+          messages from the SnapPea kernel.
+    UTILITIES:
+        tricensus, tricensus-mpi:
+            - New option -s to output lists of isomorphism signatures instead
+              of the much larger Regina data files.
+        tricensus-mpi-status:
+            - Now finishes with a running total of all triangulations found.
+            - Compressed logs (using gzip or bzip2) are now supported.
+              Requires the perl module IO::Uncompress::AnyUncompress.
+        tricensus-manager:
+            - Removed, since tricensus-mpi is a much better alternative.
+    TEST SUITE:
+        - Some slower but more detailed tests are now optional, and are
+          disabled by default.  To switch these tests on, set the
+          environment variable REGINA_DETAILED_TESTS to any non-empty value.
+        - New tests for file I/O using both modern XML and legacy binary
+          file formats.
+        - More detailed tests for bitmask operations.
+    BUILD ENVIRONMENT:
+        - Dropped support for ancient hacks like std::ios::no_create and
+          the boost.python make_constructor hack.
+        - Iconv is now mandatory, not optional.
+
+Version 4.6  [ 16 May, 2009 ]
+
+    OVERALL:
+        - Deprecated everything relating to the non-standard STL/g++ classes
+          hash_set and hash_map, for the sake of portability.
+        - Added a "deprecation guide" to the website, with a table listing
+          the outdated routines/classes/etc. to be removed in Regina 5.0 and
+          the corresponding new routines/classes/etc. that replace them.
+    ENGINE:
+        Class HashPointer, HashString:
+            - Deprecated, along with everything else relating to the hash_set
+              and hash_map classes.  See the "overall" notes above.
+        Class NBoundaryComponent, NComponent, NEdge, NFace, NVertex:
+            - All constructors for skeletal objects are now private, since
+              only the triangulation skeletal routines should be creating them.
+            - Cleaned up some of the more obscure parts of the documentation.
+        Class NCensus:
+            - Removed findAllCompletions(), which (as the documentation
+              points out) is an empty shell of a routine that has never been
+              implemented and quite possibly never will.
+        Class NDiscType:
+            - New class for specifying a normal or almost normal disc type.
+        Class NDoubleDescription, NDoubleDescriptor:
+            - The old NDoubleDescriptor class has been renamed, and is now
+              called NDoubleDescription.  This is merely for consistency
+              with documentation and papers; the functionality of the class
+              has not changed.  The old name (NDoubleDescriptor) is
+              deprecated, but for the time being a typedef is provided
+              for backward compatibility.
+        Class NEdge:
+            - Added new static arrays NEdge::edgeNumber and NEdge::edgeVertex
+              to replace the old global arrays regina::edgeNumber,
+              regina::edgeStart end regina::edgeEnd.  The old global
+              arrays are now deprecated (see below).
+            - Added a new static array NEdge::ordering to replace the old
+              global routine regina::edgeOrdering().  The old routine is
+              now deprecated (see below).
+        Class NFace:
+            - Added a new static array NFace::ordering to replace the old
+              global routine regina::faceOrdering().  The old routine is
+              now deprecated (see below).
+        Class NFacePairing:
+            - Added a missing precondition to isCanonical(), which requires
+              that the face pairing be connected.
+            - Changed the output format of toString() to make it clearer
+              which faces are boundary faces.
+        Class NFastRay:
+            - New fast but inflexible ray class; this builds on NFastVector
+              in the same way that the slower NRay builds on NVector.
+        Class NGluingPermSearcher, NCompactSearcher, NClosedPrimeMinSearcher:
+            - Overhauled the census code so that some of the optimisations
+              used in the closed minimal irreducible / P^2-irreducible census
+              can be made available to more general censuses.  In particular,
+              the modified union-find for vertex and edge links is now
+              available to any census that insists on compact (finite)
+              3-manifolds.  For details of these optimisations, see
+              "Enumeration of non-orientable 3-manifolds using face-pairing
+              graphs and union-find", B. A. Burton, Discrete Comput. Geom. 38
+              (2007), no. 3, 527--571.
+        Class NIndexedArray:
+            - Deprecated, along with everything else relating to the hash_set
+              and hash_map classes.  For a replacement, try the NMarkedVector
+              class, which is smaller and faster but requires modification
+              of the data type being stored.
+        Class NIsomorphism, NIsomorphismDirect, NIsomorphismIndexed:
+            - NIsomorphism has been enhanced to add all of the functionality
+              of the old NIsomorphismDirect class, so NIsomorphism is now a
+              fully-fledged isomorphism class in its own right.
+            - NIsomorhpismDirect has been deprecated, since this is now an
+              empty subclass of NIsomorphism with no extra functionality.
+              Programmers can change their code to use NIsomorphism instead.
+            - NIsomorphismIndexed has been removed entirely.  Python users
+              will not be affected, since this class was never available to
+              them.  C++ programmers can now use NIsomorphism in conjunction
+              with the NPerm::S4 array instead.
+        Class NLargeInteger:
+            - The old header utilities/nmpi.h is now deprecated.  Please use
+              the new header maths/nlargeinteger.h instead.
+        Class NMatrix2:
+            - The old header utilities/nmatrix2.h is now deprecated.  Please
+              use the new header maths/nmatrix2.h instead.
+        Class NNormalSurface:
+            - Finally implemented cutAlong()!
+            - New routine isEmpty() for identifying empty surfaces.
+            - New routine sameSurface() for comparing two normal surfaces.
+            - New routines locallyCompatible() and disjoint() for testing
+              intersections between normal surfaces.
+            - New routine getOctPosition() for locating the non-zero
+              octagonal coordinate in an almost normal surface.
+            - New routine rawVector() that gives direct read-only access to
+              the underlying vector in case this is needed.
+            - Removed canCrush() and knownCanCrush(), which are both
+              placeholders for routines that have never been implemented.
+              The corresponding <cancrush> element has been removed from
+              the data file format (though old files that happen to contain
+              it will load without problems).
+            - Added an optional argument to findVtxOctAlmostNormalSphere()
+              that lets the user choose between working in standard and
+              quadrilateral-octagon coordinates.
+        Class NNormalSurfaceList:
+            - Implemented quadrilateral-octagon coordinates for almost normal
+              surfaces (the relevant flavour constant is AN_QUAD_OCT).
+              See arXiv:0904.3041 for details.
+            - Added routines quadToStandard(), standardToQuad(),
+              quadOctToStandardAN() and standardANToQuadOct() to convert
+              between different solution sets.  See arXiv:0901.2629 for
+              details of the underlying algorithms.
+            - Changed enumerate() in standard coordinates so that, if
+              possible, it enumerates in quadrilateral coordinates first
+              and then converts between solution sets (see above).  This
+              typically runs orders of magnitude faster.  Similarly for
+              standard almost normal coordinates.
+            - New routines enumerateStandardDirect() and
+              enumerateStandardANDirect() to allow people to circumvent the
+              above changes to enumerate() and instead use the old direct
+              enumeration from Regina 4.5.1.
+            - Almost normal surface enumeration no longer strips out surfaces
+              with more than one octagonal *disc* (though it still avoids
+              surfaces with more than one octagonal disc *type*).  This
+              change is necessary for conversion between quad-oct and
+              standard almost normal space, and is also necessary if we
+              wish to enumerate *all* almost normal surfaces (as opposed
+              to just all *vertex* almost normal surfaces).
+            - Added a new coordinate flavour AN_LEGACY to reflect almost
+              normal surface lists created with Regina 4.5.1 or earlier,
+              where surfaces with more than one octagon were stripped out
+              (see above).
+        Class NPerm:
+            - New routines trunc2() and trunc3() to build a truncated
+              version of a permutation string.
+            - New arrays NPerm::S4, NPerm::invS4, NPerm::orderedS4,
+              NPerm::S3, NPerm::invS3, NPerm::orderedS3, NPerm::S2 and
+              NPerm::invS2.  These replace the old (and now deprecated)
+              arrays regina::allPermsS4, regina::allPermsS4Inv,
+              regina::orderedPermsS4, and so on.
+            - Deprecated the setPerm() routines; these are unnecessary
+              because NPerm objects are very small and can just be copied
+              around using the assignment operator.
+        Class NPermItS4:
+            - Deprecated, since all this class does is wrap a trivial loop.
+              Just loop through the elements of NPerm::S4 directly.
+        Class NPillowTwoSphere, NSnappedTwoSphere:
+            - Removed reduceTriangulation() and getReducedTriangulation(),
+              both of which are empty shells of routines that have never
+              been implemented and quite possibly never will.
+        Class NRational:
+            - Added new routines getTeX() and writeTeX() for TeX-friendly
+              output (thanks Ryan!).
+            - The old header utilities/nrational.h is now deprecated.  Please
+              use the new header maths/nrational.h instead.
+        Class NTetrahedron:
+            - Renamed getAdjacentTetrahedron(), getAdjacentTetrahedronGluing()
+              and getAdjacentFace() to adjacentTetrahedron(), adjacentGluing()
+              and adjacentFace(), which should be easier on the fingers.
+              The old names are still available for backward compatibility,
+              but they are now deprecated and will be removed in Regina 5.0.
+            - Proofreading and clarification for some of the older and more
+              opaque parts of the documentation.
+        Class NTriangulation:
+            - New routines isBall() and knowsBall() for recognising the
+              3-dimensional ball.
+            - New elementary move closeBook().
+            - Completely overhauled collapseEdge().  The eligiblity checks for
+              this routine are now correct and not overly conservative, which
+              makes this routine both useful and safe.  The big warning is
+              now gone from the collapseEdge() documentation as a result.
+            - Routine simplifyToLocalMinimum() now collapses edges, which
+              makes a big difference for multiple-vertex triangulations.
+            - Routine intelligentSimplify() now uses book opening moves to
+              create new opportunities for collapsing edges (which makes a
+              big difference for bounded triangulations), and also uses
+              book closing moves to reduce the number of boundary faces
+              once nothing else can be done.
+            - Routine isThreeSphere() now works in quadrilateral-octagon
+              coordinates instead of standard almost normal coordinates.
+              See arXiv:0904.3041 for details.
+            - Removed crushMaximalForest(), which (as the documentation has
+              pointed out since the first release) has never worked properly,
+              and which is therefore never actually used.
+            - Fixed crashes in twoOneMove(), twoZeroMove(NVertex*, ...)
+              and shellBoundary().  These crashes were triggered by certain
+              types of non-minimal triangulations with boundary.
+            - Fixed a couple of nasty bugs in shellBoundary(), which had the
+              potential to give incorrect results when simplifying
+              triangulations with boundary.
+            - Fixed bugs in several simplification routines when working
+              with invalid triangulations; these sometimes "simplified"
+              invalid edges to become valid edges.
+            - New routine reorderTetrahedraBFS() for renumbering tetrahedra
+              in a more sensible fashion.
+            - Routines isZeroEfficient() and hasSplittingSurface() now
+              operate on a clone of the triangulation, to avoid triggering
+              changes to the packet tree.
+        Routine edgeOrdering(), faceOrdering():
+            - Deprecated these routines, in favour of the new NEdge::ordering[]
+              and NFace::ordering[] lookup tables.
+        Routine edgeDescription(), faceDescription():
+            - Deprecated these routines, in favour of the new NPerm::trunc2()
+              and NPerm::trunc3() routines.
+        Routine writeResUsage():
+            - New helper routine to assist with diagnostics and measurements
+              of performance.
+        Global arrays allPermsS4, allPermsS4Inv, orderedPermsS4, allPermsS3,
+                allPermsS3Inv, orderedPermsS3, allPermsS2, allPermsS2Inv:
+            - All of these arrays are now deprecated.  Please use the new
+              arrays NPerm::S4, NPerm::invS4, NPerm::orderedS4, and so on.
+        Global arrays edgeNumber, edgeStart, edgeEnd:
+            - Deprecated; users are advised to switch to the new arrays
+              NEdge::edgeNumber and NEdge::edgeVertex instead.
+        Namespace stdhash:
+            - Deprecated, along with everything else relating to the hash_set
+              and hash_map classes.  See the "overall" notes above.
+    USER INTERFACE:
+        - The elementary moves dialog now has additional "Close book"
+          and "Collapse edge" options.
+        - Items in the triangulation composition list can now be copied
+          into the clipboard via the right mouse button.  Amongst other
+          things, this makes extracting the dehydration string much simpler.
+        - In the triangulation viewer, the Surfaces panel now has a new
+          "3-ball?" entry beneath the current "3-sphere?" entry.
+        - The normal surface list viewer now has two additional tabs: one to
+          summarise all surfaces in the list (which is now the default tab),
+          and one to list pairwise compatibilities between surfaces.
+        - The normal surface list viewer now has an additional "Cut Along"
+          menu item.  The shortcut letter for "Crush" has changed as well.
+        - Warn the user before enumerating immersed and/or singular normal
+          surfaces, in case the "embedded surfaces only" box was unchecked
+          by accident.  Moreover, refuse to enumerate immersed and/or
+          singular *almost* normal surfaces, since this feature was designed
+          for use with normal surfaces only.
+        - The surface coordinate viewer now lists the location of the almost
+          normal disc(s) alongside the other high-level surface properties.
+        - Normal surfaces are now individually numbered within surface lists,
+          which should make it easier to keep track of which is which.
+        - Added "Troubleshooting" and "Handbook won't open?" entries to
+          the Help menu, to make it easier to find solutions if things break.
+        - The "Python Reference" entry in the Help menu should now work
+          even when konqueror is not installed.
+        - Fixed a bug whereby small triangulations occasionally became
+          read-only after a user visited the Surfaces panel.
+        - Added a scrollbar to the Cellular Info pane in case the window
+          is small.
+    TEST SUITE:
+        - Added very thorough tests for NPerm.
+        - Additional tests for triangulation simplification and Euler
+          characteristic.
+        - New tests for the recognition of families of standard triangulations
+          and manifolds.
+        - New tests that enumerate automorphisms of triangulations and
+          test for subcomplexes.
+        - Added exhaustive testing for 3-sphere and 3-ball recognition.
+        - Added exhaustive testing for conversions between normal surface
+          solution sets in different coordinate systems.
+    BUILD ENVIRONMENT:
+        - Installing into a staging area (i.e., building packages) now works
+          fine even if older versions of the Regina development libraries are
+          installed (this used to cause relinking problems on some systems).
+
+Version 4.5.1  [ 28 October, 2008 ]
+
+    CENSUS:
+        - Replaced the old plain-text Notation packets with detailed PDF
+          packets in the closed orientable / non-orientable censuses.
+          These new Notation packets explain the manifold names and
+          parameters precisely, and include supporting diagrams.
+        - Renamed some census manifolds to avoid arbitrary (a), (b) suffixes.
+          In the 11-tetrahedron closed orientable census:
+            Hyp_2.13401634 (Z_14) (a)  ->  Hyp_2.13401634 (Z_14, geod = 0.4606)
+            Hyp_2.13401634 (Z_14) (b)  ->  Hyp_2.13401634 (Z_14, geod = 0.3684)
+            (These have also been reordered in the overall list of manifolds.)
+          In the 11-tetrahedron closed non-orientable census:
+            SFS [M] U m003 (a)  ->  SFS [M] U m003 (Z + Z_5)
+            SFS [M] U m003 (b)  ->  SFS [M] U m003 (Z + Z_10)
+          These changes are only stop-gaps until hyperbolic manfiolds are
+          dealt with properly (i.e., expect the names to change again).
+    ENGINE:
+        Class NBitmask, NBitmask1, NBitmask2, BitManipulator:
+            - New classes for manipulating bitmasks.  NBitmask is for bitmasks
+              of arbitrary length, whereas NBitmask1 and NBitmask2 are
+              optimised for situations where the length is known to be small.
+              BitManipulator makes it easier to offer optimised template
+              specialisations.
+        Class NCompConstraint, NCompConstraintSet:
+            - Removed.  Compatibility constraints now refer to facets of
+              the original cone, not coordinate positions (hence the
+              rename, since the semantics have changed in a fundamental way).
+              Individual compatibility constraints are now straight sets of
+              integers, and the deque-based NCompConstraintSet has been
+              replaced with the new vector-based class NEnumConstraintList.
+        Class NDoubleDescriptor:
+            - Streamlined the vertex enumeration routine, which is now
+              much, much faster.  See arXiv:0808.4050 for a full list of
+              improvements.
+            - The vertex enumeration routine now takes its arguments in
+              a different form, and more importantly now insists that
+              the original cone is in fact the non-negative orthant.
+              To ensure that python/C++ users notice that things have changed,
+              this routine has been renamed from enumerateVertices() to
+              enumerateExtremalRays().
+            - Major overhaul of the documentation, which is now (hopefully)
+              much clearer.
+        Class NEnumConstraintList:
+            - Added to replace the old NCompConstraintSet class.  See
+              the notes above on NCompConstraintSet for details.
+        Class NFastVector:
+            - New vector class that is less flexible than NVector but
+              more streamlined, largely because it has no virtual functions.
+        Class NGraphTriple:
+            - Fixed a bug in writeTeXName() that listed incorrect entries for
+              the first matrix.  This does not affect any census data that
+              has been published or shipped with earlier versions of Regina.
+        Class NLargeInteger:
+            - Fixed lcm() to do the right thing in the case of lcm(0,0).
+        Class NMatrixInt:
+            - New integer-specific routines divRowExact(), divColExact(),
+              gcdRow(), gcdCol(), reduceRow() and reduceCol().
+        Class NMatrixField:
+            - Removed this class, since it is never used and since it does not
+              actively address the accuracy problems raised by real numbers.
+        Class NNormalSurfaceVector:
+            - Removed createNonNegativeCone() from subclasses (which is
+              no longer required after the vertex enumeration overhaul),
+              and added makeZeroVector() (which is now required).
+        Class NPDF:
+            - A new packet type that allows PDF documents to be stored
+              directly as packets inside Regina data files.
+        Routines base64Length(), isBase64(), base64Encode(), base64Decode():
+            - New routines for base64 encoding and decoding, taken and
+              modified from the gnulib library.
+        Routines createNonNegativeCone(), makeZeroVector():
+            - Removed global routine createNonNegativeCone() and replaced it
+              with the new global makeZeroVector(), in line with the changes
+              to NNormalSurfaceVector listed above.
+        Routine gcd():
+            - Now takes longs instead of unsigned longs, and guarantees
+              that the gcd returned will be non-negative.
+        Routine lcm():
+            - Added to the collection of basic number theory routines.
+        Routines readPDF(), writePDF():
+            - New routines for importing and exporting PDF packets to
+              real PDF files.
+        Routines rowBasis(), rowBasisAndOrthComp():
+            - Added to find the rank of an integer matrix and bases for its
+              row space and orthogonal complement.
+    USER INTERFACE:
+        - PDF documents can now be embedded within data files as PDF packets.
+          Added import, export and creation facilities, plus a PDF packet
+          viewer that uses either an embedded KPart (such as kpdf or
+          kghostview's embedded viewer) or an external application (such
+          as xpdf or evince) according to the user's preferences.
+    TEST SUITE:
+        - Added new tests for normal surfaces that exploit generic properties
+          of layered loops; these tests push to 50 tetrahedra, and can
+          easily be extended further as surface enumeration becomes faster.
+        - Added additional tests for normal surfaces and angle strutures
+          that compare solutions coordinate by coordinate (instead of
+          counting solutions and looking for large-scale properties).
+
+Version 4.5  [ 17 May, 2008 ]
+
+    OVERALL:
+        - Regina finally pays attention to character encodings:
+            + All strings in the calculation engine are assumed to be UTF-8,
+              except for filenames which should be in whatever local encoding
+              the operating system expects.
+            + Regina's XML data files store their data in UTF-8, as does the
+              python configuration file ~/.regina-libs.
+            + The various user interfaces ensure that the correct character
+              encodings are always used, and translate between encodings
+              where required.
+            + Users who pass strings directly to the calculation engine
+              (through the python or C++ interface) must ensure that
+              their strings are either UTF-8 or just plain ASCII.
+        - Builds under gcc 4.3.
+        - Supports building out-of-tree (e.g., making separate builds in
+          debug/ and release/ subdirectories).
+    ENGINE:
+        Class Locale, IConvBuffer, IConvStream:
+            - New classes in the regina::i18n namespace for working with
+              internationalisation and character encodings.
+        Class NExampleTriangulation:
+            - New routine seifertWeber() to build the Seifert-Weber
+              dodecahedral space.
+        Class NFileInfo:
+            - Made the XML identification routines more robust, so that
+              they work even if extra parameters (such as encoding or
+              standalone declarations) are present in the XML prologue.
+        Class NGlobalDirs:
+            - New class for easy access to system installation directories
+              for various components of Regina.
+        Class NMarkedVector, NMarkedElement:
+            - New class for a vector with fast reverse lookups.  This
+              is more memory efficient than NIndexedArray, but requires
+              modifications to the data type being stored.
+        Class NPacket, NPacketListener:
+            - Fires packetWasRenamed() when packet tags are added or removed.
+              Note that packet tags still cannot be accessed through the GUI
+              except for via the python bindings.
+            - Made the event handling code more robust; this fixes a
+              couple of crashes in the GUI that occured when packets were
+              deleted from the tree while they were still in use elsewhere.
+        Class NTriangulation:
+            - Streamlined the implementation, cutting ~ 1/3 of the memory
+              usage and improving speed also.  As a result:
+                + Tetrahedra and skeletal components are now stored using
+                  NMarkedVector, not NIndexedArray.  As a result the return
+                  types of getTetrahedra(), getVertices(), etc. have changed.
+                + The old reverse lookup routines getTetrahedronIndex(),
+                  getVertexIndex(), etc. are now deprecated.  The new routines
+                  tetrahedronIndex(), vertexIndex(), etc. are even faster,
+                  but have new preconditions requiring the given tetrahedron,
+                  vertex, etc. to belong to the triangulation.
+        Class NXMLElementReader:
+            - New routine usingParser() that passes the current parser to the
+              top-level element reader.
+        Class XMLParserCallback:
+            - Callback routine start_document() now takes a single argument
+              that points to the current XMLParser.
+        Routine readXMLFile(), readFileMagic():
+            - Assumes that any Regina data files created by version 4.4 or
+              earlier use a LATIN-1 encoding (which is what the old GUI used
+              by default), and that any data files created by version 4.5 or
+              later use UTF-8.
+        Routine versionUsesUTF8():
+            - Added to assist code that works with files on a low-level basis.
+        Routines writeCSVStandard(), writeCSVEdgeWeight():
+            - New routines for exporting normal surface lists to plain-text
+              CSV files (which can then be imported into a spreadsheet or
+              database).
+    USER INTERFACE:
+        - Normal surface lists can now be exported to plain-text CSV files
+          (which can then be imported into a spreadsheet or database).
+        - The default SnapPea filename filter is now *.tri instead of just *.
+        - Several imports and exports (e.g., to/from python scripts and C++
+          source) now allow the user to select an explicit character encoding.
+        - Added the Seifert-Weber dodecahedral space to the list of example
+          triangulations that can be created.
+        - When adding a new library in Regina's python settings, the file
+          dialog now opens in the pylib/ directory where sample libraries
+          are installed.
+        - Application icons are now listed under hicolor instead of crystalsvg,
+          which should make them easier for other desktop environments to find.
+    PYTHON:
+        - Use docstrings for the helper routines in pylib/, so documentation
+          for these routines can be accessed from within python at runtime.
+        - Added loadCensus.py as a new collection of optional helper routines
+          in pylib/.  These make it easy to load census data files from within
+          python.
+    UTILITIES:
+        regfiledump, trisetcmp:
+            - Now respects the default locale; any international characters
+              in packet labels or packet contents are displayed using the
+              correct character set (e.g., LATIN-1 for Western European users).
+
+Version 4.4  [ 25 November, 2007 ] - The "hug a Mac today" release.
+
+    OVERALL:
+        - Builds and runs happily on MacOS!  Requires Fink to be installed.
+        - Tidied up the directory hierarchy a little.  The old engine/engine/
+          is now just engine/, and the old engine/doc-files/ is now
+          engine/doxygen/.
+        - Thanks to Ryan Budney for his many contributions to this release!
+    CENSUS:
+        - Expanded the closed non-orientable census to 11 tetrahedra.
+        - Expanded the closed orientable census to 11 tetrahedra, and
+          split it into three data files.  The 9-tetrahedron and
+          10-tetrahedron files are shipped with Regina as before (as
+          closed-or-census.rga and closed-or-census-large.rga); the
+          11-tetrahedron file is extremely large and must be downloaded
+          separately from the Regina website.
+        - Modified the closed orientable census files to use more
+          consistent choices of monodromy matrices for torus bundles.
+        - Clarified the matrix notation used with graph manifolds.
+    ENGINE:
+        Class NClosedPrimeMinSearcher:
+            - Census generation is much faster for larger numbers of
+              tetrahedra, due to new tests for high-genus vertex links.
+            - Also made census generation more efficient by pruning on
+              high-degree edges (as well as the usual low-degree edges).
+        Class NDoubleDescriptor:
+            - Now a standalone class, since the base NVertexEnumerator
+              has been removed.
+            - Made all member functions static.  Objects of this class
+              can no longer be created.
+        Class NFacePairing:
+            - Modified writeDot() to behave well with ancient versions
+              of Graphviz.
+        Class NHomologicalData:
+            - New class for computing all sorts of detailed homological
+              information for a manifold; thanks to Ryan Budney for this.
+        Class NLargeInteger:
+            - New routine divisionAlg() for using the division algorithm.
+            - New routine legendre() for calculating Legendre symbols.
+        Class NMatrix:
+            - New == and != operators for element-by-element comparison.
+        Class NMatrixInt:
+            - Added a set() routine to the python interface for setting
+              matrix elements (which was previously not possible in python).
+            - Made matrix multiplication available in the python interface.
+            - Added a python-only variant of initialise() that fills a
+              matrix given a complete list of elements.
+        Class NMatrixRing:
+            - New routine det() for fast calculation of matrix determinants.
+            - New convenience routine isIdentity().
+            - Changed the return type of operator * from a raw pointer to a
+              std::auto_ptr, to make it easier to multiply matrices inside
+              temporary expressions.
+            - Added a new multiplyAs() template routine that multiplies but
+              (unlike operator *) returns a subclass of NMatrixRing.
+        Class NMarkedAbelianGroup, NHomMarkedAbelianGroup:
+            - New classes for working with groups defined by chain
+              complexes; thanks to Ryan Budney for these.
+        Class NPacket:
+            - New routine reparent() to simplify ownership issues when
+              using Python scripting.
+        Class NPerm:
+            - Micro-optimised routines that are called extremely frequently,
+              such as sign().
+        Class NPrimes:
+            - New class that provides a more sophisticated infrastructure
+              for prime factorisation than the old factorise() and
+              primesUpTo() routines.
+        Class NRational:
+            - New routine abs() for calculating absolute value.
+            - New routine doubleApprox() for converting to a real number.
+        Struct NSatAnnulus:
+            - New routine attachLST() to help with Seifert fibred spaces.
+        Class NSFSpace:
+            - Updated reduce() to make the best possible decisions on
+              whether to reflect all fibres in cases where this is
+              possible (previously it made faster decisions but
+              occasionally missed some more subtle reductions).
+            - Enhanced construct() to support the triangulation of all
+              Seifert fibred spaces over the 2-sphere without punctures
+              or reflector boundaries.
+        Class NTetrahedron:
+            - New routine orientation() for tracking orientation.
+        Class NTorusBundle:
+            - Greatly improved monodromy matrix reduction, to the point
+              where equivalent torus bundles should give equal matrices.
+            - Fixed a bug in the matrix reduction for non-symmetric
+              matrices in non-orientable manifolds (sometimes the
+              transpose matrix was obtained instead of the correct matrix).
+        Class NTriangulation:
+            - New routine layerOn() for performing layerings.
+            - New routine dehydrate() for extracting Callahan-Hildebrand-Weeks
+              dehydration strings.
+            - Optimised the skeletal calculations, which now run *much* faster.
+            - Renamed getEulerCharacteristic() to getEulerCharTri(), since for
+              ideal triangulations this differs from the Euler characteristic
+              of the corresponding compact manifold.  The old name is kept as
+              an alias but is now deprecated.
+            - Added a new routine getEulerCharManifold(), which *does* calculate
+              the Euler characteristic of the corresponding compact manifold.
+            - Fixed a crash in splitIntoComponents() that occurred when
+              the triangulation skeleton had not yet been calculated.
+        Class NVertexEnumerator:
+            - Removed.  This abstract class existed to support multiple
+              vertex enumeration algorithms, but in reality we're only
+              using double descriptor anyway.  The virtual template
+              member functions caused problems with g++-4.2, which was
+              the final push.  NDoubleDescriptor is now a standalone class.
+        Routine smithNormalForm():
+            - New five-argument version that not only calculates the Smith
+              normal form but also returns appropriate change of basis
+              matrices; thanks to Ryan Budney.
+        Routines columnEchelonForm() and preImageOfLattice():
+            - New routines for working with matrices and homomorphisms;
+              thanks again to Ryan Bydney.
+        Routines factorise(), primesUpTo():
+            - Deprecated in favour of routines from the new NPrimes class.
+        Routine clonePtr():
+            - New routine to assist copy constructors for classes that
+              compute data on demand.
+    USER INTERFACE:
+        - New Algebra -> Cellular Info tab containing a variety of new
+          homological data for triangulations; thanks to Ryan Budney.
+        - Graphs now look better when drawn using an old Graphviz 1.x
+          (previously the graphs were only tested under Graphviz 2.x).
+        - Better infrastructure for determining the status of the
+          current Graphviz installation.  For version 1.x, Regina now
+          insists on using dot, since the old neato 1.x cannot handle
+          multiple edges.
+        - Removed the Crush column from normal surface lists, since it has
+          never contained any information beyond "N/A" or "Unknown".
+        - The Regina reference manual is now called the Regina handbook,
+          for consistency with other KDE applications.
+    PYTHON:
+        - The regina-python tool has new options -i/--interactive (run a
+          script and leave the interpreter open) and -n/--nolibs (do not
+          load any of the normal user libraries).
+    UTILITIES:
+        trisetcmp:
+            - Now outputs more appropriate messages when subcomplex testing
+              (previously the same messages were used for both subcomplex
+              testing and isomorphism testing).
+    TEST SUITE:
+        - Added a new test suite for python bindings, in addition to the
+          usual C++ test suite that is already present.
+        - Added tests for the NPerm class.
+        - Added tests for vertex link calculations.
+        - Added tests for the orientable double cover of a triangulation.
+        - Added tests for the new NPrimes class.
+        - Added division algorithm tests for NLargeInteger.
+        - Added tests for the new NHomologicalData class.
+        - Added tests for triangulation dehydrations and rehydrations.
+        - Initial work on tests for the NRational class.
+    BUILD ENVIRONMENT:
+        - Updated libtool from version 1.5a to 1.5.22 with Debian patches
+          (required for MacOS support).
+
+Version 4.3.1  [ 5 May, 2006 ]
+
+    ENGINE:
+        Class NClosedPrimeMinSearcher:
+            - Improved speed by adding additional face pairing graph
+              tests; see math.GT/0604584 for details.
+            - Made a very slight improvement in speed by testing for
+              extremely high degree edges.
+            - Fixed memory leak (the destructor was not deallocating some
+              internal arrays).
+            - Minor changes to the behaviour of mergeEdgeClasses()
+              (might return only some flags instead of all flags).
+        Class NFacePairing:
+            - New constructor for building the face pairing of an
+              existing triangulation.
+            - New routines hasOneEndedChainWithStrayBigon() and
+              hasTripleOneEndedChain() for testing for more types of
+              graphs that cannot appear in a closed census.
+            - New routines hasSingleStar(), hasDoubleStar() and
+              hasDoubleSquare() for investigating larger face pairing graphs.
+            - New routines writeDot() and writeDotHeader() to assist
+              with graph visualisation.
+        Routine readOrb():
+            - New routine for importing Orb / Casson triangulations;
+              thanks to Ryan Budney for contributing this import filter.
+        Routine readSnapPea():
+            - Verifies that the first line of the file is "% Triangulation",
+              instead of simply testing for the '%' and ignoring the rest.
+    USER INTERFACE:
+        - Now displays face pairing graphs in the triangulation viewer, using
+          Graphviz for the rendering (see the Skeleton tab).  This required
+          splitting the main Skeleton tab into two smaller child tabs.
+        - New configuration options for the Graphviz executable and the
+          default Skeleton child tab.
+        - No longer crashes when attempting to clone the root packet
+          (it simply displays an error message instead).
+        - Added a workaround for the icon problems that arise when using
+          GNU/Linux distributions with buggy icon themes.
+        - Added 48x48 and 64x64 icons for Regina and its data files.
+    TEST SUITE:
+        - New tests for recognising bad and otherwise interesting subgraphs
+          within face pairing graphs.
+
+Version 4.3  [ 27 March, 2006 ]
+
+    OVERALL:
+        - Expanded the closed non-orientable census to 10 tetrahedra.
+        - Expanded the closed orientable census to 10 tetrahedra, and
+          split it into two data files (large and small).
+        - Updated postal address for the Free Software Foundation.
+        - Bibliographic updates for the reference manual.
+        - Fixed some harmless compiler warnings, and tightened syntax
+          to adhere to the requirements of gcc 4.1.
+    ENGINE:
+        Class LessDeref:
+            - New utility class for working with pointers in the Standard
+              Template Library.
+        Class NGluingPerms, NGluingPermSearcher, NClosedPrimeMinSearcher:
+            - Significant overhaul.
+            - Moved gluing permutation search routines into new classes
+              NGluingPermSearcher and NClosedPrimeMinSearcher.
+            - Supports partial depth-based searching (by passing a
+              non-negative depth parameter to the new runSearch() routine).
+            - Tracks both vertex and edge links using a modified union
+              find structure to prune more braches of the search tree
+              where possible.  This makes an incredible difference to the
+              census running time.  Pruning takes place on non-orientable
+              vertex links, too many or too few vertices or edges, low
+              degree or invalid edges, conical faces, and L(3,1) spines.
+        Class NGraphLoop, NGraphPair, NGraphTriple:
+            - New families of graph manifolds.
+        Class NKnot:
+            - Removed this unwritten placeholder class.
+        Class NLayering:
+            - New class to help follow through layerings of tetrahedra
+              within a triangulation.
+        Class NLayeredSolidTorus:
+            - New routine formsLayeredSolidTorusTop() for finding an LST
+              from the top end instead of the bottom.
+            - New routine transform() for following through an isomorphism.
+        Class NLayeredTorusBundle, NTxICore, NTxIDiagonalCore, NTxIParallelCore:
+            - Added for recognition of layered surface bundles.
+        Class NListOnCall:
+            - New class for expensive and rarely used hard-coded lists.
+        Class NManifold:
+            - Routine writeTeXName() no longer provides wrapping dollar signs.
+            - New operator < for ordering manifolds deterministically.
+        Class NMatrix2:
+            - New specialised class for working with 2-by-2 integer matrices.
+        Class NPacket, NPacketListener:
+            - New NPacket routine sortChildren().
+            - Packet listeners are now unregistered immediately *before*
+              packetToBeDestroyed() is called.  This avoids unpleasantries
+              when a listener tries to unregister itself during this call.
+        Class NPerm:
+            - The assignment operator now returns a reference instead of void.
+        Class NSatAnnulus, NSatBlock, NSatRegion, NBlockedSFS, NBlockedSFSLoop,
+                  NBlockedSFSPair, NBlockedSFSTriple, NPluggedTorusBundle,
+                  plus subclasses and other support structures:
+            - New classes for recognising and describing Seifert fibred spaces
+              and other graph manifolds that are built using saturated blocks.
+        Class NSFS, NExceptionalFibre:
+            - Removed; see below.
+        Class NSFSpace, NSFSFibre:
+            - Complete overhaul of the Seifert fibred space classes.
+            - Now more general, supporting both orientable and
+              non-orientable 3-manifolds as well as base orbifolds with
+              reflector boundary components.
+            - Classes have been renamed from the old NSFS / NExceptionalFibre
+              to make it clear that large-scale changes have taken place.
+        Class NSFSAltSet:
+            - New class for finding alternative simple representations of
+              the same bounded Seifert fibred space.
+        Class NSnapPeaTriangulation:
+            - Added a boolean argument to the constructor that permits the
+              SnapPea kernel to work with closed triangulations if the user
+              really wants to allow it.
+        Class NStandardTri:
+            - Routine writeTeXName() no longer provides wrapping dollar signs.
+        Class NTorusBundle:
+            - New class of 3-manifolds describing torus bundles over the
+              circle.
+        Class NTriangulation:
+            - Combined isomorphism and subcomplex testing routines into
+              a single all-in-one routine to avoid excessive code reuse.
+            - Added new subcomplex testing routine findAllSubcomplexesIn(),
+              in which all matches (not just the first) are returned.
+            - Routines getTetrahedronIndex(), getComponentIndex(),
+              getBoundaryComponentIndex(), getFaceIndex(), getEdgeIndex()
+              and getVertexIndex() now returned signed instead of unsigned
+              longs, so that -1 can be returned if the object could not
+              be found.
+    USER INTERFACE:
+        - Added a configuration option that allows the SnapPea kernel to
+          work with closed triangulations.
+        - Fixed the crash when deleting a triangulation that is currently the
+          target of an isomorphism/subcomplex test.
+        - Fixed a crash that sometimes occurs in large files when deleting
+          a triangulation that is currently being viewed.
+        - Fixed extremely slow updates in the triangulation composition tab
+          for very large data files.
+        - Text and script packets now open with the cursor at the top
+          instead of the bottom.
+    PYTHON:
+        Class NSnapPeaTriangulation:
+            - Offers the additional zero-argument routine volumeWithPrecision()
+              as a way of returning the precision of the volume calculation.
+    UTILITIES:
+        tricensus-mpi:
+            - Significant overhaul.
+            - Now supports finer-grained subsearches via --depth.
+            - Better logging.
+            - Only writes .rga data files for cases in which at least
+              one triangulation was found.
+            - New option --dryrun for a quick overview of the search space.
+        tricensus-mpi-status:
+            - New tool for parsing tricensus-mpi logs.
+        trisetcmp:
+            - Support subcomplex testing as well as isomorphism testing.
+    TEST SUITE:
+        - Don't enforce precision limits for degenerate snappea volume
+          testing, to allow for flexibility in floating point behaviours
+          of different chipsets.
+        - Added tests for NIsomorphism.
+
+Version 4.2.1  [ 18 September, 2005 ]
+
+    OVERALL:
+        - Added a chapter on imports and exports to the reference manual.
+        - Expanded the closed non-orientable census to eight tetrahedra.
+    ENGINE:
+        Overall structure:
+            - Fixed "regina-engine-config --cflags", which wrote includes
+              for Regina's dependencies but not for Regina itself (sigh).
+        Class NIsomorphism:
+            - New routine random() for generating random isomorphisms.
+            - New routine apply() for permuting the tetrahedra and
+              vertices/faces of an existing triangulation.
+            - New routine isIdentity() for testing for identity isomorphisms.
+        Routine writeSnapPea():
+            - Add a precondition that the triangulation has no boundary faces.
+    USER INTERFACE:
+        - Refuse to export a triangulation to SnapPea format if it
+          has boundary faces.
+    UTILITIES:
+        trisetcmp:
+            - New utility for comparing two different sets of triangulations.
+
+Version 4.2  [ 7 July, 2005 ]
+
+    ENGINE:
+        Overall structure:
+            - Included portions of the SnapPea kernel!  Thanks again to
+              Jeff Weeks for his support.
+            - Added a regina-engine-config script to make it easier to
+              build Regina's calculation engine into other applications.
+        Class NExampleTriangulation:
+            - Added to facilitate construction of several different
+              ready-made sample triangulations.
+        Class NFacePairing:
+            - New routine hasWedgedDoubleEndedChain.
+        Class NLayeredSolidTorus:
+            - New routine isLayeredSolidTorus for classifying an entire
+              triangulation component.
+        Class NPacketListener:
+            - Added an extra boolean argument to childWasRemoved() to indicate
+              the situation in which the parent is also being destroyed.
+        Class NSnapPeaCensusManifold, NSnapPeaCensusTri:
+            - Added to aid recognition of very small SnapPea census
+              triangulations.
+        Class NSnapPeaTriangulation:
+            - Added to give Regina triangulations access to the SnapPea kernel.
+        Class NTriangulation:
+            - New routine finiteToIdeal() for extending a triangulation.
+            - New routines insertConstruction() and dumpConstruction() to
+              make it easier to hard-code triangulations in source code.
+            - Fixed vertex link calculations, which were previously
+              incorrect if a triangulation contained invalid edges.
+            - Fixed bug in twoZeroMove() which caused a crash in some cases
+              involving triangulations with boundary.
+        Class NTrivialTri:
+            - Added recognition of one-tetrahedron balls.
+    USER INTERFACE:
+        - Include several example triangulations in the triangulation
+          creation dialog.
+        - Allow exporting a triangulation to C++ source.
+        - Renamed "Ideal to Finite" as "Truncate Ideal Vertices" in the menu.
+        - Include a padlock in the corner of a packet icon if the packet
+          is uneditable.
+        - Tighter thread safety in the GUI.  This is required because some
+          calculations (such as surface enumeration) run in a separate thread.
+        - Worked around a Qt bug that caused a crash when pressing a key in
+          a table of normal surfaces or matching equations.
+        - Fixed a bug in which GAP output was unparseable due to GAP
+          inserting spaces where Regina was not expecting them.
+    UTILITIES:
+        tricensus-mpi:
+            - New census manager for use on MPI-enabled clusters.
+    TEST SUITE:
+        - Added tests for SnapPea calculations.
+        - Further additions to the triangulation tests, in particular
+          involving invalid and non-standard triangulations.
+        - Beginning of a series of tests for elementary moves.
+    BUILD ENVIRONMENT:
+        - Updated libtool to version 1.5a.  Hopefully this will make
+          things better for Darwin/Fink.
+        - Requires KDE >= 3.2, so that the XDG applications directory can
+          be used for the desktop file.
+        - Verifies in the configure script that shared libraries are
+          enabled where necessary (i.e., in the KDE and Python interfaces).
+        - Better magic in the configure script for finding the correct
+          boost.python libraries.
+        - Fixed a bug in the configure script whereby -g stripping was
+          too agressive, resulting in a compile failure for the python
+          interface under some environments.
+
+Version 4.1.3  [ 25 July, 2004 ]
+
+    OVERALL:
+        - Included the closed hyperbolic census of Hodgson and Weeks.
+        - Made explicit in the reference manual introduction where the
+          example files can be found.
+    PYTHON:
+        - For most objects, == now works like C++ pointer equality
+          instead of Python object equality.  That is, it tests whether
+          the Python wrappers point to the same C++ object, not whether
+          the Python wrappers are in fact the same wrapper.
+        - Fixed scripting in the GUI, which was broken with python 2.3
+          (indented blocks were treated as complete after just one line).
+        - Added a sample python session illustrating progress reporting.
+    USER INTERFACE:
+        - Added an "Open Example" menu item for easy access to the
+          sample files.
+        - Allow the choice of text editor component to be configured.
+        - Several fixes to make Regina work properly with the vimpart,
+          including work-arounds for bugs in the vimpart itself.
+        - Fixed the massive resource drain while editing a script's
+          variable table in a heavily populated data file.
+        - Fixed crashes that occured when deleting packets while a
+          drop-down packet chooser is in use elsewhere.
+        - Tightened up the handling of read-only mode for internal
+          components.  Also removed some loopholes that allowed editing
+          of uneditable packets.
+        - Improved handling of keyboard focus.
+        - Changed "Python Reference" to point to the modules index
+          instead of the title page.
+
+Version 4.1.2  [ 14 June, 2004 ]
+    OVERALL:
+        - Updated configure scripts so that the python interface builds
+          out of the box on a larger number of platforms (specifically Red Hat
+          and Fedora Core are now supported).  Many thanks to Craig Macintyre
+          for his patience and assistance with this.
+        - More updates to the troubleshooting section; overhauled the
+          README.txt and website to hopefully make everything clearer
+          and the important information easier to find.
+        - Added a suggested form for citing Regina.
+        - Updated INSTALL.txt to reflect current --prefix guessing.
+    ENGINE:
+        Class NTriangulation:
+            - Added simplifiedFundamentalGroup() to allow external bodies
+              such as GAP to simplify group presentations.
+    USER INTERFACE:
+        - Allow users to simplify fundamental groups using GAP.
+        - Added "Education" to the categories for the desktop file, since
+          KDE seems adamant about having no separate maths/science menu.
+          Anything is better than showing up in Lost & Found. :)
+        - Fixed compile error when building against an STL-enabled Qt
+          (thanks to Robert Myers for spotting this one).
+
+Version 4.1.1  [ 24 April, 2004 ]
+    USER INTERFACE:
+        - Fixed compile error when building against Python 2.3.
+        - Added "What's This?" button to main/packet window decorations.
+
+Version 4.1  [ 7 March, 2004 ]
+    OVERALL:
+        - Further enhancements to the reference manual, including more
+          detailed explanations in the main body as well as a new index.
+    ENGINE:
+        Class NNormalSurface:
+            - New routine doubleSurface().
+            - Added findNonTrivialSphere() and findVtxOctAlmostNormalSphere()
+              to support 0-efficiency algorithms.
+        Class NProgress:
+            - Added timing utilities getRealTime() and totalCPUTime().
+        Class NTriangulation:
+            - New 0-efficiency / decomposition routines splitIntoComponents(),
+              connectedSumDecomposition(), isThreeSphere(), knowsThreeSphere()
+              and makeZeroEfficient().
+            - New Seifert fibred space constructions insertAugTriSolidTorus()
+              and insertSFSOverSphere().
+    USER INTERFACE:
+        - Actions specific to each packet type now appear in their own
+          context-specific menus, i.e., a "Triangulation" menu appears
+          when a triangulation is open, etc.
+        - Added "Please Wait" dialogs during slow operations.
+        - Thorough "What's This?" support and tooltips offered across the
+          entire user interface.
+        - New tip-of-the-day support.
+        - More icons for triangulation actions.
+        - Updated the .desktop file and mimetype tests to work correctly
+          with KDE 3.2.
+    UTILITIES:
+        tricensus:
+            - Fixed bug in which --genpairs created empty output files.
+    TEST SUITE:
+        - Added tests for connected sum decomposition.
+
+Version 4.0.1  [ 26 January, 2004 ]
+    OVERALL:
+        - The ./configure script now takes a guess at the correct --prefix,
+          runs sanity tests upon it and insists upon Qt >= 3.2.
+        - Regina now ships with pregenerated manpages to avoid the need
+          for docbook-utils and its complicated dependencies.
+        - The troubleshooting section of the reference manual now
+          includes compile-time problems and discusses the test suite.
+    USER INTERFACE:
+        Class GridListViewItem:
+            - Added to centralise support for list views with grids.
+            - Fixed a compile error with Qt versions 3.1 and earlier.
+
+Version 4.0  [ 20 December, 2003 ]
+    ENGINE:
+        Class NAngleStructureList:
+            - Enumeration routine now takes an optional progress manager
+              and can run in a separate thread.
+        Class NGroupPresentation:
+            - Improved simplification of group presentations.
+        Class NNormalSurface:
+            - Using NProperty to store calculable properties.
+            - Using NTriBool instead of 1/-1/0 for orientability,
+              two-sidedness and connectedness.
+        Class NNormalSurfaceList:
+            - Enumeration routine now takes an optional progress manager
+              and can run in a separate thread.
+        Class NProgress:
+            - Removed isCancellable() since this is not really necessary;
+              an operation may simply choose not to poll for cancellation
+              requests.
+            - Removed isChanged() and made the changed flag protected so
+              subclasses can modify it directly.
+            - Requires subclasses to adjust the changed flag on all
+              public access/update routines.
+            - Made cancel() const so that reading threads can use it.
+        Class NProgressNumber:
+            - New convenience routine incCompleted().
+            - New lookup routine getNumericState().
+        Class NTriBool:
+            - Added for representing three-way booleans.
+        Class NVectorMatrix, NVectorUnit:
+            - Modification routines throw exceptions if called.
+    USER INTERFACE:
+        Class NAngleStructureCreator:
+            - Displays progress and allows cancellation.
+        Class NNormalSurfaceCreator:
+            - Displays progress and allows cancellation.
+        Class ProgressDialogNumeric:
+            - Added for displaying progress using regina::NProgressNumber.
+        Class PythonConsole:
+            - Added Help menu for displaying scripting documentation.
+        Class ReginaMain:
+            - Added Python reference to Help menu.
+        Class PythonManager:
+            - New static routine openPythonReference() for displaying
+              calculation engine documentation.
+    TEST SUITE:
+        - Added tests for angle structure enumeration and analysis.
+        - Expanded normal surface tests to include trivial triangulations.
+        - Added tests for fundamental group calculation and recognition.
+
+Version 3.97  [ 24 November, 2003 ] - Final prerelease for version 4.0.
+    OVERALL:
+        - Ships with the 7-tetrahedron closed non-orientable census.
+        - Compile-time configuration uses different tests for pthread, since
+          the old tests were broken on some systems.
+        - Added a Python caveats section to the reference manual.
+    ENGINE:
+        Class NEdge, NVertex:
+            - Added getDegree() as an alias for getNumberOfEmbeddings().
+        Class NGluingPerms:
+            - Incorporate new results that allow us to discard more face
+              pairings in a non-orientable census (see math.GT/0307382:v2).
+        Class NLayeredSolidTorus:
+            - Added routine flatten() to flatten a layered solid torus
+              to a Mobius band.
+        Class NMutex::MutexLock:
+            - Added reference constructor as well as a pointer constructor.
+        Class NNormalSurface, NNormalSurfaceVector:
+            - Added routine isCentral() to test for central surfaces.
+        Class NSimpleSurfaceBundle, NTrivialTri:
+            - Added for recognition of trivial non-orientable triangulations.
+    USER INTERFACE:
+        Overall structure:
+            - Split out common shell/part material into the separate
+              library libregina-kdecommon.
+            - Integrated python scripting into the graphical user interface.
+              This is contained within libregina-kdecommon and is accessible
+              through the main menu/toolbar and through the script editor.
+            - Avoid using flat buttons where possible.
+        Class ExportDialog:
+            - New routine validate() to detect when there are no packets
+              suitable for export.
+        Class ExtTabCtl, PacketTabbedUI, PacketTabbedViewerTab:
+            - Allow changing the current tab (this required a new extension
+              class to KTabCtl).
+        Class ImportDialog, NewPacketDialog:
+            - New routine validate() to detect when there are no
+              suitable parent packets.
+        Class NNormalSurfaceCreator:
+            - Allow the default coordinate system to be configured.
+        Class NScriptUI, NTextUI:
+            - Fixed problems with word wrapping and line endings in
+              the embedded text editor.
+        Class NTriangulationUI, NTriAlgebraUI:
+            - Allow the initially visible tabs to be configured.
+        Class NTriGluingsUI:
+            - Implemented census lookup for triangulations.
+            - Fixed a bug in the updating of tetrahedron labels when other
+              tetrahedra are removed from a triangulation.
+        Class PacketChooser:
+            - New routine hasPackets() to detect empty packet choosers.
+        Class ReginaPart:
+            - Make File/Save fall back to File/Save-As for new files.
+            - Make File/Save-As respect the automatic file extension setting
+              and also check whether the selected file already exists.
+        Class ReginaPreferences, ReginaPrefSet:
+            - Many new configuration options.  In addition to those
+              mentioned above, census data files and Python options can
+              also be configured.
+    TEST SUITE:
+        - Added tests for normal surface enumeration and analysis.
+
+Version 3.96  [ 31 October, 2003 ] - Second prerelease for version 4.0.
+    OVERALL:
+        - Added surface filter documentation to the reference manual,
+          which brings it completely up to date with the GUI.
+    ENGINE:
+        Overall structure:
+            - Yet more routines made const.
+        Class NAbelianGroup:
+            - Added global comparisons isTrivial() and operator ==.
+        Class NMutex:
+            - Now uses inner class MutexLock for locking and unlocking.
+        Class NProperty, NPropertyBase, StoreValue, StoreConstPtr,
+                StoreManagedPtr:
+            - New classes for management of calculable object properties.
+        Class NPropertyHolder:
+            - Moved most of its functionality directly into NFile and
+              replaced what was left with the new class NFilePropertyReader.
+        Class NTriangulation:
+            - Turaev-Viro invariants are now cached; this includes a new
+              routine allCalculatedTuraevViro().
+        Class ShareableObject:
+            - Now derives from regina::boost::noncopyable.
+    USER INTERFACE:
+        Class NTriAlgebraUI:
+            - Redesigned the algebra viewer to make it easier to read.
+            - Incorporatd Turaev-Viro invariants into the UI.
+        Class NTriCompositionUI:
+            - Incorporated isomorphism / subcomplex testing into the UI.
+            - Fixed crash when refreshing.
+        Class PacketTabbedViewerTab:
+            - Added to support tabbed UIs within tabbed UIs.
+        Class ReginaPart:
+            - Make the main window splitter remember its place when packet
+              panes are changed.
+    TEST SUITE:
+        - Added tests for trivial triangulations and property handling.
+
+Version 3.95  [ 12 October, 2003 ] - Prelease for version 4.0.
+    GRAPHICAL USER INTERFACE:
+        - Rewrote the entire user interface in C++ using the KDE
+          libraries.  The result is much faster, cleaner and easier to
+          maintain.  The old Java user interface is gone!  The user
+          interface can be started by running "regina-kde".
+    PYTHON:
+        - Python scripting rewritten to use standard Python, not Jython.
+          A python session can be started by running "regina-python".
+        - The Python API has changed to be much more faithful to the C++
+          calculation engine, especially with respect to global and static
+          routines and constants.
+        - All classes now sit directly within the module regina.
+    ENGINE:
+        Overall structure:
+            - Fixed minor memory leaks.
+            - Made more routines const.
+            - Beginning to incorporate std::auto_ptr.
+        Class Engine:
+            - Removed since this is no longer necessary with the new
+              python bindings.
+        Class NAngleStructureList:
+            - Made the enumerating constructor private and added the
+              public replacement enumerate().
+        Class NAugTriSolidTorus:
+            - Changed to fit into the new NStandardTriangulation structure.
+        Class NFacePairings:
+            - Fixed bug in isCanonical().
+        Class NGluingPerms:
+            - Further optimisations for non-orientable census generation.
+        Class NGroupPresentation:
+            - Slightly improved group recognition.
+        Class NHandlebody:
+            - Added as a new 3-manifold class.
+        Class NIsomorphism:
+            - Allows an isomorphism with 0 tetrahedra.
+            - Now derives from ShareableObject.
+            - Supports boundary incomplete isomorphisms as well as
+              complete isomorphisms.
+            - Changed return types of const lookup routines from
+              const T& to just T.
+        Class NL31Pillow:
+            - New class for identifying particular L(3,1) triangulations.
+        Class NLargeInteger:
+            - Added constructor and assignment taking a const std::string&.
+            - Routine stringValue() now returns a std::string, not a char*.
+        Class NLensSpace:
+            - Changed to fit into the new NManifold structure.
+        Class NLayeredChain:
+            - Changed to fit into the new NStandardTriangulation structure.
+        Class NLayeredLensSpace:
+            - Changed to fit into the new NStandardTriangulation structure.
+        Class NLayeredLoop:
+            - Changed to fit into the new NStandardTriangulation structure.
+        Class NLayeredSolidTorus:
+            - Changed to fit into the new NStandardTriangulation structure.
+            - Renamed isLayeredSolidTorusBase() to
+              formsLayeredSolidTorusBase().
+        Class NManifold:
+            - New class to represent a 3-manifold irrespective of its
+              triangulation.
+        Class NNormalSurfaceList:
+            - Made the enumerating constructor private and added the
+              public replacement enumerate().
+        Class NPacket, NPacketListener:
+            - The NPacket destructor now orphans the packet if this has
+              not already been done.
+            - Added event listening for packets, including new class
+              NPacketListener, new routines NPacket::listen(),
+              NPacket::isListening() and NPacket::unlisten() and new
+              class NPacket::ChangeEventBlock.
+            - New NPacket routines moveUp(), moveDown(), moveToFirst()
+              and moveToLast().
+            - Reclassified member variables from protected to private.
+        Class NPerm:
+            - Routines edgeDescription() and faceDescription()
+              implemented in the calculation engine.
+        Class NPlugTriSolidTorus:
+            - Changed to fit into the new NStandardTriangulation structure.
+        Class NSFS:
+            - Changed to fit into the new NManifold structure.
+            - New overloaded routine insertFibre(long, long).
+            - No longer allows illegal (0,k) fibres to be added.
+            - More common names recognised.
+        Class NSnappedBall:
+            - Changed to fit into the new NStandardTriangulation structure.
+            - Renamed isSnappedBall() to formsSnappedBall().
+        Class NSpiralSolidTorus:
+            - Changed to fit into the new NStandardTriangulation structure.
+            - Renamed isSpiralSolidTorus() to formsSpiralSolidTorus().
+        Class NStandardTriangulation:
+            - New class to represent a standard triangulation.
+        Class NTriSolidTorus:
+            - Changed to fit into the new NStandardTriangulation structure.
+            - Renamed isTriSolidTorus() to formsTriSolidTorus().
+        Class NTriangulation:
+            - New routine turaevViro() to calculate Turaev-Viro invariants.
+            - Changed isIsomorphicTo() to return an entire isomorphism,
+              not just whether an isomorphism exists.
+            - New routine isContainedIn() to test for boundary
+              incomplete isomorphisms.
+        Routine isKnownSFS():
+            - Removed in favour of
+              NStandardTriangulation::isStandardTriangulation().
+        File dehydration.h:
+            - New routine readDehydrationList().
+        File nsnappea.h:
+            - Renamed to snappea.h.
+        File stringutils.h:
+            - Added routines startsWith() and stripWhitespace().
+
+Version 3.2  [ 22 June, 2003 ] - The post-thesis release!
+    OVERALL:
+        - Added file format documentation to reference manual.
+        - Calculation engine test suite is much enhanced.
+        - Closed orientable census, closed non-orientable census and
+          splitting surface signature census added to example files.
+        - PhD thesis submitted on 30 May, 2003!
+    ENGINE:
+        Overall structure:
+            - Using C++-style casts instead of C-style casts.
+            - Signedness of chars is explicitly specified where it matters. 
+        Class NBoolSet:
+            - Using unsigned chars for byte codes.
+        Class NCensus:
+            - New constant PRUNE_P2_REDUCIBLE.
+        Class NFacePair:
+            - New class for working with pairs of face numbers.
+        Class NFacePairing:
+            - Added convenience operator [].
+            - Added hasTripleEdge(), hasBrokenDoubleEndedChain(),
+              hasOneEndedChainWithDoubleHandle() and associated routines.
+            - Renamed private routine isCanonical() to
+              isCanonicalInternal(), added public routine isCanonical()
+              with no preconditions.
+        Class NGluingPerms:
+            - Uses new NFacePairing routines to identify certain
+              situations in which no solutions are possible.
+            - Uses a completely redesigned algorithm in the closed
+              prime minimal P2-irreducible case.
+            - Added pruning during permutation generation to eliminate
+              edges identified with themselves in reverse.
+            - Added pruning using low-degree edges in the non-orientable
+              P2-irreducible case.
+            - Allows a null automorphism list in findAllPerms().
+        Class NLayeredLoop:
+            - Renamed getIndex() to getLength().
+        Class NLayeredSolidTorus:
+            - Fixed a bug in isLayeredSolidTorusBase() that generated
+              false positives in ideal triangulations.
+        Class NNormalSurface:
+            - Added routine knownCanCrush().  Currently this routine
+              is next to useless; it is expected to be enhanced with
+              future releases.
+            - Property queries are now const since internal cached
+              properties are declared mutable.
+        Class NPerm:
+            - Using unsigned chars for permutation codes.
+        Class NPrismSpec, NPrismSetSurface:
+            - New classes for dealing with triangular prisms defined by
+              slicing along normal quads in a tetrahedron.  Currently
+              these classes do very little.
+        Class NSFS:
+            - Better recognition of common names; now recognises all
+              spaces with finite fundamental group.
+        Class NTetFace:
+            - Added routine setFirst().
+            - Added copy constructor.
+            - Operators ++ and -- are now implemented in all forms
+              (++x, x++, --x, x--) and all have return values.
+        Class NTriangulation:
+            - New routine insertLayeredLoop().
+            - 0-efficiency testing is done in quad space where possible.
+            - Fixed a bug in which getHomologyH1Bdry() gave incorrect
+              answers if the skeleton had not already been calculated.
+            - New boundary queries hasTwoSphereBoundaryComponents() and
+              hasNegativeIdealBoundaryComponents().
+            - Renamed insertLensSpace() to insertLayeredLensSpace().
+            - Interface-only skeletal query routines are now also
+              implemented in the C++ calculation engine.
+        Routine prior(), next():
+            - Copied from the Boost C++ libraries for easy access to
+              prior and following iterators.
+    JAVA USER INTERFACE:
+        Overall structure:
+            - Incorporated engine enhancements listed above.
+    UTILITIES:
+        regconcat:
+            - New utility for combining several data files.
+        tricensus:
+            - New option --minprimep2 for P2-irreducibility.
+            - Explicitly verifies that all face pairings supplied on
+              standard input are in canonical form.
+
+Version 3.1  [ 18 October, 2002 ]
+    OVERALL:
+        - Added calculation engine test suite.
+        - Environment variables now take precedence over configuration
+          files when running the startup script.
+        - Build process now uses standard autoconf/automake structure.
+    ENGINE:
+        Overall structure:
+            - Added support for multiple vertex enumeration engines.
+        Class NCensus:
+            - Redesigned to do its work through classes NFacePairing and
+              NGluingPerms.
+            - Added support for arbitrary criterion functions.
+            - Added support for splitting a census into pieces.
+        Class NCompConstraint, NCompConstraintSet:
+            - Added.
+        Class NConeRay:
+            - Removed in favour of new class NRay.
+        Class NFacePairing, NGluingPerms:
+            - Added to bear the brunt of census generation.
+            - Massive optimisations and rewrites throughout census code.
+            - Removed all thread yields, which were causing processes to
+              have 0.0% CPU time on some systems.
+        Class NIndexedArray:
+            - Added routine validate().
+        Class NKnot:
+            - New (but incomplete) knot/link class.
+        Class NLensSpace, NSFS:
+            - Added getCommonName().
+        Class NNormalSurfaceVector:
+            - Replaced isCompatibleWith() with makeEmbeddedConstraints().
+        Class NPerm:
+            - Routine isIdentity() now implemented in C++ engine.
+            - New routine setPerm(int, int).
+        Class NTriangulation:
+            - Fixed idealToFinite() which was newly broken in Regina 3.0.
+            - Routine intelligentSimplify() now tries random 4-4 moves.
+            - New routine collapseEdge().
+            - Routine simplifyToLocalMinimum() now make boundary moves last
+              and does not do book opening at all.
+            - Fixed bug in 2-3, 3-2 and 4-4 moves that appears when faces of
+              the old tetrahedra are glued to each other.
+        Class NRay:
+            - Added to replace old class NConeRay.
+        Class NVector:
+            - Added negate().
+        Class NVertexEnumerator, NDoubleDescriptor:
+            - Added to bear the brunt of normal surface enumeration and
+              to allow different enumeration engines to be plugged in.
+            - Caches some frequent calculations, resulting in a startling
+              performance increase.
+        Routine getVersionString(), getVersionMajor(), getVersionMinor(),
+                testEngine():
+            - Moved to engine.h and added to the C++ calculation engine.
+        Routine reducedMod():
+            - Fixed bug in the midpoint case.
+        File nfile.h:
+            - New file format constants to replace the constants removed
+              with regina.h.
+        File nhashmap.h, nhashset.h:
+            - Added to deal with differing STL extension installations.
+        File nknownmanifold.h:
+            - Added global 3-manifold recognition routines.
+        File nperm.h:
+            - New arrays allPermsS2Inv, allPermsS3Inv, allPermsS4Inv.
+        File regina.h:
+            - Removed along with the constants it defined.
+    JAVA USER INTERFACE:
+        normal.algorithm.Algorithm:
+            - Fixed bug in which isPacketEditable() was enforced even for
+              non-modifying algorithms.
+        normal.console.JPythonPacketConsole:
+            - Optionally creates an additional Jython variable for direct
+              access to some preselected packet within the tree.
+        normal.mainui.NormalFrame:
+            - New Jython consoles create an additional variable for the
+              packet currently selected in the visual tree.
+        normal.packetui.surfaces.NSFPropertiesEditor:
+            - Don't enforce Euler characteristic <= 2 (singular surfaces
+              can give other values).
+    UTILITIES:
+        tricensus:
+            - Completely redesigned interface (now command-line based).
+            - Supports splitting a census into pieces.
+        tricensus-manager:
+            - New utility for distributing a census amongst several machines.
+
+Version 3.0  [ 28 June, 2002 ] - The "XML, about bloody time" release.
+    OVERALL:
+        - Moved from old impenetrable binary data files to new
+          compressed XML data files.
+        - Introduced various command-line utilities (see UTILITIES below).
+        - Removed CORBA engine/interface.  It was too much hassle to
+          maintain, and with Regina building on more platforms it has
+          lots much of its usefulness.
+        - JNI engine no longer requires autogenerated JNI headers.
+        - Reference manual much enhanced.
+    ENGINE:
+        Overall structure:
+            - Moved entire calculation engine into namespace regina.
+            - The Great STL Port: replaced hand-rolled container classes
+              with Standard Template Library classes.
+            - Added numerous XML-related routines and classes.
+            - Modified to also build under gcc3.
+            - Removed configuration macro __MUTE_WARNINGS.
+            - Replaced configuration macros __NO_IOS_NOCREATE and
+              __NO_RAW_CASTING with their negations __USE_IOS_NOCREATE and
+              __USE_RAW_CASTING which are optional in all situations.
+            - Added configuration macros __HASH_NAMESPACE and
+              __NO_NAMESPACE_ALIASES.
+        Class NBoolVector, NDoubleList, NDynamicArray, NHashSet,
+                NInfiniteArray, NIntMap, NOrderedPair, NPointerSet,
+                NQueue, NSet, NStack, NString, NStringPair and associates:
+            - All removed in favour of Standard Template Library classes.
+        Class NAngleStructureList, NNormalSurfaceList:
+            - New nested classes StructureInserter / SurfaceInserter.
+        Class NAugTriSolidTorus, NTriSolidTorus:
+            - Supports multiple ways of attaching layered chains.
+        Class NFileInfo:
+            - Added.
+        Class NGroupExpressionTerm:
+            - Changed from simple ordered pair to its own full class.
+        Class NIndexedArray:
+            - Added.
+        Class NJNIEnumeration:
+            - Added to aid the Java-C++ link.
+        Class NLargeInteger:
+            - Added third error-detection parameter to constructor
+              NLargeInteger(const char*, int).
+        Class NLayeredChainPair, NPlugTriSolidTorus:
+            - Added for further subcomplex recognition.
+        Class NLayeredLoop:
+            - Added routine getSeifertStructure().
+        Class NLensSpace:
+            - Fixed bug causing reductions to be sometimes non-optimal
+              (although still correct) - see modularInverse() notes below.
+        Class NLocalFileResource:
+            - Replaced static members MODE_READ, MODE_WRITE with static
+              routines sysModeRead(), sysModeWrite().
+        Class NNormalSurface:
+            - Added routines isVertexLink() and isThinEdgeLink().
+        Class NPacket:
+            - Added routines to support arbitrary packet tags.
+            - Finally changed getPacketName() to getPacketTypeName().
+            - Removed tidyReadPacket().
+        Class NPerm:
+            - Added isPermCode().
+        Class NScript:
+            - Changed list of variables to a proper map and removed routines
+              getVariableIndex() and removeVariableAt().
+            - Insistance on unique variable names; in enforcing this
+              routine addVariable() now returns bool.
+        Class NSFS:
+            - Added routine getHomologyH1().
+        Class NSignature, NSigCensus, NSigPartialIsomorphism:
+            - Added to deal with splitting surface signatures.
+        Class NTriangulation:
+            - Uses NIndexedArrays for skeletal elements for fast index lookup.
+        File boostutils.h:
+            - Added utility classes from the Boost C++ libraries.
+        File hashutils.h:
+            - Added various hash functions.
+        File memutils.h:
+            - Added allocation/deallocation functions.
+        File stlutils.h:
+            - Added extension Standard Template Library utility classes.
+        File stringutils.h:
+            - Added miscellaneous string manipulation routines.
+        File zstream.h:
+            - Added compressing and decompressing I/O streams.
+        Routine modularInverse():
+            - Fixed a rather nasty bug in gcdWithCoeffsInternal() that
+              caused modularInverse() to sometimes give wrong answers.
+        Routine readFileMagic():
+            - Added to provide a format-independent file reader.
+    JAVA USER INTERFACE:
+        Overall structure:
+            - Incorporated engine enhancements listed above.
+        normal.console:
+            - Added class JPythonPacketConsole.
+        normal.engine.implementation.jni.JNIShareableObject:
+            - Added static method sameCppPtr() which is necessary with gcc3.
+        normal.exports:
+            - Now exports to three different Regina data file formats.
+        normal.mainui:
+            - File information dialog is somewhat more informative.
+        normal.mainui.NormalFrame:
+            - Now supports opening a Jython console linked to a packet tree.
+        normal.mainui.PacketPane:
+            - Renamed getUI() to getPacketUI() to avoid clashing with j2sdk1.4.
+        normal.options.NormalOptionSet:
+            - Default "Display Icon" option changed from true to false.
+        normal.packetui:
+            - Resizing one coordinate column in various coordinate
+              viewers now resizes all coordinate columns.
+    UTILITIES:
+        regconvert, regfiledump, regfiletype, sigcensus, tricensus:
+            - Added.
+
+Version 2.4  [ 4 April, 2002 ]
+    OVERALL:
+        - Much enhanced documentation.
+        - Added SnapPea census and knot/link census to examples.
+        - Added functionality changelog (HIGHLIGHTS.txt).
+        - Added prepackaged Jython library directory.
+    ENGINE:
+        Overall structure:
+            - Moved engine/imports to engine/foreign.
+        Class NAngleStructure, NAngleStructureList, NAngleStructureVector:
+            - Added.
+        Class NConeRay:
+            - Now a new class of its own accord, derived from
+              NVectorDense and created to allow vertex solution routines
+              to work in contexts outside normal surfaces.
+        Class NNormalSurface:
+            - Added getName() and setName().
+        Class NNormalSurfaceVector:
+            - Now derives from NConeRay, to which some routines have moved.
+            - Changed declaration of createNonNegativeCone() to return
+              cone faces as well as extremal rays.
+        Class NPerm:
+            - Added toString().
+        Class NTriangulation:
+            - Uses fewest possible tetrahedra in insertLensSpace().
+            - Added insertRehydration(), makeDoubleCover().
+        File nperm.h:
+            - Added constant arrays orderedPermsS4, orderedPermsS3.
+        Routine intersectCone():
+            - Works with more generic cones by requiring cone faces to
+              be passed as well as extremal rays.
+        Routine writeSnapPea():
+            - Added.
+    JAVA USER INTERFACE:
+        Overall structure:
+            - Added readline/editline support using Bablok's wrapper classes.
+            - Converted option REGINA_JNIDIR to a list of directories.
+            - Option REGINA_OPTIONS_GLOBAL defaults to REGINA_HOME if
+              /etc/regina does not exist.
+        normal.ApplicationShell.CommandLineArguments:
+            - Added.
+        normal.Shell:
+            - Allow filenames to be specified on the command-line.
+            - Removed some arguments from getParameter().
+            - Added getFileParameters().
+        normal.exports:
+            - Added class SnapPeaExporter.
+        normal.imports:
+            - Added class DehydrationImporter.
+        normal.mainui:
+            - Added more keyboard accelerators.
+        normal.mainui.FilePane:
+            - Added getFileType() and setFileType().
+        normal.mainui.NormalFrame:
+            - Added File->Info menu item.
+            - Made various routines public so outsiders can manipulate
+              the primary frame.
+        normal.packetui.surfaces.CoordinateViewer:
+            - Inserted editable surface name as first column.
+        normal.packetui.triangulation.TriangulationCreator:
+            - Creates triangulations from dehydration strings.
+
+Version 2.3  [ 12 December, 2001 ] - The "Farewell Stillwater" release.
+    OVERALL:
+        - Makefile.options variables IDLTOJAVACLIENT and IDLTOCPPSERVER
+          became IDLTOJAVA and IDLTOCPP with slightly more generic meanings.
+    ENGINE:
+        Overall structure:
+            - Modified #includes to treat engine/engine, engine/jni
+              and engine/corba as top-level include directories.
+            - Removed config.h in favour of PD_MACROS in Makefile.options.
+            - Removed configuration macros __NO_INCLUDE_PATHS and __BINARY_IO.
+            - Introduced macro MY_ENGINE_OBJECT for CORBA wrapper classes.
+            - Macros GET_ENGINE_OBJECT no longer crash when null is passed.
+        Class NAugTriSolidTorus, NLayeredChain, NLayeredLoop, NLensSpace,
+                NSFS, NSpiralSolidTorus, NTriSolidTorus:
+            - New classes.
+        Class NDiscSetSurface:
+            - Modified parameters for adjacentDisc().
+        Class NFace:
+            - Added getType(), getSubtype(), isMobiusBand(), isCone().
+        Class NHashSet, NHashSetIterator:
+            - New classes.
+        Class NNormalSurface:
+            - Added crush().
+            - Added isConnected(), isVertexLink(), isSplitting().
+            - Fixed isOrientable() and added isTwoSided().
+        Class NPacket:
+            - Added makeUniqueLabels().
+        Class NPerm:
+            - Added operators = and != and constructor NPerm(const NPerm&).
+        Class NTriangulation:
+            - Added isZeroEfficient(), hasSplittingSurface(),
+              knowsZeroEfficient() and knowsSplittingSurface().
+            - Added extra condition to shellBoundary() covering two
+              boundary faces plus two identified faces.
+            - Added extra condition to twoZeroMove(NEdge*, ...) covering
+              two boundary faces plus two identified faces.
+            - Added fourFourMove().
+        File ndisc.h:
+            - Added routine discOrientationFollowsEdge().
+        File nnormalsurface.h:
+            - Added arrays triDiscArcs, quadDiscArcs, octDiscArcs.
+        Routine hashMap(T*), hashMap(NString):
+            - Added to support new class NHashSet.
+        Routine readSnapPea():
+            - Sets the new packet label to the SnapPea manifold name.
+    JAVA USER INTERFACE:
+        Overall structure:
+            - Loading/saving local files is now possible even through CORBA!
+            - Incorporated engine enhancements listed above.
+            - Added Jython operator overloads to a number of classes.
+        normal.engine.utilities:
+            - Added NLargeInteger to replace java.math.BigInteger so
+              Jython scripts can use native mathematical operators with
+              arbitrary precision integers.
+        normal.exports:
+            - Created architecture for exporting to foreign file formats.
+            - Added classes Exporter, ReginaExporter, ScriptExporter.
+        normal.images:
+            - A couple of new icons.
+        normal.imports:
+            - Redesigned import architecture; replaced old class
+              ImportFilePane with new class Importer.
+            - Imported packets now have appropriate packet labels (such
+              as their names in the imported files).
+            - The file dialog is now brought up before anything else is done.
+            - Added classes ReginaImporter, ScriptImporter.
+        normal.mainui.TopologyPane:
+            - Fixed bug where icon was sometimes not displayed.
+        normal.packetui:
+            - Added a new TopologyPane argument to some routines to
+              allow interfaces to manipulate the visual packet tree.
+        normal.packetui.triangulation.CompositionViewer:
+            - Displays more detailed information.
+        normal.packetui.triangulation.SkeletonTableFrame:
+            - Displays more details regarding face/vertex type.
+
+Version 2.2  [ 7 October, 2001 ]
+    OVERALL:
+        - Documentation now DocBook-based; generates HTML and man pages.
+        - Documentation now in docs/, not docs/normal/docs/.
+        - Builds and runs under windows!
+        - Added support for both global and local configuration files;
+          configuration files are now called regina.conf.
+        - Vastly reworked runtime scripts.
+        - Tidied up Makefiles and CVS.
+    ENGINE:
+        Overall structure:
+            - Ported CORBA stuff to omniORB3.
+        Class NDoubleList, NDynamicArray:
+            - Added operator = to the iterator classes.
+        Class NEdge, NFace:
+            - Added extra skeletal query routines.
+        Class NGroupExpression, NGroupPresentation:
+            - New classes.
+        Class NLayeredLensSpace, NLayeredSolidTorus, NPillowTwoSphere,
+                NSnappedBall, NSnappedTwoSphere:
+            - New classes.
+        Class NPacket:
+            - Changed meaning of second (boolean) parameter to clone().
+            - Added getNumberOfDescendants() and getNumberOfChildren();
+              renamed totalTreeSize() to getTotalTreeSize().
+        Class NTriangulation:
+            - Added fundamental group as a new property.
+            - Added a two-zero move about a vertex.
+        File numbertheory.h:
+            - Added modularInverse().
+    JAVA USER INTERFACE:
+        Overall structure:
+            - Reads Regina options from directory $REGINA_OPTIONS_LOCAL
+              and reads runtime options from system properties (which
+              should be set by startup scripts).
+            - Ported from JPython 1.1 to Jython 2.1-alpha1.
+            - Now supports custom Jython libraries.
+            - Improved support for mnemonics and keyboard accelerators.
+            - Fixed tooltips in tables.
+        normal.Application:
+            - Moved fileExtension member into normal.mainui.FilePane subclasses.
+        normal.Shell:
+            - Dynamically finds JavaHelp classes so JavaHelp is not
+              necessary for compilation.
+            - Cleanly handles missing runtime options file.
+            - Added a registry of all open Jython consoles.
+        normal.algorithm:
+            - Added class ElementaryMove.
+        normal.console:
+            - Major rearrangements; new class JPythonUtils now does most of
+              the Jython work.
+        normal.console.JPythonConsoleFrame:
+            - Stores the root of the associated packet tree.
+            - Allows saving the contents of the console to a file.
+        normal.engine.implementation.corba.CORBAEngine:
+            - Better error handling.
+        normal.mainui:
+            - Renamed SystemPane to TopologyPane and moved generic file
+              editing functionality into FilePane to allow for editing
+              different file types.
+            - Much all-round cleaning up.
+        normal.mainui.LibraryPane:
+            - New class; allows editing of Jython libraries.
+        normal.mainui.NormalFrame:
+            - Moved console ownership routines into normal.Shell.
+            - More appropriate enabling/disabling of menu items and buttons.
+            - Edit menu hooks into current working file.
+        normal.mainui.TopologyPane:
+            - Closing a file closes all associated consoles.
+            - Fixed the bug where double clicking on a tree item opens
+              it three times.
+            - Fixed bugs in the various fire... routines.
+            - Improved interaction with the packet rename dialog.
+            - Fixed the packet renaming bug in the visual tree display.
+        normal.mainui.PacketTreeNode:
+            - Replaced insertUnwrappedDescendants() with
+              verifyDescendants() which actually does what it should; thus
+              the refresh button now works properly.
+            - Added findChildNodeIndex().
+        normal.packetui.PacketUI:
+            - Added subtreeWasDeleted().
+        normal.packetui.packet.NContainerViewer:
+            - Displays tree size statistics.
+        normal.packetui.surfaces:
+            - Coordinate tables in edge weight space now flag boundary edges.
+        normal.packetui.surfaces.Coordinates:
+            - Some routines now require the triangulation to be passed.
+        normal.packetui.triangulation:
+            - Pulled SkeletonTableFrame out into its own standalone class
+              and turned it into a dialog.
+        normal.packetui.triangulation.NTriangulationEditor:
+            - Added triangulation component recognition.
+
+Version 2.1.1a  [ 8 March, 2001 ]
+    OVERALL:
+        - Set up system for creating distributions.
+        - Final tidying up for proper release.
+
+Version 2.1.1
+    OVERALL:
+        - Added a CORBA interface to the engine.
+        - Rearranged Makefiles and directory structure for CVS and
+          SourceForge.
+    ENGINE:
+        Overall structure:
+            - Split config.h into config.h and regina.h.
+        Class Engine:
+            - Formalised and slightly rearranged.
+            - Added getVersion...() routines.
+        Class NBoolSet:
+            - Now passed as characters to and from external interfaces.
+              Added getByteCode(), setByteCode() and fromByteCode() for
+              this purpose.
+        Class NNormalSurfaceList:
+            - Added coordinate system FACE_ARCS; renumbered EDGE_WEIGHT.
+        Class NPerm:
+            - Now passed as characters to and from external interfaces.
+        Class NTriangulation:
+            - Added routine isStandard().
+    JAVA USER INTERFACE:
+        Overall structure:
+            - Allows running as an applet as well as an application.
+            - Class normal.Application now contains just global constants
+              and a generic applet/application shell.  Class normal.Shell
+              contains top-level Regina runtime routines and routines
+              specific to the shell type (applet or application).
+            - Made miscellaneous optimisations.
+        normal.packetui.census.NCensusCreator:
+            - Altered the boundary combo box strings to avoid
+              misinterpretation.
+        normal.packetui.surfaces.NSurfaceFilterEditor:
+            - Fixed the bug in which changes in the filter were not
+              always being immediately reflected in the surface list.
+
+Version 2.1.0  [ 18 December, 2000 ]
+    (Initial public release.)
+
+Ben Burton (bab@debian.org)
+http://regina.sourceforge.net/
+
