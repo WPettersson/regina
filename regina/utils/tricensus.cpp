@@ -53,6 +53,9 @@
 #include "packet/ncontainer.h"
 #include "packet/ntext.h"
 #include "triangulation/ntriangulation.h"
+#ifdef SUPPORT_CYCLEDECOMP
+#include "cycledecomp.h"
+#endif
 
 #define WORD_face (dim4 ? "facet" : dim2 ? "edge" : "face")
 #define WORD_Face (dim4 ? "Facet" : dim2 ? "Edge" : "Face")
@@ -74,6 +77,7 @@ regina::NBoolSet
 int minimal = 0;
 int minimalPrime = 0;
 int minimalPrimeP2 = 0;
+int cycleDecomp = 0;
 int dim2 = 0;
 int dim4 = 0;
 int usePairs = 0;
@@ -141,6 +145,26 @@ struct Dim3Params {
         return s->getFacePairing();
     }
 };
+
+#ifdef SUPPORT_CYCLEDECOMP
+struct Dim3DecompParams {
+    typedef regina::NFacePairing Pairing;
+    typedef CycleDecompSearcher GluingPermSearcher;
+    typedef regina::NTriangulation Triangulation;
+    inline static void findAllPerms(const Pairing* p,
+            const Pairing::IsoList* autos, bool orientableOnly,
+            bool finiteOnly, int whichPurge, regina::NPacket* dest) {
+        CycleDecompSearcher::findAllPerms(p, autos,
+            orientableOnly, finiteOnly, whichPurge,
+            foundGluingPerms<Dim3Params>, dest);
+    }
+
+    inline static bool mightBeMinimal(Triangulation* tri) {
+        return regina::NCensus::mightBeMinimal(tri, 0);
+    }
+
+};
+#endif
 
 #if SUPPORT_DIM4
 struct Dim4Params {
@@ -337,6 +361,10 @@ int main(int argc, const char* argv[]) {
             "Ignore obviously non-minimal, non-prime and/or disc-reducible triangulations.", 0 },
         { "minprimep2", 'N', POPT_ARG_NONE, &minimalPrimeP2, 0,
             "Ignore obviously non-minimal, non-prime, disc-reducible and/or P2-reducible triangulations.", 0 },
+#ifdef SUPPORT_CYCLEDECOMP
+        { "cycledecomp" , "c", POPT_ARG_NONE, &cycleDecomp, 0,
+            "Find permutations by cycle decompositions of the face pairing graph.", 0 },
+#endif
         { "dim2", '2', POPT_ARG_NONE, &dim2, 0,
             "Run a census of 2-manifold triangulations, "
             "not 3-manifold triangulations.  Here --tetrahedra counts "
@@ -444,6 +472,12 @@ int main(int argc, const char* argv[]) {
         std::cerr << "Options -p/--genpairs and -P/--usepairs "
             << "cannot be used together.\n";
         broken = true;
+#ifdef SUPPORT_CYCLEDECOMP
+    } else if (cycleDecomp && (dim2 || dim4)) {
+        std::cerr << "Cycle decompositions are only available in 3 "
+            << "dimensions.\n";
+        broken = true;
+#endif
     }
 
     if ((! broken) && (nBdryFaces != -1)) {
@@ -517,6 +551,10 @@ int main(int argc, const char* argv[]) {
 #if SUPPORT_DIM4
     else if (dim4)
         return runCensus<Dim4Params>();
+#endif
+#ifdef SUPPORT_CYCLEDECOMP
+    else if (cycleDecomp)
+        return runCensus<Dim3DecompParams>();
 #endif
     else
         return runCensus<Dim3Params>();
