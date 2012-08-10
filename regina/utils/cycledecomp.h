@@ -31,14 +31,16 @@
  *  decompositions of the face pairing graph.
  */
 
-#ifndef __NGLUINGPERMSEARCHER_H
+#ifndef __CYCLEDECOMPSEARCHER_H
 #ifndef __DOXYGEN
-#define __NGLUINGPERMSEARCHER_H
+#define __CYCLEDECOMPSEARCHER_H
 #endif
 
 #include "regina-core.h"
 #include "census/ngluingperms.h"
 #include "utilities/nqitmask.h"
+
+using namespace regina;
 
 /**
  * A routine used to do arbitrary processing upon a particular set of
@@ -56,7 +58,7 @@
  * Note that the first parameter passed might be \c null to signal that
  * gluing permutation generation has finished.
  */
-typedef void (*UseGluingPerms)(const NGluingPermSearcher*, void*);
+typedef void (*UseGluingPerms)(const CycleDecompSearcher*, void*);
 
 
 /**
@@ -191,6 +193,12 @@ class CycleDecompSearcher {
                 const NFacePairing::IsoList* autos,
                 bool orientableOnly, UseGluingPerms use, void* useArgs = 0);
 
+
+        /**
+         * Create a triangulation from the data the search manager has 
+         * found. */
+        NTriangulation triangulate();
+
         /**
          * Initialises a new search manager based on data read from the
          * given input stream.  This may be a new search or a partially
@@ -225,6 +233,7 @@ class CycleDecompSearcher {
         // Overridden methods:
         virtual void dumpData(std::ostream& out) const;
         virtual void runSearch(long maxDepth = -1);
+
 
     protected:
         // Overridden methods:

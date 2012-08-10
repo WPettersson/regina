@@ -156,7 +156,7 @@ struct Dim3DecompParams {
             bool finiteOnly, int whichPurge, regina::NPacket* dest) {
         CycleDecompSearcher::findAllPerms(p, autos,
             orientableOnly, finiteOnly, whichPurge,
-            foundGluingPerms<Dim3Params>, dest);
+            foundGluingPerms<Dim3DecompParams>, dest);
     }
 
     inline static bool mightBeMinimal(Triangulation* tri) {
