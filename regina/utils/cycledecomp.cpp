@@ -300,6 +300,17 @@ void CycleDecompSearcher::runSearch(long maxDepth) {
     use_(0, useArgs_);
 }
 
+NTriangulation* CycleDecompSearcher::triangulate() {
+    Triangulation* ans = new Triangulation;
+    Simplex** simp = new Simplex*[nTets];
+    unsigned t;
+    for (t = 0; t < nTets; ++t)
+        simp[t] = ans->newSimplex();
+
+
+
+}
+
 void CycleDecompSearcher::dumpData(std::ostream& out) const {
     //NCompactSearcher::dumpData(out);
 
