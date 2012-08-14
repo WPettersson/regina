@@ -53,9 +53,8 @@
 #include "packet/ncontainer.h"
 #include "packet/ntext.h"
 #include "triangulation/ntriangulation.h"
-#ifdef SUPPORT_CYCLEDECOMP
+
 #include "cycledecomp.h"
-#endif
 
 #define WORD_face (dim4 ? "facet" : dim2 ? "edge" : "face")
 #define WORD_Face (dim4 ? "Facet" : dim2 ? "Edge" : "Face")

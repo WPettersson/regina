@@ -42,6 +42,7 @@
 
 using namespace regina;
 
+class CycleDecompSearcher;
 /**
  * A routine used to do arbitrary processing upon a particular set of
  * tetrahedron gluing permutations.  Such routines are used to process
@@ -58,7 +59,7 @@ using namespace regina;
  * Note that the first parameter passed might be \c null to signal that
  * gluing permutation generation has finished.
  */
-typedef void (*UseGluingPerms)(const CycleDecompSearcher*, void*);
+typedef void (*UseCycles)(const CycleDecompSearcher*, void*);
 
 
 /**
@@ -83,10 +84,44 @@ class CycleDecompSearcher {
              *   "above" or "below" some given edge.  For example, if edge i is
              *   considered to be "above" edge j, then edge edgeParity[j][i]
              *   should also be "above" edge j. */
+        
+        UseCycles use_;
+            /**< A routine to call each time a gluing permutation set is
+                 found during the search. */
+        void* useArgs_;
+            /**< Additional user-supplied data to be passed as the second
+                 argument to the \a use_ routine. */
+
+        class EdgeEnd;
+
+        class Tetrahedron {
+            /**< A tetrahedron, as represented in the face pairing graph. */
+            public:
+                Tetrahedron();
+                    /**< Constructor. */
+                int used;
+                    /**< The number of internal edges used. */
+                unsigned internalEdges[6];
+                    /**< The 6 internal edges of the tetrahedron. */
+                EdgeEnd* externalEdgeEnd[4];
+                    /**< The EdgeEnds which are attached to each face of the
+                     *   tetrahedron. */
+
+        };
 
         class Edge {
             /**< Represents a single edge of the face pairingr graph. */
             public:
+                Edge(); 
+                    /**< Constructor. */
+                void colour(unsigned newColour);
+                    /**< Adds the "newColour" cycle to this edge. */
+                void unColour();
+                    /**< Removes the most recent cycle from this edge. */
+                EdgeEnd* otherEnd(EdgeEnd* one);
+                    /**< Given EdgeEnd one belonging to this Edge, return
+                     *   the other EdgeEnd. */
+
                 signed colours[3];
                     /**< The 3 cycles an edge may have. */
                 int used;
@@ -95,6 +130,9 @@ class CycleDecompSearcher {
                     /**< The tetrahedron on either end  of this edge. */
                 EdgeEnd* ends[2];
                     /**< The edge-ends of this edge. */
+                unsigned index;
+                    /**< The index of this edge, such that 
+                     *   Edge == edges[Edge.index]. */
         };
 
         class EdgeEnd {
@@ -112,37 +150,25 @@ class CycleDecompSearcher {
                 signed map[6];
                     /**< A mapping of the edges of the face to the cycles on
                      *   the edge. */
-
         };
 
-        class Tetrahedron {
-            /**< A tetrahedron, as represented in the face pairing graph. */
-            public:
-                int used;
-                    /**< The number of internal edges used. */
-                unsigned internalEdges[6];
-                    /**< The 6 internal edges of the tetrahedron. */
-                EdgeEnd* externalEdgeEnd[4];
-                    /**< The EdgeEnds which are attached to each face of the
-                     *   tetrahedron. */
-
-        };
-
-        Tetrahedron[] tets;
+        Tetrahedron *tets;
             /**< The tetrahedron representations in the face pairing graph. */
         unsigned nTets;
             /**< The number of tetrahedra. */
-        Edge[] edges;
+        Edge *edges;
             /**< The edges of the face pairing graph. */
         unsigned nEdges;
             /**< The number of edges. */
-        EdgeEnd[] ends;
+        EdgeEnd *ends;
             /**< The ends of the edges. */
         unsigned nEnds;
             /**< The number of edge ends. */
         unsigned nextColour;
             /**< The next "colour" to be used to mark out a cycle in the 
              *   face pairing graph. */
+        unsigned edgesLeft;
+            /**< How many edges have not been coloured yet. */
         unsigned** cycles;
             /**< Contains a list of all edge numbers used in each cycle.
              *   cycles[x][y] denotes the y'th edge in cycle number x. 
@@ -150,7 +176,24 @@ class CycleDecompSearcher {
         unsigned* cycleLengths;
             /**< The length of each cycle as stored in the array above. */
 
-        
+        void colourOnTetrahedra(unsigned tet);
+            /**< Start colouring a cycle on tetrahedra tet. */
+       
+        bool checkColourOk();
+            /**< Checks whether the cycle indicated by colour nextColour
+             *   is a valid cycle. */
+
+        void  nextPath(EdgeEnd *start, unsigned firstEdge, EdgeEnd *now);
+            /**< Tries all choices for continuing a cycle from *now.
+             *   Also checks to see if a cycle can be completed after using
+             *   one of these choices. */
+
+        bool checkComplete();
+            /**< Checks to see if a decomposition has been found. This is done
+             *   by checking to see that each Edge has 3 cycles on it. */
+
+        unsigned findTetWithMostInternalEdgesUsed();
+            /**< Finds the tetrahedra with the most used internal edges. */
 
     public:
         static const char dataTag_;
@@ -189,9 +232,9 @@ class CycleDecompSearcher {
          * \pre The given face pairing has no boundary faces and has at
          * least three tetrahedra.
          */
-        NCycleDecompSearcher(const NFacePairing* pairing,
+        CycleDecompSearcher(const NFacePairing* pairing,
                 const NFacePairing::IsoList* autos,
-                bool orientableOnly, UseGluingPerms use, void* useArgs = 0);
+                bool orientableOnly, UseCycles use, void* useArgs = 0);
 
 
         /**
@@ -221,14 +264,14 @@ class CycleDecompSearcher {
          *
          * @param in the input stream from which to read.
          */
-        NCycleDecompSearcher(std::istream& in,
-            UseGluingPerms use, void* useArgs = 0);
+        //NCycleDecompSearcher(std::istream& in,
+        //    UseGluingPerms use, void* useArgs = 0);
 
         /**
          * Destroys this search manager and all supporting data
          * structures.
          */
-        virtual ~NCycleDecompSearcher();
+        virtual ~CycleDecompSearcher();
 
         // Overridden methods:
         virtual void dumpData(std::ostream& out) const;
@@ -241,15 +284,15 @@ class CycleDecompSearcher {
 
 };
 
-inline char NCycleDecompSearcher::dataTag() const {
-    return NCycleDecompSearcher::dataTag_;
+inline char CycleDecompSearcher::dataTag() const {
+    return CycleDecompSearcher::dataTag_;
 }
 
-inline NCycleDecompSearcher::Edge::Edge() {
+inline CycleDecompSearcher::Edge::Edge() {
     used=0;
 }
 
-inline NCycleDecompSearcher::Tetrahedron::Tetrahedron() {
+inline CycleDecompSearcher::Tetrahedron::Tetrahedron() {
     used=0;
     for(unsigned i=0; i<6;i++) 
         internalEdges[i]=0;
