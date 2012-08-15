@@ -301,8 +301,8 @@ void CycleDecompSearcher::runSearch(long maxDepth) {
 }
 
 NTriangulation* CycleDecompSearcher::triangulate() {
-    Triangulation* ans = new Triangulation;
-    Simplex** simp = new Simplex*[nTets];
+    NTriangulation* ans = new NTriangulation;
+    NTetrahedron** simp = new NTetrahedron*[nTets];
     unsigned t;
     for (t = 0; t < nTets; ++t)
         simp[t] = ans->newSimplex();

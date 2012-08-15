@@ -40,7 +40,6 @@
 #include "census/ngluingperms.h"
 #include "utilities/nqitmask.h"
 
-using namespace regina;
 
 class CycleDecompSearcher;
 /**
@@ -232,15 +231,15 @@ class CycleDecompSearcher {
          * \pre The given face pairing has no boundary faces and has at
          * least three tetrahedra.
          */
-        CycleDecompSearcher(const NFacePairing* pairing,
-                const NFacePairing::IsoList* autos,
+        CycleDecompSearcher(const regina::NFacePairing* pairing,
+                const regina::NFacePairing::IsoList* autos,
                 bool orientableOnly, UseCycles use, void* useArgs = 0);
 
 
         /**
          * Create a triangulation from the data the search manager has 
          * found. */
-        NTriangulation triangulate();
+        regina::NTriangulation* triangulate();
 
         /**
          * Initialises a new search manager based on data read from the
