@@ -55,6 +55,13 @@ const signed CycleDecompSearcher::edgeParity[6][6] = {
     {4,5,-1,-1,0,1}, {3,-1,5,0,-1,2}, {-1,3,4,1,2,-1}
 };
 
+const signed CycleDecompSearcher::otherVert[4][6] = {
+    {-1,-1,-1,3,2,1},
+    {-1,3,2,-1,-1,0},
+    {3,-1,1,-1,0,-1},
+    {2,1,-1,0,-1,-1}
+};
+
 const char CycleDecompSearcher::dataTag_ = 'd';
 
 
@@ -303,12 +310,43 @@ void CycleDecompSearcher::runSearch(long maxDepth) {
 NTriangulation* CycleDecompSearcher::triangulate() {
     NTriangulation* ans = new NTriangulation;
     NTetrahedron** simp = new NTetrahedron*[nTets];
-    unsigned t;
+    unsigned t,k,a,b;
     for (t = 0; t < nTets; ++t)
         simp[t] = ans->newSimplex();
+    int perms[4];
+    Edge *e;
+    for (t = 0; t < nEdges; ++t) {
+        e = &(edges[t]);
+        for (k = 0; k < 3; k++) {
+            // The edge e represents 3 distinct edges.
+            // The following loops work out, for each distinct edge,
+            // which internal edge on either end is connected to
+            // this edge.
+            for (a = 0; (e->ends[0]->map[a] != k); a++) 
+                assert(a<6);
+            for (b = 0; (e->ends[1]->map[b] != k); b++) 
+                assert(b<6);
 
+            // Use otherVert to determine the "other" vertex on this face
+            // of the tetrahedron, the vertex that is not on this edge.
+            // Note that we don't know how edges a and b are glued together 
+            // (in which direction that is) but we do know that the third
+            // vertex on each face must be identified.
+            int vertA = otherVert[e->ends[0]->face][a];
+            assert(vertA >= 0);
+            int vertB = otherVert[e->ends[1]->face][b];
+            assert(vertB >= 0);
 
-
+            perms[vertA] = vertB;
+        }
+        perms[e->ends[0]->face] = e->ends[1]->face;
+        
+        int thisTet = e->ends[0]->tet->index;
+        int otherTet = e->ends[1]->tet->index;
+        int thisFace = e->ends[0]->face;
+        NPerm4 gluing(perms[0],perms[1],perms[2],perms[3]);
+        simp[thisTet]->joinTo(thisFace, simp[otherTet], gluing);
+    }
 }
 
 void CycleDecompSearcher::dumpData(std::ostream& out) const {

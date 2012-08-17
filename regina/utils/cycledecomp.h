@@ -83,7 +83,12 @@ class CycleDecompSearcher {
              *   "above" or "below" some given edge.  For example, if edge i is
              *   considered to be "above" edge j, then edge edgeParity[j][i]
              *   should also be "above" edge j. */
-        
+ 
+        static const signed otherVert[4][6];
+            /**< Identifies the vertex on the face of a tetrahedron that is 
+             *   not incident upon a given edge.  For example, the vertex which
+             *   is on face i but is not on edge j is otherVertex[i][j]. */
+
         UseCycles use_;
             /**< A routine to call each time a gluing permutation set is
                  found during the search. */
@@ -100,6 +105,8 @@ class CycleDecompSearcher {
                     /**< Constructor. */
                 int used;
                     /**< The number of internal edges used. */
+                int index;
+                    /**< An identifying number for this tetrahedron. */
                 unsigned internalEdges[6];
                     /**< The 6 internal edges of the tetrahedron. */
                 EdgeEnd* externalEdgeEnd[4];
