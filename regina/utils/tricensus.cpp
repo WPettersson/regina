@@ -98,6 +98,9 @@ template <class CensusType>
 void foundGluingPerms(const typename CensusType::GluingPermSearcher*, void*);
 
 template <class CensusType>
+void foundCycleDecomp(const typename CensusType::GluingPermSearcher*, void*); 
+
+template <class CensusType>
 int runCensus();
 
 // Differences between censuses of 2, 3 and 4-manifolds:
@@ -145,7 +148,6 @@ struct Dim3Params {
     }
 };
 
-#ifdef SUPPORT_CYCLEDECOMP
 struct Dim3DecompParams {
     typedef regina::NFacePairing Pairing;
     typedef CycleDecompSearcher GluingPermSearcher;
@@ -153,17 +155,16 @@ struct Dim3DecompParams {
     inline static void findAllPerms(const Pairing* p,
             const Pairing::IsoList* autos, bool orientableOnly,
             bool finiteOnly, int whichPurge, regina::NPacket* dest) {
-        CycleDecompSearcher::findAllPerms(p, autos,
-            orientableOnly, finiteOnly, whichPurge,
-            foundGluingPerms<Dim3DecompParams>, dest);
+            CycleDecompSearcher *searcher = new CycleDecompSearcher(p, autos,
+            orientableOnly, foundCycleDecomp<Dim3DecompParams>, dest);
+            searcher->runSearch();
+            delete searcher;
     }
 
     inline static bool mightBeMinimal(Triangulation* tri) {
-        return regina::NCensus::mightBeMinimal(tri, 0);
+        return true;
     }
-
 };
-#endif
 
 #if SUPPORT_DIM4
 struct Dim4Params {
@@ -194,6 +195,48 @@ struct Dim4Params {
  */
 template <class CensusType>
 void foundGluingPerms(const typename CensusType::GluingPermSearcher* perms,
+        void* container) {
+    if (perms) {
+        typename CensusType::Triangulation* tri = perms->triangulate();
+
+        bool ok = true;
+        if (! tri->isValid())
+            ok = false;
+        else if ((! finiteness.hasFalse()) && tri->isIdeal())
+            ok = false;
+        else if ((! finiteness.hasTrue()) && (! tri->isIdeal()))
+            ok = false;
+        else if ((! orientability.hasTrue()) && tri->isOrientable())
+            ok = false;
+        else if ((minimal || minimalPrime || minimalPrimeP2) &&
+                ! CensusType::mightBeMinimal(tri))
+            ok = false;
+
+        if (ok) {
+            // Put it in the census!
+            if (sigs) {
+                sigStream << tri->isoSig() << std::endl;
+                delete tri;
+            } else {
+                regina::NPacket* dest =
+                    static_cast<regina::NPacket*>(container);
+
+                std::ostringstream out;
+                out << "Item " << (nSolns + 1);
+                tri->setPacketLabel(out.str());
+
+                dest->insertChildLast(tri);
+            }
+            nSolns++;
+        } else {
+            // The fish that John West reject.
+            delete tri;
+        }
+    }
+}
+
+template <class CensusType>
+void foundCycleDecomp(const typename CensusType::GluingPermSearcher* perms,
         void* container) {
     if (perms) {
         typename CensusType::Triangulation* tri = perms->triangulate();
@@ -360,10 +403,8 @@ int main(int argc, const char* argv[]) {
             "Ignore obviously non-minimal, non-prime and/or disc-reducible triangulations.", 0 },
         { "minprimep2", 'N', POPT_ARG_NONE, &minimalPrimeP2, 0,
             "Ignore obviously non-minimal, non-prime, disc-reducible and/or P2-reducible triangulations.", 0 },
-#ifdef SUPPORT_CYCLEDECOMP
-        { "cycledecomp" , "c", POPT_ARG_NONE, &cycleDecomp, 0,
+        { "cycledecomp" , 'c', POPT_ARG_NONE, &cycleDecomp, 0,
             "Find permutations by cycle decompositions of the face pairing graph.", 0 },
-#endif
         { "dim2", '2', POPT_ARG_NONE, &dim2, 0,
             "Run a census of 2-manifold triangulations, "
             "not 3-manifold triangulations.  Here --tetrahedra counts "
@@ -471,12 +512,14 @@ int main(int argc, const char* argv[]) {
         std::cerr << "Options -p/--genpairs and -P/--usepairs "
             << "cannot be used together.\n";
         broken = true;
-#ifdef SUPPORT_CYCLEDECOMP
     } else if (cycleDecomp && (dim2 || dim4)) {
         std::cerr << "Cycle decompositions are only available in 3 "
             << "dimensions.\n";
         broken = true;
-#endif
+    } else if (cycleDecomp && (!argNoBdry)) {
+        std::cerr << "Cycle decompositions require no boundary facets "
+            << "(-i/--internal).\n";
+        broken = true;
     }
 
     if ((! broken) && (nBdryFaces != -1)) {
@@ -551,10 +594,8 @@ int main(int argc, const char* argv[]) {
     else if (dim4)
         return runCensus<Dim4Params>();
 #endif
-#ifdef SUPPORT_CYCLEDECOMP
     else if (cycleDecomp)
         return runCensus<Dim3DecompParams>();
-#endif
     else
         return runCensus<Dim3Params>();
 }
@@ -573,7 +614,6 @@ int runCensus() {
                 return 1;
             }
         }
-
         CensusType::Pairing::findAllPairings(nTet, boundary,
             nBdryFaces, dumpPairing<CensusType>, 0, false);
         std::cerr << "Total " << WORD_face << " pairings: "
@@ -669,7 +709,6 @@ int runCensus() {
     } else {
         // An ordinary all-face-pairings census.
         std::cout << "Starting census generation..." << std::endl;
-
         CensusType::Pairing::findAllPairings(nTet, boundary, nBdryFaces,
             foundFacePairing<CensusType>, census /* dest */);
 

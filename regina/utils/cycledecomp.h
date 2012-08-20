@@ -103,6 +103,8 @@ class CycleDecompSearcher {
             public:
                 Tetrahedron();
                     /**< Constructor. */
+                ~Tetrahedron();
+                    /**< Destructor. */
                 int used;
                     /**< The number of internal edges used. */
                 int index;
@@ -120,6 +122,8 @@ class CycleDecompSearcher {
             public:
                 Edge(); 
                     /**< Constructor. */
+                ~Edge(); 
+                    /**< Destructor. */
                 void colour(unsigned newColour);
                     /**< Adds the "newColour" cycle to this edge. */
                 void unColour();
@@ -175,9 +179,11 @@ class CycleDecompSearcher {
              *   face pairing graph. */
         unsigned edgesLeft;
             /**< How many edges have not been coloured yet. */
-        unsigned** cycles;
+        signed** cycles;
             /**< Contains a list of all edge numbers used in each cycle.
              *   cycles[x][y] denotes the y'th edge in cycle number x. 
+             *   Some edge numbers are negative, this indicates following
+             *   the edge in the "reverse" direction (end[1] to end[0]).
              *   These are the spine codes as Matveev uses them. */
         unsigned* cycleLengths;
             /**< The length of each cycle as stored in the array above. */
@@ -246,7 +252,7 @@ class CycleDecompSearcher {
         /**
          * Create a triangulation from the data the search manager has 
          * found. */
-        regina::NTriangulation* triangulate();
+        regina::NTriangulation* triangulate() const;
 
         /**
          * Initialises a new search manager based on data read from the
@@ -277,7 +283,7 @@ class CycleDecompSearcher {
          * Destroys this search manager and all supporting data
          * structures.
          */
-        virtual ~CycleDecompSearcher();
+        ~CycleDecompSearcher();
 
         // Overridden methods:
         virtual void dumpData(std::ostream& out) const;
@@ -298,10 +304,16 @@ inline CycleDecompSearcher::Edge::Edge() {
     used=0;
 }
 
+inline CycleDecompSearcher::Edge::~Edge() {
+}
+
 inline CycleDecompSearcher::Tetrahedron::Tetrahedron() {
     used=0;
     for(unsigned i=0; i<6;i++) 
         internalEdges[i]=0;
+}
+
+inline CycleDecompSearcher::Tetrahedron::~Tetrahedron() {
 }
 
 #endif
