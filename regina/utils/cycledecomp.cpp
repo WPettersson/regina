@@ -91,10 +91,14 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
 
     nextColour = 0;
 
-    cycleLengths = new unsigned int[nTets+1];
+    // Note that we need (nTets+1) cycles,
+    // but we also don't use index 0 to denote
+    // a cycle so we need space for (nTets+2) 
+    // cycle descriptors.
+    cycleLengths = new unsigned int[nTets+2];
     
-    cycles = new int*[nTets+1];
-    for( unsigned i=0; i < nTets+1; i++ ) {
+    cycles = new int*[nTets+2];
+    for( unsigned i=0; i < nTets+2; i++ ) {
         cycleLengths[i] = 0;
         cycles[i] = new int[3*nEdges];
     }
@@ -170,14 +174,8 @@ void CycleDecompSearcher::colourOnTetrahedra(unsigned tet) {
     for (edge=0; tets[tet].internalEdges[edge] != 0; edge++) 
         assert(edge<=6);
 
-    if (edge >= 6)
-        return;
     nextColour++;
 
-    if (nextColour == 6) {
-        dumpData(std::cout);
-    }
-    
     assert(cycleLengths[nextColour] == 0);
 
     
@@ -259,10 +257,6 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned firstEdge,  EdgeEnd 
     // for each of the (nTets+1 - nextColour) cycles after this one.
     
     if (edgesLeft < 3*(nTets+1 - nextColour)) {
-        if (nextColour >= 6) {
-            dumpData(std::cout);
-            std::cout << "edgesLeft: " << edgesLeft << " so bailing" << std::endl;
-        }
         return;
     }
     for (unsigned i=0; i<3 ; i++) {
@@ -309,7 +303,7 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned firstEdge,  EdgeEnd 
         if (nextEnd == start) {
             start->map[firstEdge] = start->edge->used;
             if (checkColourOk()) {
-                if (false && (nextColour >= 4)) {
+                if (false && (nextColour >= 5)) {
                     dumpData(std::cout);
                     //std::cout << "Cycle " << nextColour << ", lengths: ";
                     //for(unsigned i=0; i < nextColour; i++) 
@@ -320,10 +314,10 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned firstEdge,  EdgeEnd 
                     //std::cout << "Cycle " << nextColour << " of length " << cycleLengths[nextColour] << " complete, " << edgesLeft << " edges left" << std::endl;
                 }
                 if ( (edgesLeft == 0) &&  checkComplete()) {
-                    std::cout << "Found decomp" << std::endl;
                     use_(this, useArgs_);
                 } else {
-                    if (nextColour < nTets) 
+                    // At most (nTets+1) cycles
+                    if (nextColour <= nTets)
                         colourOnTetrahedra(findTetWithMostInternalEdgesUsed());
                 }
             }
@@ -340,8 +334,8 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned firstEdge,  EdgeEnd 
         cycles[nextColour][cycleLengths[nextColour]]=0;
 
         edgesLeft++;
-        now->map[nextInternal]= 0;
         outEnd->map[nextInternal] = 0;
+        now->map[nextInternal]= 0;
         nextEdge->unColour();
         nextTet->internalEdges[nextInternal] = 0;
         nextTet->used--;
@@ -351,7 +345,6 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned firstEdge,  EdgeEnd 
  
 
 bool CycleDecompSearcher::checkComplete() {
-    std::cout << "Checking complete!" << std::endl;
     for(unsigned i=0; i< nEdges; i++) {
         if (edges[i].used != 3) {
             return false;
@@ -405,6 +398,7 @@ NTriangulation* CycleDecompSearcher::triangulate() const {
         simp[t] = ans->newSimplex();
     int perms[4];
     Edge *e;
+    dumpData(std::cout);
     for (t = 0; t < nEdges; ++t) {
         e = &(edges[t]);
         for (k = 0; k < 3; k++) {
@@ -444,7 +438,7 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
 
     unsigned i;
     unsigned j;
-    for (i = 0; i < nTets+1; i++) {
+    for (i = 1; i < nTets+2; i++) {
         out << i << ": ";
         for(j = 0; j < cycleLengths[i]; j++) {
             out << cycles[i][j];
@@ -454,15 +448,25 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
         out << std::endl;
     }
     for (i = 0; i < nEdges; i++) {
-        out << edges[i].used << ": [";
+        out << "Edge " << i << ": [";
         for(j = 0; j < 6; j++) {
-            out << edges[i].ends[0]->map[j];
+            int c = edges[i].ends[0]->map[j];
+            if (c > 0) {
+                out << c << "(" << edges[i].colours[c] << ")";
+            } else {
+                out << "0";
+            }
             if (j != 5)
                 out << ", ";
         }
         out << "] -> [";
         for(j = 0; j < 6; j++) {
-            out << edges[i].ends[1]->map[j];
+            int c = edges[i].ends[1]->map[j];
+            if (c > 0) {
+                out << c << "(" << edges[i].colours[c] << ")";
+            } else {
+                out << "0";
+            }
             if (j != 5)
                 out << ", ";
         }
@@ -471,13 +475,21 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
 }
 
 inline void CycleDecompSearcher::Edge::colour(unsigned newColour) {
-    assert(used < 3);
-    colours[used++] = newColour;
+    if ( index == 7) 
+      std::cout << "Before: Edge " << index << ": " << used << "[ " << colours[0] << ", " << colours[1] << ", " << colours[2] << "]" <<std::endl;
+    assert(0 <= used && used < 3);
+    colours[used] = newColour;
+    used+=1;
+    if ( index == 7) 
+      std::cout << "After: Edge " << index << ": " << used << "[ " << colours[0] << ", " << colours[1] << ", " << colours[2] << "]" <<std::endl;
 }
 
 inline void CycleDecompSearcher::Edge::unColour() {
-    assert(used > 0);
-    colours[used--] = 0;
+    if (used == 0) 
+      std::cout << "Edge " << index << ": " << used << "[ " << colours[0] << ", " << colours[1] << ", " << colours[2] << "]" <<std::endl;
+    assert(0 < used && used <= 3);
+    used-=1;
+    colours[used] = 0;
 }
 
 inline CycleDecompSearcher::EdgeEnd* CycleDecompSearcher::Edge::otherEnd(EdgeEnd *one) {
