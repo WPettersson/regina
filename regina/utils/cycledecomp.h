@@ -38,6 +38,7 @@
 
 #include "regina-core.h"
 #include "census/ngluingperms.h"
+#include "census/nfacepairing.h"
 #include "utilities/nqitmask.h"
 
 
@@ -95,6 +96,8 @@ class CycleDecompSearcher {
         void* useArgs_;
             /**< Additional user-supplied data to be passed as the second
                  argument to the \a use_ routine. */
+        const regina::NFacePairing *pairing_;
+            /**< The face pairing graph. */
 
         class EdgeEnd;
 

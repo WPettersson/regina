@@ -30,6 +30,8 @@
 
 #include <assert.h>
 #include <sstream>
+#include <stdlib.h>
+
 #include "census/ncensus.h"
 #include "census/ngluingpermsearcher.h"
 #include "triangulation/nedge.h"
@@ -68,7 +70,7 @@ const char CycleDecompSearcher::dataTag_ = 'd';
 
 CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
         const NFacePairing::IsoList* autos, bool orientableOnly,
-        UseCycles use, void* useArgs) {
+        UseCycles use, void* useArgs) : pairing_(pairing) {
 
     use_ = use;
     useArgs_ = useArgs;
@@ -83,6 +85,10 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     edges = new Edge[nEdges];
     ends = new EdgeEnd[nEnds];
     
+    for( unsigned i=0; i < nTets; i++ ) {
+        tets[i].index = i;
+    }
+
     nextColour = 0;
 
     cycleLengths = new unsigned int[nTets+1];
@@ -135,6 +141,8 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
         tets[adj.simp].externalEdgeEnd[adj.facet] = 
             edges[edgesDone].ends[1];
 
+        //std::cout << "Edge " << edgesDone << " is " << face.simp << ":" << face.facet << " to " << adj.simp << ":" << adj.facet << std::endl;
+
         orderAssigned[face.simp * 4 + face.facet] = true;
         orderAssigned[adj.simp * 4 + adj.facet] = true;
         edgesDone++;
@@ -165,26 +173,47 @@ void CycleDecompSearcher::colourOnTetrahedra(unsigned tet) {
     if (edge >= 6)
         return;
     nextColour++;
+
+    if (nextColour == 6) {
+        dumpData(std::cout);
+    }
+    
+    assert(cycleLengths[nextColour] == 0);
+
+    
     tets[tet].internalEdges[edge] = nextColour;
     tets[tet].used++;
-    
     unsigned startFace = NEdge::edgeVertex[5-edge][0];
     EdgeEnd *start = tets[tet].externalEdgeEnd[startFace];
     unsigned outFace = NEdge::edgeVertex[5-edge][1];
     EdgeEnd *outEdgeEnd = tets[tet].externalEdgeEnd[outFace];
     Edge *nextEdge = outEdgeEnd->edge;
-    outEdgeEnd->map[edge] = nextEdge->used;
     nextEdge->colour(nextColour);
+    outEdgeEnd->map[edge] = nextEdge->used;
     edgesLeft--;
     EdgeEnd *nextEdgeEnd = nextEdge->otherEnd(outEdgeEnd);
+    
+    // An edge has two ends, ends[0] and ends[1]
+    // A "forward" direction along an edge is from ends[0] to ends[1]
+    // and "backwards" is the reverse. Forwards is denoted by a positive
+    // edge number and backwards by a negative edge number.
+    signed dir = nextEdge->index;
+    if (outEdgeEnd == (nextEdge->ends[0]) ) 
+        dir = -1* nextEdge->index;
+    
+    cycles[nextColour][cycleLengths[nextColour]]=dir;
+    cycleLengths[nextColour]++;
 
     nextPath(start, edge, nextEdgeEnd);
     
-    nextEdge->unColour(); 
-    outEdgeEnd->map[edge] = 0;
+    cycles[nextColour][cycleLengths[nextColour]]=0;
+    cycleLengths[nextColour]--;
+    
     edgesLeft++;
-    tets[tet].internalEdges[edge] = 0;
+    outEdgeEnd->map[edge] = 0;
+    nextEdge->unColour(); 
     tets[tet].used--;
+    tets[tet].internalEdges[edge] = 0;
     nextColour--;
 }
 
@@ -197,7 +226,8 @@ bool CycleDecompSearcher::checkColourOk() {
     if ( cycleLengths[nextColour] == 3 ) {
         bool foundLoop = false;
         for(unsigned i=0;i<3;i++) { 
-            Edge *e = &(edges[cycles[nextColour][i]]);
+            unsigned ind = abs(cycles[nextColour][i]);
+            Edge *e = &(edges[ind]);
             if (e->ends[0]->tet == e->ends[1]->tet) {
                 foundLoop = true;
                 break;
@@ -207,36 +237,48 @@ bool CycleDecompSearcher::checkColourOk() {
             return false;
     }
 
+    // Count the number of edges left. We need nTet+1 cycles,
+    // and have just finished cycle number nextColour. We need 3 edges
+    // for each of the (nTets+1 - nextColour) cycles after this one.
+    
+    if (edgesLeft < 3*(nTets+1 - nextColour)) {
+        return false;
+    }
     return true;
 }
 
 void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned firstEdge,  EdgeEnd *now) {
     unsigned nextInternal;
-    EdgeEnd *nextEnd;
+    EdgeEnd *nextEnd, *outEnd;
     Edge *nextEdge;
     Tetrahedron *nextTet = now->tet;
+
+    unsigned edgesLeftTest = edgesLeft;
     // Count the number of edges left. We need nTet+1 cycles,
     // and are working on cycle number nextColour. We need 3 edges
     // for each of the (nTets+1 - nextColour) cycles after this one.
     
     if (edgesLeft < 3*(nTets+1 - nextColour)) {
-        std::cout << "edges required: " << 4*(nTets+1-nextColour) << std::endl;
-        std::cout << "edges left: " << edgesLeft << std::endl;
+        if (nextColour >= 6) {
+            dumpData(std::cout);
+            std::cout << "edgesLeft: " << edgesLeft << " so bailing" << std::endl;
+        }
         return;
     }
     for (unsigned i=0; i<3 ; i++) {
         nextInternal = faceEdges[now->face][i];
         if (nextTet->internalEdges[nextInternal] != 0) 
             continue;
-        nextEnd = nextTet->externalEdgeEnd[otherFace[now->face][nextInternal]];
-        nextEdge = nextEnd->edge;
+        outEnd = nextTet->externalEdgeEnd[otherFace[now->face][i]];
+        nextEdge = outEnd->edge;
+        nextEnd = nextEdge->otherEnd(outEnd);
         
         // An edge has two ends, ends[0] and ends[1]
         // A "forward" direction along an edge is from ends[0] to ends[1]
         // and "backwards" is the reverse. Forwards is denoted by a positive
         // edge number and backwards by a negative edge number.
         signed dir = nextEdge->index;
-        if (nextEnd == (nextEnd->edge->ends[1]) ) 
+        if (nextEnd == (nextEnd->edge->ends[0]) ) 
             dir = -1* nextEdge->index;
         // In the following loop, dir=0 means the edge has already been used in
         // the opposite direction.
@@ -250,48 +292,72 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned firstEdge,  EdgeEnd 
         //    continue;
         
         assert(cycleLengths[nextColour] < 3*nEdges);
+        //std::cout << "tet["<<nextTet->index<<"]["<<nextInternal<<"] used" << std::endl; 
+        //std::cout << now->tet->index << ":" << outEnd->face << " to " << nextEnd->tet->index << ":" << nextEnd->face 
+        //    << " colour " << nextColour << std::endl;
         cycles[nextColour][cycleLengths[nextColour]]=dir;
         cycleLengths[nextColour]++;
-        std::cout << cycleLengths[nextColour] << std::endl;
         
         nextTet->internalEdges[nextInternal] = nextColour;
+        nextTet->used++;
         nextEdge->colour(nextColour);
-        now->map[nextInternal] = nextEdge->used;
+        now->map[nextInternal] = now->edge->used;
+        outEnd->map[nextInternal] = nextEdge->used;
         edgesLeft--;
        
         // Try to complete the cycle
         if (nextEnd == start) {
-            std::cout << "Found cycle" << std::endl;
             start->map[firstEdge] = start->edge->used;
             if (checkColourOk()) {
-                if (checkComplete()) {
+                if (false && (nextColour >= 4)) {
+                    dumpData(std::cout);
+                    //std::cout << "Cycle " << nextColour << ", lengths: ";
+                    //for(unsigned i=0; i < nextColour; i++) 
+                    //    std::cout << cycleLengths[i+1] << " ";
+                    //std::cout << std::endl;
+                    //std::cout << edgesLeft << " edges left." << std::endl;
+
+                    //std::cout << "Cycle " << nextColour << " of length " << cycleLengths[nextColour] << " complete, " << edgesLeft << " edges left" << std::endl;
+                }
+                if ( (edgesLeft == 0) &&  checkComplete()) {
                     std::cout << "Found decomp" << std::endl;
                     use_(this, useArgs_);
                 } else {
-                    colourOnTetrahedra(findTetWithMostInternalEdgesUsed());
+                    if (nextColour < nTets) 
+                        colourOnTetrahedra(findTetWithMostInternalEdgesUsed());
                 }
             }
             start->map[firstEdge] = 0;
         }
 
         nextPath(start, firstEdge, nextEnd);
+        
+        //std::cout << now->tet->index << ":" << outEnd->face << " to " << nextEnd->tet->index << ":" << nextEnd->face 
+        //    << " blanked" << std::endl;
+        //std::cout << "tet["<<nextTet->index<<"]["<<nextInternal<<"] blanked" << std::endl; 
 
         cycleLengths[nextColour]--;
         cycles[nextColour][cycleLengths[nextColour]]=0;
 
         edgesLeft++;
         now->map[nextInternal]= 0;
+        outEnd->map[nextInternal] = 0;
         nextEdge->unColour();
         nextTet->internalEdges[nextInternal] = 0;
+        nextTet->used--;
     }
+    assert(edgesLeft == edgesLeftTest);
 }
  
 
 bool CycleDecompSearcher::checkComplete() {
+    std::cout << "Checking complete!" << std::endl;
     for(unsigned i=0; i< nEdges; i++) {
-        if (edges[i].used != 3) 
+        if (edges[i].used != 3) {
             return false;
+        }
     }
+    return true;
 }
 
 unsigned CycleDecompSearcher::findTetWithMostInternalEdgesUsed() {
@@ -299,11 +365,12 @@ unsigned CycleDecompSearcher::findTetWithMostInternalEdgesUsed() {
     // If nothing is used, start on tetrahedra 0.
     unsigned tet=0;
     for(unsigned i=0; i< nTets; i++) {
-        if (tets[i].used > mostUsed) {
+        if ((tets[i].used < 6) && (tets[i].used > mostUsed)) {
             mostUsed = tets[i].used;
             tet = i;
         }
     }
+    assert(tets[tet].used < 6);
     return tet;
 }
 
@@ -314,15 +381,15 @@ void CycleDecompSearcher::runSearch(long maxDepth) {
 
     // Begin by testing for face pairings that can never lead to such a
     // triangulation.
-    //if (pairing_->hasTripleEdge() ||
-    //        pairing_->hasBrokenDoubleEndedChain() ||
-    //        pairing_->hasOneEndedChainWithDoubleHandle() ||
-    //        pairing_->hasOneEndedChainWithStrayBigon() ||
-    //        pairing_->hasWedgedDoubleEndedChain() ||
-    //        pairing_->hasTripleOneEndedChain()) {
-    //    use_(0, useArgs_);
-    //    return;
-    //}
+    if (pairing_->hasTripleEdge() ||
+            pairing_->hasBrokenDoubleEndedChain() ||
+            pairing_->hasOneEndedChainWithDoubleHandle() ||
+            pairing_->hasOneEndedChainWithStrayBigon() ||
+            pairing_->hasWedgedDoubleEndedChain() ||
+            pairing_->hasTripleOneEndedChain()) {
+        use_(0, useArgs_);
+        return;
+    }
 
 
     unsigned tet = findTetWithMostInternalEdgesUsed();
@@ -383,8 +450,23 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
             out << cycles[i][j];
             if (j != cycleLengths[i]-1) 
                 out << ", ";
-        out << std::endl;
         }
+        out << std::endl;
+    }
+    for (i = 0; i < nEdges; i++) {
+        out << edges[i].used << ": [";
+        for(j = 0; j < 6; j++) {
+            out << edges[i].ends[0]->map[j];
+            if (j != 5)
+                out << ", ";
+        }
+        out << "] -> [";
+        for(j = 0; j < 6; j++) {
+            out << edges[i].ends[1]->map[j];
+            if (j != 5)
+                out << ", ";
+        }
+        out << "]" << std::endl;
     }
 }
 

@@ -516,9 +516,9 @@ int main(int argc, const char* argv[]) {
         std::cerr << "Cycle decompositions are only available in 3 "
             << "dimensions.\n";
         broken = true;
-    } else if (cycleDecomp && (!argNoBdry)) {
-        std::cerr << "Cycle decompositions require no boundary facets "
-            << "(-i/--internal).\n";
+    } else if (cycleDecomp && (argBdry)) {
+        std::cerr << "Cycle decompositions cannot be used with "
+            << "boundary facets (-b/--boundary).\n";
         broken = true;
     }
 
