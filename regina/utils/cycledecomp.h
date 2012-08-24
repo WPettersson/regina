@@ -106,13 +106,11 @@ class CycleDecompSearcher {
             public:
                 Tetrahedron();
                     /**< Constructor. */
-                ~Tetrahedron();
-                    /**< Destructor. */
-                int used;
+                unsigned int used;
                     /**< The number of internal edges used. */
                 int index;
                     /**< An identifying number for this tetrahedron. */
-                unsigned internalEdges[6];
+                unsigned int internalEdges[6];
                     /**< The 6 internal edges of the tetrahedron. */
                 EdgeEnd* externalEdgeEnd[4];
                     /**< The EdgeEnds which are attached to each face of the
@@ -125,9 +123,7 @@ class CycleDecompSearcher {
             public:
                 Edge(); 
                     /**< Constructor. */
-                ~Edge(); 
-                    /**< Destructor. */
-                void colour(unsigned newColour);
+                void colour(unsigned int newColour);
                     /**< Adds the "newColour" cycle to this edge. */
                 void unColour();
                     /**< Removes the most recent cycle from this edge. */
@@ -135,15 +131,15 @@ class CycleDecompSearcher {
                     /**< Given EdgeEnd one belonging to this Edge, return
                      *   the other EdgeEnd. */
 
-                signed colours[3];
+                signed int colours[3];
                     /**< The 3 cycles an edge may have. */
                 int used;
                     /**< The number of cycles currently using this edge. */
-                unsigned endTet[2];
+                //unsigned int endTet[2];
                     /**< The tetrahedron on either end  of this edge. */
                 EdgeEnd* ends[2];
                     /**< The edge-ends of this edge. */
-                unsigned index;
+                unsigned int index;
                     /**< The index of this edge, such that 
                      *   Edge == edges[Edge.index]. */
         };
@@ -153,52 +149,56 @@ class CycleDecompSearcher {
              *   contains information about how the edge is attached to the
              *   tetrahedron. */
             public:
+                EdgeEnd();
+                    /**< Constructor. */
                 Tetrahedron* tet;
                     /**< The tetrahedron attached here. */
                 Edge *edge;
                     /**< The edge containing this end. */
-                unsigned face;
+                unsigned int face;
                     /**< The face of the tetrahedron which this edge is
                      *   attached to. */
-                signed map[6];
+                signed int map[6];
                     /**< A mapping of the edges of the face to the cycles on
                      *   the edge. */
         };
 
         Tetrahedron *tets;
             /**< The tetrahedron representations in the face pairing graph. */
-        unsigned nTets;
+        unsigned int nTets;
             /**< The number of tetrahedra. */
         Edge *edges;
             /**< The edges of the face pairing graph. */
-        unsigned nEdges;
+        unsigned int nEdges;
             /**< The number of edges. */
         EdgeEnd *ends;
             /**< The ends of the edges. */
-        unsigned nEnds;
+        unsigned int nEnds;
             /**< The number of edge ends. */
-        unsigned nextColour;
+        unsigned int nextColour;
             /**< The next "colour" to be used to mark out a cycle in the 
              *   face pairing graph. */
-        unsigned edgesLeft;
+        unsigned int edgesLeft;
             /**< How many edges have not been coloured yet. */
-        signed** cycles;
+        signed int ** cycles;
             /**< Contains a list of all edge numbers used in each cycle.
              *   cycles[x][y] denotes the y'th edge in cycle number x. 
              *   Some edge numbers are negative, this indicates following
              *   the edge in the "reverse" direction (end[1] to end[0]).
              *   These are the spine codes as Matveev uses them. */
-        unsigned* cycleLengths;
+        unsigned int * cycleLengths;
             /**< The length of each cycle as stored in the array above. */
+        bool orientable;
+            /**< Whether we are searching for orientable manifolds. */
 
-        void colourOnTetrahedra(unsigned tet);
+        void colourOnTetrahedra(unsigned int tet);
             /**< Start colouring a cycle on tetrahedra tet. */
        
         bool checkColourOk();
             /**< Checks whether the cycle indicated by colour nextColour
              *   is a valid cycle. */
 
-        void  nextPath(EdgeEnd *start, unsigned firstEdge, EdgeEnd *now);
+        void  nextPath(EdgeEnd *start, unsigned int firstEdge, EdgeEnd *now);
             /**< Tries all choices for continuing a cycle from *now.
              *   Also checks to see if a cycle can be completed after using
              *   one of these choices. */
@@ -207,7 +207,7 @@ class CycleDecompSearcher {
             /**< Checks to see if a decomposition has been found. This is done
              *   by checking to see that each Edge has 3 cycles on it. */
 
-        unsigned findTetWithMostInternalEdgesUsed();
+        unsigned int findTetWithMostInternalEdgesUsed();
             /**< Finds the tetrahedra with the most used internal edges. */
 
     public:
@@ -307,16 +307,15 @@ inline CycleDecompSearcher::Edge::Edge() {
     used=0;
 }
 
-inline CycleDecompSearcher::Edge::~Edge() {
+inline CycleDecompSearcher::EdgeEnd::EdgeEnd() {
+    for(unsigned int i=0; i<6;i++) 
+        map[i]=0;
 }
 
 inline CycleDecompSearcher::Tetrahedron::Tetrahedron() {
     used=0;
-    for(unsigned i=0; i<6;i++) 
+    for(unsigned int i=0; i<6;i++) 
         internalEdges[i]=0;
-}
-
-inline CycleDecompSearcher::Tetrahedron::~Tetrahedron() {
 }
 
 #endif
