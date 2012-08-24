@@ -326,7 +326,9 @@ ENDIF (REGINA_DOCS)
 ENABLE_TESTING() # This must appear before any calls to ADD_SUBDIRECTORY().
 
 # TODO: Get rid of this, eventually.
-SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
+IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wno-deprecated")
+ENDIF()
 
 # Core directories
 ADD_SUBDIRECTORY(engine)
