@@ -108,7 +108,7 @@ class CycleDecompSearcher {
                     /**< Constructor. */
                 unsigned int used;
                     /**< The number of internal edges used. */
-                int index;
+                unsigned int index;
                     /**< An identifying number for this tetrahedron. */
                 unsigned int internalEdges[6];
                     /**< The 6 internal edges of the tetrahedron. */
@@ -188,6 +188,11 @@ class CycleDecompSearcher {
              *   These are the spine codes as Matveev uses them. */
         unsigned int * cycleLengths;
             /**< The length of each cycle as stored in the array above. */
+        unsigned int nAutos;
+            /**< The number of automorphisms of the graph. */
+        signed int ** automorphisms;
+            /**< Store the automorphisms as maps from the edges in the
+             *   graph to edges in the automorphism of the graph. */
         bool orientable;
             /**< Whether we are searching for orientable manifolds. */
 
@@ -206,7 +211,7 @@ class CycleDecompSearcher {
         bool checkComplete();
             /**< Checks to see if a decomposition has been found. This is done
              *   by checking to see that each Edge has 3 cycles on it. */
-
+  
         unsigned int findTetWithMostInternalEdgesUsed();
             /**< Finds the tetrahedra with the most used internal edges. */
 

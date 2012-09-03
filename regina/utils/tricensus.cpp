@@ -258,6 +258,7 @@ void foundCycleDecomp(const typename CensusType::GluingPermSearcher* perms,
             // Put it in the census!
             if (sigs) {
                 sigStream << tri->isoSig() << std::endl;
+                std::cout << tri->isoSig();
                 delete tri;
             } else {
                 regina::NPacket* dest =
@@ -274,6 +275,7 @@ void foundCycleDecomp(const typename CensusType::GluingPermSearcher* perms,
             // The fish that John West reject.
             delete tri;
         }
+        std::cout << std::endl;
     }
 }
 
@@ -283,13 +285,16 @@ void foundCycleDecomp(const typename CensusType::GluingPermSearcher* perms,
 template <class CensusType>
 void foundFacePairing(const typename CensusType::Pairing* pairing,
         const typename CensusType::Pairing::IsoList* autos, void* container) {
+    long long before = nSolns;
     if (pairing) {
         std::cout << pairing->toString() << std::endl;
 
         CensusType::findAllPerms(pairing, autos,
             ! orientability.hasFalse(), ! finiteness.hasFalse(),
             whichPurge, static_cast<regina::NPacket*>(container));
+        std::cout << "Found " << (nSolns - before) << " triangulations." << std::endl;
     }
+
 }
 
 /**
