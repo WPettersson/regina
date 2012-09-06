@@ -101,15 +101,6 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
         cycles[i] = new int[3*nEdges];
     }
     
-    if ( autos ) {
-        nAutos = autos->size();
-        automorphisms = new signed int*[nAutos];
-        for( unsigned int i=0; i < nAutos; i++ ) {
-            automorphisms[i] = new signed int[nEdges];
-        }
-    } else {
-        automorphisms = 0;
-    }
 
     bool* orderAssigned = new bool[nTets * 4];
         /**< Have we placed a tetrahedron face or its partner in the
@@ -160,49 +151,22 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     // All done for the orderAssigned[] array.  Tidy up.
     delete[] orderAssigned;
 
-    if ( automorphisms ) {
-        unsigned int autoCounter=0;
-        for (NFacePairing::IsoList::const_iterator it = autos->begin();
-                    it != autos->end(); it++) {
-            for (unsigned int i=0; i< edgesDone;i++) {
-                unsigned int startFace = edges[i].ends[0]->face;
-                unsigned int startTet = edges[i].ends[0]->tet->index;
-                unsigned int endFace = edges[i].ends[1]->face;
-                unsigned int endTet = edges[i].ends[1]->tet->index;
 
-                unsigned int newStartFace = (*it)->facePerm(startTet)[startFace];
-                unsigned int newStartTet = (*it)->tetImage(startTet);
-                unsigned int newEndFace = (*it)->facePerm(endTet)[endFace];
-                unsigned int newEndTet = (*it)->tetImage(endTet);
-                
-                for(unsigned int j=0; j< edgesDone;j++) {
-                    if (( newStartTet == edges[j].ends[0]->tet->index) &&
-                        ( newStartFace == edges[j].ends[0]->face) &&
-                        ( newEndTet == edges[j].ends[1]->tet->index) &&
-                        ( newEndFace == edges[j].ends[1]->face)) {
-                        assert((0 <= j) && (j < edgesDone));
-                        automorphisms[autoCounter][i] = j;
-                        break;
-                    }
-                    if (( newEndTet == edges[j].ends[0]->tet->index) &&
-                        ( newEndFace == edges[j].ends[0]->face) &&
-                        ( newStartTet == edges[j].ends[1]->tet->index) &&
-                        ( newStartFace == edges[j].ends[1]->face)) {
-                        assert((0 <= j) && (j < edgesDone));
-                        automorphisms[autoCounter][i] = -j;
-                        break;
-                    }
-                }
-            }
-            autoCounter+=1;
+    if ( autos ) {
+        nAutos = 0;
+        automorphisms = new Automorphism*[autos->size()];
+        for( NFacePairing::IsoList::const_iterator it = autos->begin();
+                it != autos->end(); it++) {
+            automorphisms[nAutos] = new Automorphism( (*it),edges,nEdges);
+            nAutos++;
         }
         std::cout << "Original " << std::endl;
 
-        cycleLengths[1] = 4;
-        cycles[1][0] = 3;
-        cycles[1][1] = 5;
-        cycles[1][2] = 7;
-        cycles[1][3] = 9;
+        cycleLengths[1] = 3;
+        cycles[1][0] = -2;
+        cycles[1][1] = 3;
+        cycles[1][2] = 5;
+        cycles[1][3] = 7;
         std::cout << "1: ";
         for(unsigned int i=0; i < cycleLengths[1]; i++) {
             std::cout << cycles[1][i];
@@ -212,47 +176,65 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
         std::cout << std::endl;
         std::cout << "Automorphisms " << std::endl;
         
-        for (autoCounter=0; autoCounter< nAutos; autoCounter++) {
-            signed int newCycle[nEdges];
-            std::cout << "1: ";
+        signed int *newCycle;
+        newCycle = new signed int[cycleLengths[1]];
+        signed int *internalEdges;
+        internalEdges = new signed int[6*nTets];
+        for (unsigned int autoCounter=0; autoCounter< nAutos; autoCounter++) {
+            for(unsigned int i=1; i <= nEdges; i++) 
+                std::cout << (*automorphisms[autoCounter])[i] << " ";
+            std::cout << "::\t";
             for(unsigned int i=0; i < cycleLengths[1]; i++) {
-                unsigned int index = abs(cycles[1][i]);
-                if ( cycles[1][i] < 0 ) {
-                    newCycle[i] = -1* automorphisms[autoCounter][index];
-                } else {
-                    newCycle[i] = automorphisms[autoCounter][index];
-                }
+                newCycle[i] = (*automorphisms[autoCounter])[cycles[1][i]];
                 std::cout << newCycle[i];
                 if (i < (cycleLengths[1]-1))
                     std::cout << ", ";
             }
-            std::cout << std::endl;
-            signed int internalEdges[6*nTet];
+            //std::cout << std::endl;
+            std::cout << "::\t";
+            for(unsigned int i=0; i < 6*nTets; i++) 
+                internalEdges[i]=0;
+
             for(unsigned int i=1; i < cycleLengths[1]; i++) {
-                if edge[i-1] used negative:
-                    edge[i-1].end[0].tet is this tet
-                    edge[i-1].end[0].face is one face
-                else:
-                    edge[i-1].end[1].tet is this tet
-                    edge[i-1].end[1].face is one face
-                if edge[i] used negative
-                    edge[i].end[1].face is other face
-                else
-                    edge[i].end[0].face is other face
-                find common edge to one face and other face
-                set internalEdges[this tet][common edge] = 1
+                signed int edge = newCycle[i];
+                signed int lastEdge = newCycle[i-1];
+                unsigned int tet;
+                unsigned int oneFace;
+                unsigned int otherFace;
+                if (lastEdge < 0) {
+                    tet = edges[(-lastEdge)-1].ends[0]->tet->index;
+                    oneFace = edges[-(lastEdge-1)].ends[0]->face;
+                } else {
+                    tet = edges[lastEdge-1].ends[1]->tet->index;
+                    oneFace = edges[lastEdge-1].ends[1]->face;
+                }
+                if (edge < 0) {
+                    otherFace = edges[(-edge)-1].ends[1]->face;
+                } else {
+                    otherFace = edges[edge-1].ends[0]->face;
+                }
+                assert((0 <= tet) && (tet < 6));
+                // NEdge::edgeNumber[oneFace][otherFace] gives the edge joining
+                // vertices oneFace and otherFace (as vertices).  We want the
+                // exact opposite edge, so we do 5 - this value.
+                internalEdges[(6*tet)+(5-NEdge::edgeNumber[oneFace][otherFace])] = 1;
             }
-            print all the things
-
-
-                edge[i-1] to edge[1];
-                
+            for(unsigned int i=0; i < 6*nTets; i++) {
+              std::cout << internalEdges[i] << " ";
+              if ( (i%6) == 5)
+                  std::cout << ": ";
+            }
+            std::cout << std::endl;
         }
+        delete[] internalEdges;
+        delete[] newCycle;
         cycleLengths[1] = 0;
         cycles[1][0] = 0;
         cycles[1][1] = 0;
         cycles[1][2] = 0;
         cycles[1][3] = 0;
+    } else {
+        automorphisms = 0;
     }
 }
 
@@ -260,6 +242,10 @@ CycleDecompSearcher::~CycleDecompSearcher() {
     for( unsigned int i=0; i < nTets+1; i++ ) {
         delete[] cycles[i];
     }
+    for( unsigned int i=0; i < nAutos; i++ ) {
+        delete[] automorphisms[i];
+    }
+    delete[] automorphisms;
     delete[] cycles;
     delete[] cycleLengths;    
     delete[] tets;
@@ -574,6 +560,130 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
     //}
 }
 
+bool CycleDecompSearcher::isCanonical() {
+    signed int *internalEdges = new signed int[6*nTets];
+    unsigned int *mapping = new unsigned int[nextColour];
+    unsigned int autoNo, cycleNo;
+    unsigned int start;
+    Tetrahedron *tet;
+    unsigned int tetIndex;
+    bool iso;
+    for(autoNo; autoNo < nAutos; autoNo++) {
+        iso = true; 
+        for(cycleNo = 1; cycleNo < nextColour; cycleNo++) {
+            mapping[cycleNo] = 0;
+            for(unsigned int i=0; i < 6*nTets; i++) 
+                internalEdges[i]=0;
+            for(unsigned int i=0; i < cycleLengths[cycleNo]; i++) {
+                signed int edge;
+                if ( i == cycleLengths[cycleNo]-1) {
+                    edge = newCycle[0];
+                } else {
+                    edge = newCycle[i+1];
+                }
+                signed int lastEdge = newCycle[i];
+                unsigned int tet;
+                unsigned int oneFace;
+                unsigned int otherFace;
+                if (lastEdge < 0) {
+                    tet = edges[(-lastEdge)-1].ends[0]->tet->index;
+                    oneFace = edges[-(lastEdge-1)].ends[0]->face;
+                } else {
+                    tet = edges[lastEdge-1].ends[1]->tet->index;
+                    oneFace = edges[lastEdge-1].ends[1]->face;
+                }
+                if (edge < 0) {
+                    otherFace = edges[(-edge)-1].ends[1]->face;
+                } else {
+                    otherFace = edges[edge-1].ends[0]->face;
+                }
+                assert((0 <= tet) && (tet < 6));
+                // NEdge::edgeNumber[oneFace][otherFace] gives the edge joining
+                // vertices oneFace and otherFace (as vertices).  We want the
+                // exact opposite edge, so we do 5 - this value.
+                internalEdges[(6*tet)+(5-NEdge::edgeNumber[oneFace][otherFace])] = 1;
+            }
+            for(unsigned int i=0; i < 6*nTets; i++) {
+              std::cout << internalEdges[i] << " ";
+              if ( (i%6) == 5)
+                  std::cout << ": ";
+            }
+            std::cout << std::endl;
+        }
+        // Check to see if the first "nextColour-1" cycles can be matched up
+        // Note that this loop terminates if iso=false (no longer isomorphic).
+        for ( tetIndex=0; iso && tetIndex < nTets; tetIndex++ ) {
+            for( unsigned int i=0; i < 6; i++) {
+                unsigned int currentNumber = tets[tetIndex]->internalEdges[i];
+                unsigned int isoNumber = internalEdges[(6*tetIndex)+i];
+                // If edge uncoloured in current graph, then it must be
+                // uncoloured in isomorphism.
+                if (currentNumber == 0) 
+                    if ( isoNumber == 0) 
+                        continue;
+                    else {
+                        iso = false;
+                        break;
+                    }
+                // So edge is coloured.  If no mapping is set up, and the
+                // corresponding edge in the iso is coloured, set up a mapping.
+                // If corresponding edge not coloured, break out
+                // Else, just check that the corresponding edge makes 
+                if ( mapping[currentNumber] == 0 ) {
+                    if (isoNumber == 0) {
+                        iso = false;
+                        break;
+                    } else {
+                        mapping[currentNumber] == isoNumber;
+                    }
+                } else {
+                    if ( mapping[currentNumber] != isoNumber ) {
+                        iso = false;
+                        break;
+                    }
+                }
+            }
+        }
+        if (! iso) 
+            continue;
+        // Is isomorphic so far, check the last cycle
+        // First find the "start" of the cycle so we can keep that fixed.
+        // Remember, the start of the cycle is the "lowest free edge" on the
+        // tetrahedra with the most used edges (and we shouldn't cound an edge
+        // as used if it has nextColour on it, as that is part of the current
+        // cycle.
+        tetIndex=0;
+        unsigned int mostused=0;
+        unsigned int currentUsed;
+        for( unsigned int i=0; i < nTet; i++) {
+            currentUsed=0; 
+            for( unsigned int j=0; j < 6; j++) {
+                if ((tets[i]->internalEdges[j] != 0) && 
+                    (tets[i]->internalEdges[j] != nextColour)) {
+                    currentUsed+=1;
+                }
+            }
+            if (currentUsed > mostUsed) {
+                mostUsed = currentUsed;
+                tetIndex=i;
+            }
+        }
+            
+        tet = tets[tetIndex];
+        start = 0;
+        // Note that since this tetrahedra had the most used edges, we must
+        // have started colouring on it, so it must have an edge coloured
+        // nextColour.
+        while ( tet->internalEdges[start] != nextColour) {
+            start++;
+            assert(start < 6);
+        }
+
+    }
+    return false;
+}
+
+
 inline void CycleDecompSearcher::Edge::colour(unsigned newColour) {
     assert(0 <= used && used < 3);
     colours[used] = newColour;
@@ -639,4 +749,43 @@ inline CycleDecompSearcher::EdgeEnd* CycleDecompSearcher::Edge::otherEnd(EdgeEnd
 //        inputError_ = true;
 //}
 
+CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
+        const Edge *edges, const unsigned int _nEdges) {
+    nEdges = _nEdges;
+    edgeMap = new signed int[nEdges+1];
+    for (unsigned int i=0; i< nEdges;i++) {
+        unsigned int startFace = edges[i].ends[0]->face;
+        unsigned int startTet = edges[i].ends[0]->tet->index;
+        unsigned int endFace = edges[i].ends[1]->face;
+        unsigned int endTet = edges[i].ends[1]->tet->index;
 
+        unsigned int newStartFace = iso->facePerm(startTet)[startFace];
+        unsigned int newStartTet = iso->tetImage(startTet);
+        unsigned int newEndFace = iso->facePerm(endTet)[endFace];
+        unsigned int newEndTet = iso->tetImage(endTet);
+        
+        for(unsigned int j=0; j< nEdges;j++) {
+            if (( newStartTet == edges[j].ends[0]->tet->index) &&
+                ( newStartFace == edges[j].ends[0]->face) &&
+                ( newEndTet == edges[j].ends[1]->tet->index) &&
+                ( newEndFace == edges[j].ends[1]->face)) {
+                assert((0 <= j) && (j < nEdges));
+                edgeMap[i+1] = j+1;
+                break;
+            }
+            if (( newEndTet == edges[j].ends[0]->tet->index) &&
+                ( newEndFace == edges[j].ends[0]->face) &&
+                ( newStartTet == edges[j].ends[1]->tet->index) &&
+                ( newStartFace == edges[j].ends[1]->face)) {
+                assert((0 <= j) && (j < nEdges));
+                edgeMap[i+1] = -(j+1);
+                break;
+            }
+        }
+    }
+}
+
+signed int CycleDecompSearcher::Automorphism::operator [] (const signed int in) {
+  signed int sign = ( in < 0 ? -1 : 1);
+  return sign * edgeMap[ abs(in) ];
+}
