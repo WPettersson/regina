@@ -186,6 +186,9 @@ class CycleDecompSearcher {
             /**< The number of tetrahedra. */
         Edge *edges;
             /**< The edges of the face pairing graph. */
+        signed int lastEdge;
+            /**< The last edge (including direction) to be used 
+             *   in this cycle. */
         unsigned int nEdges;
             /**< The number of edges. */
         EdgeEnd *ends;
