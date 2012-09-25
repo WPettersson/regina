@@ -82,10 +82,11 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     tets = new Tetrahedron[nTets];
     edges = new Edge[nEdges];
     ends = new EdgeEnd[nEnds];
-    
+   
     for( unsigned int i=0; i < nTets; i++ ) {
         tets[i].index = i;
     }
+    
 
     nextColour = 0;
 
@@ -101,6 +102,8 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
         cycles[i] = new int[3*nEdges];
     }
     
+    // Need to keep a track of what edge is to be used last in each cycle.
+    lastEdge = new int[nTets+2];
 
     bool* orderAssigned = new bool[nTets * 4];
         /**< Have we placed a tetrahedron face or its partner in the
@@ -251,6 +254,7 @@ CycleDecompSearcher::~CycleDecompSearcher() {
     delete[] tets;
     delete[] edges;
     delete[] ends;
+    delete[] lastEdge;
 }
 
 void CycleDecompSearcher::colourOnTetrahedra(unsigned int tet) {
@@ -272,9 +276,9 @@ void CycleDecompSearcher::colourOnTetrahedra(unsigned int tet) {
     // If ends[0] of this edge is last visited, then we're going backwards
     // along this edge.
     if ( start->edge->ends[0] == start )
-        lastEdge = -1*(start->edge->index);
+        lastEdge[nextColour] = -1*(start->edge->index);
     else
-        lastEdge = start->edge->index;
+        lastEdge[nextColour] = start->edge->index;
 
 
     unsigned int outFace = NEdge::edgeVertex[5-edge][1];
@@ -284,8 +288,6 @@ void CycleDecompSearcher::colourOnTetrahedra(unsigned int tet) {
     outEdgeEnd->map[edge] = nextEdge->used;
     edgesLeft--;
     EdgeEnd *nextEdgeEnd = nextEdge->otherEnd(outEdgeEnd);
-    
-    std::cout << "t"<<tet<<"i"<<edge<<"l"<<lastEdge<<"n"<<nextEdge->index << std::endl;
     
     // An edge has two ends, ends[0] and ends[1]
     // A "forward" direction along an edge is from ends[0] to ends[1]
@@ -297,6 +299,8 @@ void CycleDecompSearcher::colourOnTetrahedra(unsigned int tet) {
     signed int dir = nextEdge->index;
     if (outEdgeEnd == (nextEdge->ends[1]) ) 
         dir = -1* nextEdge->index;
+    //std::cout << "c" << nextColour << "t"<<tet<<"i"<<edge<<"l"<<lastEdge[nextColour]<<"n"<< dir << std::endl;
+    
     
     cycles[nextColour][cycleLengths[nextColour]]=dir;
     cycleLengths[nextColour]++;
@@ -544,7 +548,7 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
         for(j = 0; j < 6; j++) {
             out << tets[i].internalEdges[j] << " ";
         }
-        out << " : ";
+        out << ": ";
     }
     //for (i = 0; i < nEdges; i++) {
     //    out << "Edge " << i << ": [";
@@ -583,25 +587,40 @@ bool CycleDecompSearcher::isCanonical() {
     Tetrahedron *tet;
     unsigned int tetIndex;
     bool iso;
+    std::cout << "--------------------------------------------------------------------" << std::endl;
+    dumpData(std::cout);
+    std::cout <<std::endl;
     for(autoNo=0; autoNo < nAutos; autoNo++) {
+        if ( lastEdge[nextColour] != (*automorphisms[autoNo])[lastEdge[nextColour]] ) 
+            continue;
+        if ( cycles[nextColour][0] != (*automorphisms[autoNo])[cycles[nextColour][0]] )
+            continue;
         iso = true; 
         for(unsigned int i=0; i < 6*nTets; i++) 
             internalEdges[i]=0;
+
         for(cycleNo = 1; cycleNo <= nextColour; cycleNo++) {
             mapping[cycleNo] = 0;
             for(unsigned int i=0; i < cycleLengths[cycleNo]; i++) {
                 signed int edge;
                 if ( i == 0) {
+                    // If we're looking at the first edge, loop back to the end
+                    // of the cycle to find the previous edge.
+                    //
+                    // Note that if we're on the current cycle, the end won't
+                    // necessarily match up, so instead we use the edge we know
+                    // must be last (which we stored earlier).
                     if ( cycleNo == nextColour ) {
                         // Last cycle
-                        edge = lastEdge;
+                        edge = (*automorphisms[autoNo])[lastEdge[nextColour]];
                     } else {
-                        edge = cycles[cycleNo][cycleLengths[cycleNo]-1];
+                        edge = (*automorphisms[autoNo])[cycles[cycleNo][cycleLengths[cycleNo]-1]];
                     }
                 } else {
-                    edge = cycles[cycleNo][i-1];
+                    edge = (*automorphisms[autoNo])[cycles[cycleNo][i-1]];
                 }
-                signed int nextEdge = cycles[cycleNo][i];
+
+                signed int nextEdge = (*automorphisms[autoNo])[cycles[cycleNo][i]];
                 unsigned int tet;
                 unsigned int oneFace;
                 unsigned int otherFace;
@@ -620,21 +639,12 @@ bool CycleDecompSearcher::isCanonical() {
                 // NEdge::edgeNumber[oneFace][otherFace] gives the edge joining
                 // vertices oneFace and otherFace (as vertices).  We want the
                 // exact opposite edge, so we do 5 - this value.
-                if (!((6*tet)+(5-NEdge::edgeNumber[oneFace][otherFace]) < 6*nTets)) {
-                    std::cout << "Blah";
-                }
                 assert((6*tet)+(5-NEdge::edgeNumber[oneFace][otherFace]) < 6*nTets);
                 assert(0 <= (6*tet)+(5-NEdge::edgeNumber[oneFace][otherFace]));
 
                 internalEdges[(6*tet)+(5-NEdge::edgeNumber[oneFace][otherFace])] = cycleNo;
             }
         }
-        //for(unsigned int i=0; i < 6*nTets; i++) {
-        //  std::cout << internalEdges[i] << " ";
-        //  if ( (i%6) == 5)
-        //      std::cout << ": ";
-        //}
-        //std::cout << std::endl;
         // Check to see if the first "nextColour-1" cycles can be matched up
         // perfectly. Note that we assume by induction that these cycles are
         // all canonical already.
@@ -646,12 +656,11 @@ bool CycleDecompSearcher::isCanonical() {
                 // If it's the current colour we're looking at, skip it.
                 if (currentNumber == nextColour)
                     continue;
-                if (isoNumber == nextColour)
-                    continue;
                 // If edge uncoloured in current graph, then it must be
-                // uncoloured in isomorphism.
+                // uncoloured in isomorphism (or be one of the newly used
+                // edges).
                 if (currentNumber == 0) {
-                    if ( isoNumber == 0) 
+                    if (( isoNumber == 0) || ( isoNumber == nextColour)) 
                         continue;
                     else {
                         iso = false;
@@ -682,7 +691,7 @@ bool CycleDecompSearcher::isCanonical() {
         // Is isomorphic so far, check the last cycle
         // First find the "start" of the cycle so we can keep that fixed.
         // Remember, the start of the cycle is the "lowest free edge" on the
-        // tetrahedra with the most used edges (and we shouldn't cound an edge
+        // tetrahedra with the most used edges (and we shouldn't count an edge
         // as used if it has nextColour on it, as that is part of the current
         // cycle.
         tetIndex=0;
@@ -711,13 +720,16 @@ bool CycleDecompSearcher::isCanonical() {
             start++;
             assert(start < 6);
         }
+        // Now check to make sure the automorphism also has this edge used.
+        if ( internalEdges[(6*tetIndex)+start] != nextColour)
+            continue;
         // Check the rest of the tetrahedra. 
-        // I internalEdges[] is nextColour before
+        // If internalEdges[] is nextColour before
         // tet[start]->internalEdges then this current colouring is not
         // canonical. 
         //
         // If tet[start]->internalEdges is nextColour before
-        // internalEdges, then this current colouring is definitely more
+        // internalEdges, then the current colouring is definitely more
         // canonical than this isomorphism.
         
         // If possiblyMoreCanonical is set, that means the isomorphic graph is 
@@ -726,8 +738,22 @@ bool CycleDecompSearcher::isCanonical() {
         for( unsigned int i=0; possiblyMoreCanonical && i < nTets; i++) {
             for( unsigned int j=0; j < 6; j++) {
                 if  ( internalEdges[(6*i)+j] == nextColour) {
-                    if ( tets[i].internalEdges[j] != nextColour) 
+                    if ( tets[i].internalEdges[j] != nextColour) {
+                        std::cout << " >>> " << std::endl;
+                        for(unsigned int i=0; i < 6*nTets; i++) {
+                          std::cout << internalEdges[i] << " ";
+                          if ( (i%6) == 5)
+                              std::cout << ": ";
+                        }
+                        std::cout << std::endl;
+                        for(unsigned int i=0; i < cycleLengths[nextColour]; i++) {
+                            std::cout << (*automorphisms[autoNo])[cycles[nextColour][i]];
+                            if ( i < (cycleLengths[nextColour]-1))
+                                std::cout << ", ";
+                        }
+                        std::cout << std::endl;
                         return false;
+                    }
                 }
                 if ( tets[i].internalEdges[j] == nextColour) {
                     if ( internalEdges[(6*i)+j] != nextColour) {
@@ -737,6 +763,9 @@ bool CycleDecompSearcher::isCanonical() {
                 }
             }
         }
+
+        //std::cout << "<=?" << std::endl;;
+
     }
     delete[] internalEdges;
     delete[] mapping;
