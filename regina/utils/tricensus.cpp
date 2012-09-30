@@ -216,6 +216,7 @@ void foundGluingPerms(const typename CensusType::GluingPermSearcher* perms,
             // Put it in the census!
             if (sigs) {
                 sigStream << tri->isoSig() << std::endl;
+                std::cout << tri->isoSig() << std::endl;;
                 delete tri;
             } else {
                 regina::NPacket* dest =

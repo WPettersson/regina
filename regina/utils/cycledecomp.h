@@ -172,12 +172,19 @@ class CycleDecompSearcher {
                               const Edge* edges,
                               const unsigned int _nEdges);
                     /**< Constructor from regina type isomorphism. */
+                ~Automorphism();
+                    /**< Destructor. */
                 signed int operator [] ( const signed int initial);
                     /**< Returns the equivalent edge under the automorphism in
                      *   question. */
             private:
                 unsigned int nEdges;
+                    /**< Number of edges. */
                 signed int *edgeMap;
+                    /**< An array storing the relationship between edges.
+                     *   Note that we index this array as [nEdges + edgeNo].
+                     */
+                signed int *realEdgeMap;
         };
 
         Tetrahedron *tets;
@@ -213,6 +220,12 @@ class CycleDecompSearcher {
         Automorphism** automorphisms;
             /**< Store the automorphisms as maps from the edges in the
              *   graph to edges in the automorphism of the graph. */
+        unsigned int * isAutoOk;
+            /**< An array of size nAutos. Each entry corresponds an
+             *   automorphism, such if automorphism i is not valid when 
+             *   adding edge j, isAutoOk[i] = j.
+             *   The value of j here is purely a number indicating how many
+             *   edges have been added so far. */
         bool orientable;
             /**< Whether we are searching for orientable manifolds. */
 
@@ -223,12 +236,14 @@ class CycleDecompSearcher {
             /**< Checks whether the cycle indicated by colour nextColour
              *   is a valid cycle. */
 
-        bool isCanonical();
-            /**< Determine whether the current internal edge allocation is
+        bool isCanonical(unsigned int tet, unsigned int internal, 
+                signed int nextEdgeToBeUsed);
+            /**< Determine whether the current internal edge allocation, as
+             *   defined by the parameters passed to the function, is
              *   canonical, where canonical means all prior cycles that have
              *   been completed are still the same, and for the current partial
-             *   cycle, each (internal) edge selected is as lexicographically
-             *   small as possible?????????? */
+             *   cycle, each (internal) edge selected-in-turn is as 
+             *   lexicographically small as possible. */
 
         void  nextPath(EdgeEnd *start, unsigned int firstEdge, EdgeEnd *now);
             /**< Tries all choices for continuing a cycle from *now.
