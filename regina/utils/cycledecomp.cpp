@@ -620,12 +620,47 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
         if ( cycles[nextColour][0] != (*automorphisms[autoNo])[cycles[nextColour][0]] )
             continue;
         iso = true; 
-        for(unsigned int i=0; i < 6*nTets; i++) 
+        for(cycleNo = 1; cycleNo < nextColour; cycleNo++) 
+            mapping[cycleNo] = 0;
+        // Ensure we don't map nextColour to anything else.
+        mapping[nextColour] = nextColour;
+        for(unsigned int i=0; iso && i < 6*nTets; i++) {
             internalEdges[i]=0;
-        // After each cycle, we check if the cycle in the isomorphism can be
-        // mapped onto some cycle in the current colouring. iso starts off as
-        // true, but becomes false if we cannot.
-        for(cycleNo = 1; iso && cycleNo <= nextColour; cycleNo++) {
+            unsigned int iEdge = i%6;
+            unsigned int cTet = (i-iEdge)/6;
+            unsigned int cycle = tets[cTet].internalEdges[iEdge];
+            if ( cycle == 0 )
+                continue;
+            unsigned int newPos = (*automorphisms[autoNo])[i];
+            unsigned int newiEdge = newPos%6;
+            unsigned int newTet = (newPos - newiEdge)/6;
+            
+            unsigned int newCycle = tets[newTet].internalEdges[newiEdge];
+            if (mapping[cycle] == 0) {
+                if ( newCycle != 0 ) {
+                    if ( cycleLengths[cycle] != cycleLengths[newCycle] ) {
+                        iso = false;
+                        break;
+                    }
+                    mapping[cycle] = newCycle;
+                } else {
+                    iso = false;
+                    break;
+                }
+            } else {
+                if (mapping[cycle] != newCycle ) {
+                    iso = false;
+                    break;
+                }
+            }
+
+
+            internalEdges[ (*automorphisms[autoNo])[i] ] = cycle;
+        }
+
+
+
+        for(cycleNo = 1; cycleNo <= nextColour; cycleNo++) {
             mapping[cycleNo] = 0;
             signed int edge;
             for(unsigned int i=0; i < cycleLengths[cycleNo]; i++) {
@@ -940,38 +975,23 @@ inline CycleDecompSearcher::EdgeEnd* CycleDecompSearcher::Edge::otherEnd(EdgeEnd
 //}
 
 CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
-        const Edge *edges, const unsigned int _nEdges) {
-    nEdges = _nEdges;
-    edgeMap = new signed int[2*(nEdges+1)];
-    realEdgeMap = edgeMap+nEdges;
-    for (unsigned int i=0; i < nEdges;i++) {
-        unsigned int startFace = edges[i].ends[0]->face;
-        unsigned int startTet = edges[i].ends[0]->tet->index;
-        unsigned int endFace = edges[i].ends[1]->face;
-        unsigned int endTet = edges[i].ends[1]->tet->index;
+        const Edge *edges, const unsigned int _nTets) {
+    nTets = _nTets;
+    edgeMap = new signed int[6*nTets];
+    for (unsigned int i=0; i < nTet;i++) {
+        unsigned int newTet = iso->tetImage(i);
 
-        unsigned int newStartFace = iso->facePerm(startTet)[startFace];
-        unsigned int newStartTet = iso->tetImage(startTet);
-        unsigned int newEndFace = iso->facePerm(endTet)[endFace];
-        unsigned int newEndTet = iso->tetImage(endTet);
-        
-        for(unsigned int j=0; j< nEdges;j++) {
-            if (( newStartTet == edges[j].ends[0]->tet->index) &&
-                ( newStartFace == edges[j].ends[0]->face) &&
-                ( newEndTet == edges[j].ends[1]->tet->index) &&
-                ( newEndFace == edges[j].ends[1]->face)) {
-                realEdgeMap[i+1] = j+1;
-                realEdgeMap[ptrdiff_t(- (signed int)(i+1))] = -(j+1);
-                break;
-            }
-            if (( newEndTet == edges[j].ends[0]->tet->index) &&
-                ( newEndFace == edges[j].ends[0]->face) &&
-                ( newStartTet == edges[j].ends[1]->tet->index) &&
-                ( newStartFace == edges[j].ends[1]->face)) {
-                realEdgeMap[i+1] = -(j+1);
-                realEdgeMap[ptrdiff_t(- (signed int)(i+1))] = j+1;
-                break;
-            }
+        NPerm4 perm = iso->facePerm(tet);
+
+        for (unsigned int j=0; j<6 j++) {
+            // In below code, we are getting the vertices of an internal edge,
+            // applying permutations to each vertex, then converting back to an
+            // edge.
+            // edgeNumber[                      ][                      ];
+            //            perm[                ]  perm[                ]
+            //                 edgeVertex[j][0]        edgeVertex[j][1]
+            //
+            edgeMap[6*i + j] = (6*newTet) + NEdge::edgeNumber[perm[edgeVertex[j][0]]][perm[edgeVertex[j][1]]];
         }
     }
 }
@@ -981,8 +1001,5 @@ CycleDecompSearcher::Automorphism::~Automorphism() {
 }
 
 signed int inline CycleDecompSearcher::Automorphism::operator [] (const signed int in) {
-  //signed int sign = ( in < 0 ? -1 : 1);
-  //return sign * edgeMap[ sign*in ];
-  //return realEdgeMap[(ptrdiff_t)(in)];
-  return edgeMap[in+nEdges];
+  return edgeMap[in];
 }
