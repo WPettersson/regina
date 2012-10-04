@@ -174,17 +174,15 @@ class CycleDecompSearcher {
                     /**< Constructor from regina type isomorphism. */
                 ~Automorphism();
                     /**< Destructor. */
-                signed int operator [] ( const signed int initial);
+                unsigned int operator [] ( const unsigned int initial);
                     /**< Returns the equivalent edge under the automorphism in
                      *   question. */
             private:
                 unsigned int nTets;
                     /**< Number of tetrahedra. */
-                signed int *edgeMap;
+                unsigned int *edgeMap;
                     /**< An array storing the relationship between edges.
-                     *   Note that we index this array as [nEdges + edgeNo].
                      */
-                signed int *realEdgeMap;
         };
 
         Tetrahedron *tets;
@@ -193,9 +191,16 @@ class CycleDecompSearcher {
             /**< The number of tetrahedra. */
         Edge *edges;
             /**< The edges of the face pairing graph. */
-        signed int *lastEdge;
-            /**< The last edge (including direction) to be used 
+        unsigned int *firstEdge;
+            /**< The first internal edge to be used 
              *   in each cycle. */
+        unsigned int *firstOtherFace;
+            /**< The first face to be used 
+             *   in each cycle, after using the internal edge firstEdge.
+             *   That is, follow the firstEdge throgh a tetrahedron, go out
+             *   through the face NEdge::edgeVertex[5-firstEdge][0], and follow
+             *   that new edge.  This new edge goes into face firstOtherFace on
+             *   the new tetrahedron. */
         unsigned int nEdges;
             /**< The number of edges. */
         EdgeEnd *ends;
@@ -236,14 +241,15 @@ class CycleDecompSearcher {
             /**< Checks whether the cycle indicated by colour nextColour
              *   is a valid cycle. */
 
-        bool isCanonical(unsigned int tet, unsigned int internal, 
-                signed int nextEdgeToBeUsed);
+        bool isCanonical(unsigned int tet, unsigned int internal);
             /**< Determine whether the current internal edge allocation, as
              *   defined by the parameters passed to the function, is
              *   canonical, where canonical means all prior cycles that have
              *   been completed are still the same, and for the current partial
              *   cycle, each (internal) edge selected-in-turn is as 
-             *   lexicographically small as possible. */
+             *   lexicographically small as possible. 
+             *
+             *   The parameter otherOption, if non-zero, */
 
         void  nextPath(EdgeEnd *start, unsigned int firstEdge, EdgeEnd *now);
             /**< Tries all choices for continuing a cycle from *now.
