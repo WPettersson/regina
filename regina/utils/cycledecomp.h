@@ -178,8 +178,8 @@ class CycleDecompSearcher {
                     /**< Returns the equivalent edge under the automorphism in
                      *   question. */
             private:
-                unsigned int nEdges;
-                    /**< Number of edges. */
+                unsigned int nTets;
+                    /**< Number of tetrahedra. */
                 signed int *edgeMap;
                     /**< An array storing the relationship between edges.
                      *   Note that we index this array as [nEdges + edgeNo].
