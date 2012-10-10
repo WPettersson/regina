@@ -177,12 +177,24 @@ class CycleDecompSearcher {
                 unsigned int operator [] ( const unsigned int initial);
                     /**< Returns the equivalent edge under the automorphism in
                      *   question. */
+                void tetAndInt(unsigned int *newTet, unsigned int *newInternal,
+                               unsigned int oldTet, unsigned int oldInternal);
+                    /**< As above, returns the equivalent tet/internal_edge
+                     *   pair under this automorphism. */
             private:
                 unsigned int nTets;
                     /**< Number of tetrahedra. */
                 unsigned int *edgeMap;
-                    /**< An array storing the relationship between edges.
-                     */
+                    /**< An array storing the relationship between edges.  */
+                unsigned int *newTets;
+                    /**< An array storing how tetrahedra change under this
+                     *   automorphism. */
+                unsigned int **newInts;
+                    /**< An array of arrays, storing how internal edges change
+                     *   under this  automorphism. For example, newInts[i][j]
+                     *   will return a value from 0 to 5 inclusive, telling us
+                     *   that internal edge j, of tetrahedron i, will be mapped
+                     *   to internal edge "newInts[i][j]" in some tetrahedron. */
         };
 
         Tetrahedron *tets;
