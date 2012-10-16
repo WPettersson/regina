@@ -213,6 +213,8 @@ class CycleDecompSearcher {
              *   through the face NEdge::edgeVertex[5-firstEdge][0], and follow
              *   that new edge.  This new edge goes into face firstOtherFace on
              *   the new tetrahedron. */
+        unsigned int nCycles;
+            /**< The maximum number of cycles to search for. */
         unsigned int nEdges;
             /**< The number of edges. */
         EdgeEnd *ends;
@@ -245,6 +247,8 @@ class CycleDecompSearcher {
              *   edges have been added so far. */
         bool orientable;
             /**< Whether we are searching for orientable manifolds. */
+        bool minimal_;
+            /**< Is the search only looking for minimal triangulations. */
 
         void colourOnTetrahedra(unsigned int tet);
             /**< Start colouring a cycle on tetrahedra tet. */
@@ -314,7 +318,8 @@ class CycleDecompSearcher {
          */
         CycleDecompSearcher(const regina::NFacePairing* pairing,
                 const regina::NFacePairing::IsoList* autos,
-                bool orientableOnly, UseCycles use, void* useArgs = 0);
+                bool orientableOnly, UseCycles use, void* useArgs = 0,
+                bool minimal = true);
 
 
         /**

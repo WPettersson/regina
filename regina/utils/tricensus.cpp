@@ -156,7 +156,7 @@ struct Dim3DecompParams {
             const Pairing::IsoList* autos, bool orientableOnly,
             bool finiteOnly, int whichPurge, regina::NPacket* dest) {
             CycleDecompSearcher *searcher = new CycleDecompSearcher(p, autos,
-            orientableOnly, foundCycleDecomp<Dim3DecompParams>, dest);
+            orientableOnly, foundCycleDecomp<Dim3DecompParams>, dest, true);
             searcher->runSearch();
             delete searcher;
     }
@@ -216,7 +216,7 @@ void foundGluingPerms(const typename CensusType::GluingPermSearcher* perms,
             // Put it in the census!
             if (sigs) {
                 sigStream << tri->isoSig() << std::endl;
-                std::cout << tri->isoSig() << std::endl;;
+                //std::cout << tri->isoSig() << std::endl;;
                 delete tri;
             } else {
                 regina::NPacket* dest =
@@ -259,7 +259,7 @@ void foundCycleDecomp(const typename CensusType::GluingPermSearcher* perms,
             // Put it in the census!
             if (sigs) {
                 sigStream << tri->isoSig() << std::endl;
-                std::cout << tri->isoSig();
+                //std::cout << tri->isoSig();
                 delete tri;
             } else {
                 regina::NPacket* dest =
@@ -276,7 +276,7 @@ void foundCycleDecomp(const typename CensusType::GluingPermSearcher* perms,
             // The fish that John West reject.
             delete tri;
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
     }
 }
 
