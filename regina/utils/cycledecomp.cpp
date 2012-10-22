@@ -533,63 +533,96 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
         unsigned int nextInternal) {
     unsigned int autoNo;
     bool iso;
+    signed **int cycleList[nCycles];
+    signed offset[nCycles];
+    for(unsigned int i=0; i< nCycles; i++)
+        cycleList[i] = new int[nEdges];
+
     for(autoNo=0; autoNo < nAutos; autoNo++) {
-        // Check that the first internal edge in this colour is not moved by this
-        // automorphism.
-        if ( (*automorphisms[autoNo])[firstEdge[nextColour]] != firstEdge[nextColour] )
-           continue;
-        iso = true; 
-        for(unsigned int i=0; iso && i < nTets; i++) {
-            for(unsigned int j=0; iso && j < 6; j++) {
-                unsigned int cycle = tets[i].internalEdges[j];
-                if ( cycle == 0 )
-                    continue;
-                unsigned int newiEdge;
-                unsigned int newTet;
-                (*automorphisms[autoNo]).tetAndInt(&newTet,&newiEdge,i,j);
-                unsigned int newCycle = tets[newTet].internalEdges[newiEdge];
-                if (cycle != newCycle ) {
-                    iso = false;
-                    break;
+        // Generate new cycle lists
+        for(unsigned int i=0; i<=nextColour; i++) {
+            unsigned int min = nEdges;
+            bool checkNextPair=false;
+            for(unsigned int j=0; j < cycleLengths[i]; j++) {
+                unsigned int newEdge = (*automorphisms[autoNo])[cycles[i][j]];
+                // If checkNextPair is true, that means the last edge we
+                // checked was equal-smallest.  We check this new edge against
+                // the "next" edge from the current smallest, and if we have a
+                // smaller edge, update the offset.
+                if (checkNextPair) {
+                    if (newEdge < cycleList[i][offset[i]+1]) {
+                        offset[i]=j-1;
+                    }
+                    checkNextPair=false;
                 }
-            }
-        }
-
-
-        if (! iso) {
-            continue;
-        }
-
-        // Is isomorphic so far, check the most recently added internalEdge, as
-        // given as function parameter.  First, map the edge.
-        //unsigned int newNext = (*automorphisms[autoNo])[nextInternalTotal];
-        // And if this new internal location is less than the current option,
-        // the current option is not canonical.
-        unsigned int newNextInt;
-        unsigned int newNextTet;
-        (*automorphisms[autoNo]).tetAndInt(&newNextTet,&newNextInt, nextTet, nextInternal);
-        if ((newNextTet == nextTet) && ( newNextInt < nextInternal )) {
-            // If we only have 1 edge so far, make sure this automorphism isn't
-            // more canonical simply by going "backwards" around the cycle,
-            // since we won't ever do this.
-            if ( cycleLengths[nextColour] == 1 ) {
-                // And then check that the new/better internal edge does
-                // connect to this face.
-                bool badIso = true;
-                for(unsigned int i=0; i< 3; i++ ) {
-                    if (faceEdges[firstOtherFace[nextColour]][i] == newNextInt) {
-                        badIso = false;
-                        break;
+                // New lowest edge used in this cycle.
+                if ( newEdge < min ) {
+                    min = newEdge;
+                    offset[i] = j;
+                } else {
+                    // Check to see if we have a tie.
+                    if ( newEdge == min ) {
+                        // Have to check whether the next edge is smaller or
+                        // not.  Don't forget that "next" might be previous if
+                        // the lowest edge is a -ve.
+                       
+                        if ( newEdge %2 == 1) { // current lowest is a -ve
+                            // If the current lowest is negative, we will be
+                            // flipping the signs of all edges, so don't forget
+                            // that in this comparison.
+                            if (cycleList[i][j-1] < cycleList[i][offset[i]-1]) {
+                                if ((cycleList[i][offset[i]-1] - cycleList[i][j-1] == 1) &&
+                                    (cycleList[i][j-1] % 2 == 0)) {
+                                    // The difference between the two is 1, and
+                                    // the smaller is even.  That means the
+                                    // two edges have the same absolute index,
+                                    // but the (current_offset+1) is negative.
+                                    // Thus, when swapping signs this new edge
+                                    // will be negative, so don't change
+                                    // offset.
+                                } else {
+                                    offset[i]=j;
+                                }
+                            }
+                        } else { // current lowest is positive. make a note 
+                                 // to check the next pair.
+                            checkNextPair = true;
+                        }
                     }
                 }
-                // This "better" edge attaches at a different face. We only
-                // look at edges coming out of one face at a time, so we won't
-                // reach this isomorphism.
-                if (badIso) 
-                    continue;
+                cycleList[i][j] = newEdge;
             }
+        }
+        // Sort cycleList based on values of cycleList[i][offset[i]] 
+        unsigned int order[nextColour];
+        for(unsigned int i=0; i < nextColour; i++ ) {
+            // Do some sorting!
+            
+
+        }
+
+        // Compare cycleList[order[i]][offset[i]+j mod cycleLengths[order[i]]]
+        // with cycles[i][j] for all i,j.
+
+        
+
+    }
+
+
+
+        
+          
+        if ( (*automorphisms[autoNo])[firstEdge[nextColour]] != firstEdge[nextColour] )
             return false;
         }
+    
+
+        
+        
+        // Sort cycleList
+        
+        
+        // check canonical.
     }
     return true;
 }
@@ -657,47 +690,60 @@ inline CycleDecompSearcher::EdgeEnd* CycleDecompSearcher::Edge::otherEnd(EdgeEnd
 //}
 
 CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
-        const Edge *edges, const unsigned int _nTets) {
-    nTets = _nTets;
-    edgeMap = new unsigned int[6*nTets];
-    newInts = new unsigned int*[nTets];
-    newTets = new unsigned int[nTets];
-    for (unsigned int i=0; i < nTets;i++) {
-        unsigned int newTet = iso->tetImage(i);
-        newTets[i] = newTet;
-        newInts[i] = new unsigned int[6];
-        NPerm4 perm = iso->facePerm(i);
+        const Edge *edges, const unsigned int _nEdges) : nEdges(_nEdges)  {
+    edgeMap = new signed int[2*(nEdges+1)];
+    realEdgeMap = edgeMap+nEdges;
+    for (unsigned int i=0; i < nEdges;i++) {
+        unsigned int startFace = edges[i].ends[0]->face;
+        unsigned int startTet = edges[i].ends[0]->tet->index;
+        unsigned int endFace = edges[i].ends[1]->face;
+        unsigned int endTet = edges[i].ends[1]->tet->index;
 
-        for (unsigned int j=0; j<6; j++) {
-            // In below code, we are getting the vertices of an internal edge,
-            // applying permutations to each vertex, then converting back to an
-            // edge.
-            // edgeNumber[                             ][                             ];
-            //            perm[                       ]  perm[                       ]
-            //                 NEdge::edgeVertex[j][0]        NEdge::edgeVertex[j][1]
-            //
-            unsigned int newInt = NEdge::edgeNumber[perm[NEdge::edgeVertex[j][0]]][perm[NEdge::edgeVertex[j][1]]];
-            edgeMap[6*i + j] = (6*newTet) + newInt;
-            newInts[i][j] = newInt;
+        unsigned int newStartFace = iso->facePerm(startTet)[startFace];
+        unsigned int newStartTet = iso->tetImage(startTet);
+        unsigned int newEndFace = iso->facePerm(endTet)[endFace];
+        unsigned int newEndTet = iso->tetImage(endTet);
+        
+        for(unsigned int j=0; j< nEdges;j++) {
+            if (( newStartTet == edges[j].ends[0]->tet->index) &&
+                ( newStartFace == edges[j].ends[0]->face) &&
+                ( newEndTet == edges[j].ends[1]->tet->index) &&
+                ( newEndFace == edges[j].ends[1]->face)) {
+                // Edge parity stays the same.
+                realEdgeMap[i+1] = 2*(j-1);
+                realEdgeMap[ptrdiff_t(- (signed int)(i+1))] = 2*j-1;
+                break;
+            }
+            if (( newEndTet == edges[j].ends[0]->tet->index) &&
+                ( newEndFace == edges[j].ends[0]->face) &&
+                ( newStartTet == edges[j].ends[1]->tet->index) &&
+                ( newStartFace == edges[j].ends[1]->face)) {
+                realEdgeMap[i+1] = 2*j-1;
+                realEdgeMap[ptrdiff_t(- (signed int)(i+1))] = 2*(j-1);
+                break;
+            }
         }
     }
 }
 
 CycleDecompSearcher::Automorphism::~Automorphism() {
     delete[] edgeMap;
-    for (unsigned int i=0; i < nTets;i++) 
-      delete[] newInts[i];
-    delete[] newInts;
+//    for (unsigned int i=0; i < nTets;i++) 
+//      delete[] newInts[i];
+//    delete[] newInts;
 }
 
-unsigned int inline CycleDecompSearcher::Automorphism::operator [] (const unsigned int in) {
-  return edgeMap[in];
+unsigned int inline CycleDecompSearcher::Automorphism::operator [] (const signed int in) {
+  return edgeMap[in+nEdges];
+  //return realEdgeMap[(ptr_diff_t)(in)];
 }
 
-void CycleDecompSearcher::Automorphism::tetAndInt(
-        unsigned int *newTet, unsigned int *newInternal, 
-        unsigned int oldTet, unsigned int oldInternal) {
-  *newTet = newTets[oldTet];
-  *newInternal = newInts[oldTet][oldInternal];
-  return;
-}
+//void CycleDecompSearcher::Automorphism::tetAndInt(
+//        unsigned int *newTet, unsigned int *newInternal, 
+//        unsigned int oldTet, unsigned int oldInternal) {
+//  *newTet = newTets[oldTet];
+//  *newInternal = newInts[oldTet][oldInternal];
+//  return;
+//}
+
+/* vim: set ts=4 sw=4 expandtab: */
