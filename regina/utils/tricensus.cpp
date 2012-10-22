@@ -156,7 +156,7 @@ struct Dim3DecompParams {
             const Pairing::IsoList* autos, bool orientableOnly,
             bool finiteOnly, int whichPurge, regina::NPacket* dest) {
             CycleDecompSearcher *searcher = new CycleDecompSearcher(p, autos,
-            orientableOnly, foundCycleDecomp<Dim3DecompParams>, dest, true);
+            orientableOnly, foundCycleDecomp<Dim3DecompParams>, dest, false);
             searcher->runSearch();
             delete searcher;
     }

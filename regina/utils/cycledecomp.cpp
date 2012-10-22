@@ -87,7 +87,7 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     if (minimal) 
         nCycles = nTets+1;
     else
-        nCycles = nEdges/2;
+        nCycles = 3*nEdges;
 
     for( unsigned int i=0; i < nTets; i++ ) {
         tets[i].index = i;
@@ -230,6 +230,26 @@ void CycleDecompSearcher::colourOnTetrahedra(unsigned int tet) {
     cycles[nextColour][cycleLengths[nextColour]]=dir;
     cycleLengths[nextColour]++;
 
+    // Minimal triangulations won't have degree one edges.
+    if (! minimal_ ) {
+        // Try to complete the cycle
+        if (nextEdgeEnd == start) {
+            nextEdgeEnd->map[edge] = nextEdgeEnd->edge->used;
+            if (checkColourOk()) {
+                if ( (edgesLeft == 0) &&  checkComplete()) {
+                    use_(this, useArgs_);
+                } else {
+                    // At most nCycles cycles.  Remember nextColour starts at
+                    // 1, and colourOnTetrahedra() increments it by one.
+                    if (nextColour < nCycles) {
+                        colourOnTetrahedra(findTetWithMostInternalEdgesUsed());
+                    }
+                }
+            }
+            nextEdgeEnd->map[edge] = 0;
+        }
+    }
+    // Try to find more paths.
     nextPath(start, edge, nextEdgeEnd);
     
     cycles[nextColour][cycleLengths[nextColour]]=0;
@@ -276,7 +296,6 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
     EdgeEnd *nextEnd, *outEnd;
     Edge *nextEdge;
     Tetrahedron *nextTet = now->tet;
-
     // Count the number of edges left. We are working on cycle number 
     // nextColour. We need 3 edges for each of the (nCycles - nextColour) 
     // cycles after this one. Note that this only applies if we are looking for
@@ -347,7 +366,7 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
                     if (nextColour < nCycles)
                         colourOnTetrahedra(findTetWithMostInternalEdgesUsed());
                 }
-            }
+            } 
             start->map[firstEdge] = 0;
         }
         // Try to find more paths.
@@ -464,9 +483,9 @@ NTriangulation* CycleDecompSearcher::triangulate() const {
 void CycleDecompSearcher::dumpData(std::ostream& out) const {
     //NCompactSearcher::dumpData(out);
 
-    unsigned i;
-    unsigned j;
-    for (i = 1; i < nTets+2; i++) {
+    unsigned int i;
+    unsigned int j;
+    for (i = 1; i < nCycles && cycleLengths[i] > 0; i++) {
         out << i << ": ";
         for(j = 0; j < cycleLengths[i]; j++) {
             out << cycles[i][j];
@@ -553,7 +572,6 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
             // If we only have 1 edge so far, make sure this automorphism isn't
             // more canonical simply by going "backwards" around the cycle,
             // since we won't ever do this.
-            
             if ( cycleLengths[nextColour] == 1 ) {
                 // And then check that the new/better internal edge does
                 // connect to this face.
