@@ -533,14 +533,15 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
         unsigned int nextInternal) {
     unsigned int autoNo;
     bool iso;
-    signed **int cycleList[nCycles];
+    signed *int cycleList[nextColour+1];
+    unsigned int cycleListLength[nextColour+1];
     signed offset[nCycles];
-    for(unsigned int i=0; i< nCycles; i++)
+    for(unsigned int i=0; i<=nextColour; i++)
         cycleList[i] = new int[nEdges];
 
     for(autoNo=0; autoNo < nAutos; autoNo++) {
         // Generate new cycle lists
-        for(unsigned int i=0; i<=nextColour; i++) {
+        for(unsigned int i=1; i<=nextColour; i++) {
             unsigned int min = nEdges;
             bool checkNextPair=false;
             for(unsigned int j=0; j < cycleLengths[i]; j++) {
@@ -592,41 +593,42 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
                 }
                 cycleList[i][j] = newEdge;
             }
+            cycleListLength[i] = cycleLengths[i];
         }
         // Sort cycleList based on values of cycleList[i][offset[i]] 
         unsigned int order[nextColour];
-        for(unsigned int i=0; i < nextColour; i++ ) {
+        // Reverse bubble sort order so position[0] is definitely lowest
+        // after one run through.  We can then check to see if this is more or
+        // less canonical after 1 run through.
+        for(unsigned int i=1; i <= nextColour ; i-- ) {
             // Do some sorting!
+            for(unsigned int j=nextColour; j > i; j--) {
+                // Implement proper sort ordering here.
+                if ( cycleList[j] < cycleList[j-1] ) {
+                    signed int *temp = cycleList[j];
+                    cycleList[j] = cycleList[i];
+                    cycleList[i] = temp;
+                    unsigned int temp2 = offset[j];
+                    offset[j] = offset[i];
+                    offset[i] = temp2;
+                    temp2 = cycleListLengths[i];
+                    cycleListLengths[i] = cycleListLengths[j];
+                    cycleListLengths[j] = temp2;
+                }
+
+                // Compare cycleList[order[i]][offset[i]+j mod cycleLengths[order[i]]]
+                // with cycles[i][j] for all j.
+                 
             
 
         }
 
-        // Compare cycleList[order[i]][offset[i]+j mod cycleLengths[order[i]]]
-        // with cycles[i][j] for all i,j.
-
-        
 
     }
-
-
-
-        
-          
-        if ( (*automorphisms[autoNo])[firstEdge[nextColour]] != firstEdge[nextColour] )
-            return false;
-        }
-    
-
-        
-        
-        // Sort cycleList
-        
-        
-        // check canonical.
-    }
+    for(unsigned int i=0; i<=nextColour; i++)
+        delete[] cycleList[i];
     return true;
 }
-
 
 inline void CycleDecompSearcher::Edge::colour(unsigned newColour) {
     colours[used++] = newColour;
