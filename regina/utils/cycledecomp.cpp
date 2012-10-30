@@ -537,7 +537,7 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
     unsigned int cycleListLength[nextColour+1];
     signed offset[nCycles];
     for(unsigned int i=0; i<=nextColour; i++)
-        cycleList[i] = new int[nEdges];
+        cycleList[i] = new int[cycleLengths[i]]; 
 
     for(autoNo=0; autoNo < nAutos; autoNo++) {
         // Generate new cycle lists
@@ -545,7 +545,10 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
             unsigned int min = nEdges;
             bool checkNextPair=false;
             for(unsigned int j=0; j < cycleLengths[i]; j++) {
-                unsigned int newEdge = (*automorphisms[autoNo])[cycles[i][j]];
+                signed int newEdge = 2*(*automorphisms[autoNo])[cycles[i][j]];
+                if (newEdge < 0) {
+                    newEdge = (-newEdge) + 1;
+                }
                 // If checkNextPair is true, that means the last edge we
                 // checked was equal-smallest.  We check this new edge against
                 // the "next" edge from the current smallest, and if we have a
@@ -616,9 +619,9 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
                     cycleListLengths[j] = temp2;
                 }
 
-                // Compare cycleList[order[i]][offset[i]+j mod cycleLengths[order[i]]]
+                // Compare cycleList[order[i]][offset[i]+j mod cycleListLengths[i]]
                 // with cycles[i][j] for all j.
-                 
+            }    
             
 
         }
@@ -629,6 +632,55 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
         delete[] cycleList[i];
     return true;
 }
+// Check to see which of two cycles is more canonical.  Return values are
+//  0 if A < B
+//  1 if B > A
+//  2 if A == B
+unsigned int CycleDecompSearcher::compareCycles(signed int cycleListA, 
+        signed int cycleListB, unsigned int lengthA, unsigned int lengthB) {
+    unsigned int maxLenth = lengthA < lengthB ? lengthA : lengthB;
+    unsigned int counterA=offsetA;, counterB=offsetB;
+    for(unsigned int i=0 ; i < maxLength; i++) {
+        // Find next edges
+        signed int edgeA = cycleListA[counterA];
+        signed int edgeB = cycleListB[counterB];
+
+        // Compare edges
+        if (edgeA < edgeB)
+            return 0;
+        if (edgeB < edgeA)
+            return 1;
+
+        // Move counters along.  Note that we have to check whether the first
+        // edge is positive or negative.
+        if (cycleListA[offsetA] %2 == 1) { // Negative
+            if ( --counterA == 0) {
+                counterA = lengthA;
+            }
+        } else {
+            if ( ++counterA == lengthA ) {
+                counterA = 0;
+            }
+        }
+        if (cycleListB[offsetB] %2 == 1) { // Negative
+            if ( --counterB == 0) {
+                counterB = lengthB;
+            }
+        } else {
+            if ( ++counterB == lengthB ) {
+                counterB = 0;
+            }
+        }
+    }
+    // So far all edges are the same.  shorter cycles are "more" canonical.
+    if (lengthA < lengthB)
+        return 0;
+    if (lengthB < lengthA)
+        return 1;
+    // All edges the same, lengths the same.  Same cycles.
+    return 2; 
+}
+
 
 inline void CycleDecompSearcher::Edge::colour(unsigned newColour) {
     colours[used++] = newColour;
