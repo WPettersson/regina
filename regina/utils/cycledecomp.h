@@ -174,7 +174,7 @@ class CycleDecompSearcher {
                     /**< Constructor from regina type isomorphism. */
                 ~Automorphism();
                     /**< Destructor. */
-                unsigned int operator [] ( const unsigned int initial);
+                signed int operator [] ( const signed int initial);
                     /**< Returns the equivalent edge under the automorphism in
                      *   question. */
                 void tetAndInt(unsigned int *newTet, unsigned int *newInternal,
@@ -185,7 +185,17 @@ class CycleDecompSearcher {
                 unsigned int nEdges;
                     /**< Number of edges. */
                 signed int *edgeMap;
-                    /**< An array storing the relationship between edges.  */
+                    /**< An array storing the relationship between edges.  
+                     *   These are stored such that for edge e,
+                     *   edgeMap[nEdge + e] gives the mapping.
+                     *   That is, negative edge mappings are stored in the
+                     *   range edgeMap[0] .. edgeMap[nEdge-1] and positive edge
+                     *   mappings are stored in the range edgeMap[nEdge+1] ..
+                     *   edgeMap[2*nEdge].*/
+                signed int *realEdgeMap;
+                    /**< An array storing the relationship between edges. 
+                     *   This is simply a pointer to edgeMap[nEdge] so pointer
+                     *   arithmetic is simpler when accessing mappings. */
                 //unsigned int *newTets;
                     /**< An array storing how tetrahedra change under this
                      *   automorphism. */
@@ -279,6 +289,14 @@ class CycleDecompSearcher {
         unsigned int findTetWithMostInternalEdgesUsed();
             /**< Finds the tetrahedra with the most used internal edges. */
 
+        unsigned int compareCycles(signed int *cycleListA, signed int *cycleListB, 
+                unsigned int lengthA, unsigned int lengthB,
+                unsigned int offsetA, unsigned int offsetB); 
+            /**< Check to see which of two cycles is more canonical.  Return values are
+             *   0 if A < B
+             *   1 if B > A
+             *   2 if A == B
+             *   */
     public:
         static const char dataTag_;
             /**< A character used to identify this class when reading

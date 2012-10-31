@@ -532,14 +532,18 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
 bool CycleDecompSearcher::isCanonical(unsigned int nextTet, 
         unsigned int nextInternal) {
     unsigned int autoNo;
-    bool iso;
-    signed *int cycleList[nextColour+1];
-    unsigned int cycleListLength[nextColour+1];
+    bool thisAuto;
+    signed int *cycleList[nextColour+1];
+    unsigned int cycleListLengths[nextColour+1];
     signed offset[nCycles];
     for(unsigned int i=0; i<=nextColour; i++)
         cycleList[i] = new int[cycleLengths[i]]; 
-
+    
     for(autoNo=0; autoNo < nAutos; autoNo++) {
+        // As long as thisAuto is true, we keep looking at this automorphism.
+        // If it becomes false, it means that this automorphism results in a
+        // less canonical representation.
+        thisAuto=true;
         // Generate new cycle lists
         for(unsigned int i=1; i<=nextColour; i++) {
             unsigned int min = nEdges;
@@ -560,12 +564,14 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
                     checkNextPair=false;
                 }
                 // New lowest edge used in this cycle.
-                if ( newEdge < min ) {
+                if ( newEdge < min ) { // GCC throws a warning about 
+                                       // unsigned vs signed comparisons. This
+                                       // is ok since we force newEdge > 0.
                     min = newEdge;
                     offset[i] = j;
                 } else {
                     // Check to see if we have a tie.
-                    if ( newEdge == min ) {
+                    if ( newEdge == min ) { // See above for GCC warning.
                         // Have to check whether the next edge is smaller or
                         // not.  Don't forget that "next" might be previous if
                         // the lowest edge is a -ve.
@@ -596,18 +602,20 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
                 }
                 cycleList[i][j] = newEdge;
             }
-            cycleListLength[i] = cycleLengths[i];
+            cycleListLengths[i] = cycleLengths[i];
         }
         // Sort cycleList based on values of cycleList[i][offset[i]] 
-        unsigned int order[nextColour];
+        
         // Reverse bubble sort order so position[0] is definitely lowest
         // after one run through.  We can then check to see if this is more or
         // less canonical after 1 run through.
-        for(unsigned int i=1; i <= nextColour ; i-- ) {
+        for(unsigned int i=1; thisAuto && i <= nextColour ; i-- ) {
             // Do some sorting!
             for(unsigned int j=nextColour; j > i; j--) {
                 // Implement proper sort ordering here.
-                if ( cycleList[j] < cycleList[j-1] ) {
+                if ( compareCycles(cycleList[j],        cycleList[j-1],
+                                   cycleListLengths[j], cycleListLengths[j-1],
+                                   offset[j],           offset[j-1]) == 0) {
                     signed int *temp = cycleList[j];
                     cycleList[j] = cycleList[i];
                     cycleList[i] = temp;
@@ -619,14 +627,48 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
                     cycleListLengths[j] = temp2;
                 }
 
-                // Compare cycleList[order[i]][offset[i]+j mod cycleListLengths[i]]
-                // with cycles[i][j] for all j.
-            }    
-            
+            }
+            unsigned int counterA=offset[i];
+            unsigned int maxLength = cycleLengths[i] < cycleListLengths[i] ? cycleLengths[i] : cycleListLengths[i];
+            for(unsigned int j=0; j < maxLength; j++) {
+                signed int e = 2*cycles[i][j];
+                if (e < 0) {
+                    e = (-e)+1;
+                }
+                // the automorphism gives a more canonical representation
+                if (e > cycleList[i][counterA]) {
+                    for(unsigned int i=0; i<=nextColour; i++)
+                        delete[] cycleList[i];
+                    return false;
+                }
+                // this automorphism is definitely worse, so go to next.
+                if (e < cycleList[i][counterA]) {
+                    thisAuto=false;
+                    break;
+                }
 
+                // Increment counter in appropriate direction.
+                if (cycleList[i][offset[i]] %2 == 1) { // Negative
+                    if ( --counterA == 0) {
+                        counterA = cycleListLengths[i];
+                    }
+                } else {
+                    if ( ++counterA == cycleListLengths[i] ) {
+                        counterA = 0;
+                    }
+                }
+            }
+            // Check cycle lengths, shorter cycles are more canonical
+
+            if ( cycleLengths[i] < cycleListLengths[i] ) {
+                thisAuto=false;
+            }
+            if ( cycleListLengths[i] < cycleLengths[i] ) {
+                for(unsigned int i=0; i<=nextColour; i++)
+                    delete[] cycleList[i];
+                return false;
+            }
         }
-
-
     }
     for(unsigned int i=0; i<=nextColour; i++)
         delete[] cycleList[i];
@@ -636,10 +678,12 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
 //  0 if A < B
 //  1 if B > A
 //  2 if A == B
-unsigned int CycleDecompSearcher::compareCycles(signed int cycleListA, 
-        signed int cycleListB, unsigned int lengthA, unsigned int lengthB) {
-    unsigned int maxLenth = lengthA < lengthB ? lengthA : lengthB;
-    unsigned int counterA=offsetA;, counterB=offsetB;
+unsigned int CycleDecompSearcher::compareCycles(signed int *cycleListA, 
+        signed int *cycleListB, unsigned int lengthA, unsigned int lengthB,
+        unsigned int offsetA, unsigned int offsetB) {
+    unsigned int maxLength = lengthA < lengthB ? lengthA : lengthB;
+    unsigned int counterA=offsetA;
+    unsigned int counterB=offsetB;
     for(unsigned int i=0 ; i < maxLength; i++) {
         // Find next edges
         signed int edgeA = cycleListA[counterA];
@@ -765,7 +809,7 @@ CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
                 ( newEndFace == edges[j].ends[1]->face)) {
                 // Edge parity stays the same.
                 realEdgeMap[i+1] = 2*(j-1);
-                realEdgeMap[ptrdiff_t(- (signed int)(i+1))] = 2*j-1;
+                realEdgeMap[std::ptrdiff_t(- (signed int)(i+1))] = 2*j-1;
                 break;
             }
             if (( newEndTet == edges[j].ends[0]->tet->index) &&
@@ -773,7 +817,7 @@ CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
                 ( newStartTet == edges[j].ends[1]->tet->index) &&
                 ( newStartFace == edges[j].ends[1]->face)) {
                 realEdgeMap[i+1] = 2*j-1;
-                realEdgeMap[ptrdiff_t(- (signed int)(i+1))] = 2*(j-1);
+                realEdgeMap[std::ptrdiff_t(- (signed int)(i+1))] = 2*(j-1);
                 break;
             }
         }
@@ -787,7 +831,7 @@ CycleDecompSearcher::Automorphism::~Automorphism() {
 //    delete[] newInts;
 }
 
-unsigned int inline CycleDecompSearcher::Automorphism::operator [] (const signed int in) {
+signed int inline CycleDecompSearcher::Automorphism::operator [] (const signed int in) {
   return edgeMap[in+nEdges];
   //return realEdgeMap[(ptr_diff_t)(in)];
 }
