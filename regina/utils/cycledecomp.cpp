@@ -547,6 +547,7 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
         // Generate new cycle lists
         for(unsigned int i=1; i<=nextColour; i++) {
             unsigned int min = nEdges;
+            offset[i]=0;
             bool checkNextPair=false;
             for(unsigned int j=0; j < cycleLengths[i]; j++) {
                 signed int newEdge = 2*(*automorphisms[autoNo])[cycles[i][j]];
@@ -832,8 +833,8 @@ CycleDecompSearcher::Automorphism::~Automorphism() {
 }
 
 signed int inline CycleDecompSearcher::Automorphism::operator [] (const signed int in) {
-  return edgeMap[in+nEdges];
-  //return realEdgeMap[(ptr_diff_t)(in)];
+  //return edgeMap[in+nEdges];
+  return realEdgeMap[(std::ptrdiff_t)(in)];
 }
 
 //void CycleDecompSearcher::Automorphism::tetAndInt(
