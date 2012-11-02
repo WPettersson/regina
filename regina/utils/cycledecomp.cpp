@@ -107,9 +107,6 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
         cycles[i] = new signed int[3*nEdges];
     }
     
-    // Need to keep a track of what edge is to be used last in each cycle.
-    firstEdge = new unsigned int[nCycles+1];
-    firstOtherFace = new unsigned int[nCycles+1];
 
     bool* orderAssigned = new bool[nTets * 4];
         /* Have we placed a tetrahedron face or its partner in the
@@ -162,7 +159,7 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
         automorphisms = new Automorphism*[autos->size()];
         for( NFacePairing::IsoList::const_iterator it = autos->begin();
                 it != autos->end(); it++) {
-            automorphisms[nAutos] = new Automorphism( (*it),edges,nTets);
+            automorphisms[nAutos] = new Automorphism( (*it),edges,nEdges);
             nAutos++;
         }
     } else {
@@ -186,80 +183,76 @@ CycleDecompSearcher::~CycleDecompSearcher() {
     delete[] firstEdge;
 }
 
-void CycleDecompSearcher::colourOnTetrahedra(unsigned int tet) {
+void CycleDecompSearcher::colourLowestEdge() {
     unsigned int edge;
-    // Note empty for loop to find first unused internal edge.
-    for (edge=0; tets[tet].internalEdges[edge] != 0; edge++) 
-        assert(edge<=6);
+    // Note empty for loop to find first edge with space.
+    for (edge=0; edges[edge].used == 3; edge++) 
+        assert(edge<=nEdges);
+    Edge *nextEdge = &edges[edge];
+    unsigned int tet = nextEdge->ends[0]->tet->index;
 
     nextColour++;
+    // Try each unused internal edge to start this cycle.
+    for(unsigned int i=0; i < 3; i++) {
+        unsigned int iEdge = faceEdges[nextEdge->ends[0]->face][i];
+        if (tets[tet].internalEdges[iEdge] != 0)
+            continue;
 
-    assert(cycleLengths[nextColour] == 0);
+        assert(cycleLengths[nextColour] == 0);
 
-    tets[tet].internalEdges[edge] = nextColour;
-    tets[tet].used++;
-    unsigned int startFace = NEdge::edgeVertex[5-edge][0];
-    EdgeEnd *start = tets[tet].externalEdgeEnd[startFace];
-    
-    // Store the first edge used (needed for automorphisms).
-    firstEdge[nextColour] = 6*tet+edge;
-
-    unsigned int outFace = NEdge::edgeVertex[5-edge][1];
-    EdgeEnd *outEdgeEnd = tets[tet].externalEdgeEnd[outFace];
-    Edge *nextEdge = outEdgeEnd->edge;
-    nextEdge->colour(nextColour);
-    outEdgeEnd->map[edge] = nextEdge->used;
-    edgesLeft--;
-    EdgeEnd *nextEdgeEnd = nextEdge->otherEnd(outEdgeEnd);
-    
-    firstOtherFace[nextColour] = nextEdgeEnd->face;
+        tets[tet].internalEdges[iEdge] = nextColour;
+        tets[tet].used++;
+        unsigned int startFace = NEdge::edgeVertex[5-iEdge][0];
+        EdgeEnd *start = tets[tet].externalEdgeEnd[startFace];
+        if ( start == nextEdge->ends[0] ) {
+            startFace = NEdge::edgeVertex[5-iEdge][1];
+            start = tets[tet].externalEdgeEnd[startFace];
+        }
 
 
-    // An edge has two ends, ends[0] and ends[1]
-    // A "forward" direction along an edge is from ends[0] to ends[1]
-    // and "backwards" is the reverse. Forwards is denoted by a positive
-    // edge number and backwards by a negative edge number.
-    //
-    // If outEdgeEnd == ends[1] that means we're using the edge 
-    // ends[1] -> ends[0]
-    signed int dir = nextEdge->index;
-    if (outEdgeEnd == (nextEdge->ends[1]) ) 
-        dir = -1* nextEdge->index;
-    
-    
-    cycles[nextColour][cycleLengths[nextColour]]=dir;
-    cycleLengths[nextColour]++;
+        nextEdge->colour(nextColour);
+        nextEdge->ends[0]->map[iEdge] = nextEdge->used;
+        edgesLeft--;
+        EdgeEnd *nextEdgeEnd = nextEdge->ends[1];
+        
 
-    // Minimal triangulations won't have degree one edges.
-    if (! minimal_ ) {
-        // Try to complete the cycle
-        if (nextEdgeEnd == start) {
-            nextEdgeEnd->map[edge] = nextEdgeEnd->edge->used;
-            if (checkColourOk()) {
-                if ( (edgesLeft == 0) &&  checkComplete()) {
-                    use_(this, useArgs_);
-                } else {
-                    // At most nCycles cycles.  Remember nextColour starts at
-                    // 1, and colourOnTetrahedra() increments it by one.
-                    if (nextColour < nCycles) {
-                        colourOnTetrahedra(findTetWithMostInternalEdgesUsed());
+        signed int dir = nextEdge->index;
+        
+        
+        cycles[nextColour][cycleLengths[nextColour]]=dir;
+        cycleLengths[nextColour]++;
+
+        // Minimal triangulations won't have degree one edges.
+        if (! minimal_ ) {
+            // Try to complete the cycle
+            if (nextEdgeEnd == start) {
+                nextEdgeEnd->map[iEdge] = nextEdgeEnd->edge->used;
+                if (checkColourOk() && isCanonical()) {
+                    if ( (edgesLeft == 0) &&  checkComplete()) {
+                        use_(this, useArgs_);
+                    } else {
+                        // At most nCycles cycles.  Remember nextColour starts at
+                        // 1, and colourOnLowestEdge() increments it by one.
+                        if (nextColour < nCycles) {
+                            colourLowestEdge();
+                        }
                     }
                 }
+                nextEdgeEnd->map[iEdge] = 0;
             }
-            nextEdgeEnd->map[edge] = 0;
         }
+        // Try to find more paths.
+        nextPath(start, iEdge, nextEdgeEnd);
+        
+        cycles[nextColour][cycleLengths[nextColour]]=0;
+        cycleLengths[nextColour]--;
+        
+        edgesLeft++;
+        nextEdge->ends[0]->map[iEdge] = 0;
+        nextEdge->unColour(); 
+        tets[tet].used--;
+        tets[tet].internalEdges[iEdge] = 0;
     }
-    // Try to find more paths.
-    nextPath(start, edge, nextEdgeEnd);
-    
-    cycles[nextColour][cycleLengths[nextColour]]=0;
-    cycleLengths[nextColour]--;
-    
-    edgesLeft++;
-    outEdgeEnd->map[edge] = 0;
-    nextEdge->unColour(); 
-    tets[tet].used--;
-    tets[tet].internalEdges[edge] = 0;
     nextColour--;
 }
 
@@ -338,9 +331,9 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
                 continue;
         }
         
-        if ((nextColour == 1) && (! isCanonical(nextTet->index, nextInternal) )) {
-            continue;
-        }
+        //if ((nextColour == 1) && (! isCanonical(nextTet->index, nextInternal) )) {
+        //    continue;
+        //}
         
         
         assert(cycleLengths[nextColour] < 3*nEdges);
@@ -357,14 +350,14 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         // Try to complete the cycle
         if (nextEnd == start) {
             start->map[firstEdge] = start->edge->used;
-            if (checkColourOk()) {
-                if ( (edgesLeft == 0) &&  checkComplete()) {
+            if (checkColourOk() && isCanonical()) {
+                if ( (edgesLeft == 0) && checkComplete()) {
                     use_(this, useArgs_);
                 } else {
                     // At most nCycles cycles.  Remember nextColour starts at
-                    // 1, and colourOnTetrahedra() increments it by one.
+                    // 1, and colourOnLowestEdge() increments it by one.
                     if (nextColour < nCycles)
-                        colourOnTetrahedra(findTetWithMostInternalEdgesUsed());
+                        colourLowestEdge();
                 }
             } 
             start->map[firstEdge] = 0;
@@ -428,8 +421,7 @@ void CycleDecompSearcher::runSearch(long maxDepth) {
     }
 
 
-    unsigned tet = findTetWithMostInternalEdgesUsed();
-    colourOnTetrahedra(tet);
+    colourLowestEdge();
     use_(0, useArgs_);
 }
 
@@ -529,15 +521,22 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
     //}
 }
 
-bool CycleDecompSearcher::isCanonical(unsigned int nextTet, 
-        unsigned int nextInternal) {
+bool CycleDecompSearcher::isCanonical() {
     unsigned int autoNo;
     bool thisAuto;
     signed int *cycleList[nextColour+1];
     unsigned int cycleListLengths[nextColour+1];
     signed offset[nCycles];
-    for(unsigned int i=0; i<=nextColour; i++)
+    for(unsigned int i=1; i<=nextColour; i++)
         cycleList[i] = new int[cycleLengths[i]]; 
+    //std::cout << "Checking" << std::endl;
+    //for(unsigned int k=1; k<=nextColour; k++) {
+    //    for(unsigned int l=0; l < cycleLengths[k]; l++) {
+    //        std::cout << cycles[k][l] << " ";
+    //    }
+    //    std::cout << std::endl;
+    //}
+    //std::cout << "---" << std::endl;
     
     for(autoNo=0; autoNo < nAutos; autoNo++) {
         // As long as thisAuto is true, we keep looking at this automorphism.
@@ -610,10 +609,9 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
         // Reverse bubble sort order so position[0] is definitely lowest
         // after one run through.  We can then check to see if this is more or
         // less canonical after 1 run through.
-        for(unsigned int i=1; thisAuto && i <= nextColour ; i-- ) {
+        for(unsigned int i=1; thisAuto && i <= nextColour ; i++ ) {
             // Do some sorting!
             for(unsigned int j=nextColour; j > i; j--) {
-                // Implement proper sort ordering here.
                 if ( compareCycles(cycleList[j],        cycleList[j-1],
                                    cycleListLengths[j], cycleListLengths[j-1],
                                    offset[j],           offset[j-1]) == 0) {
@@ -638,8 +636,29 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
                 }
                 // the automorphism gives a more canonical representation
                 if (e > cycleList[i][counterA]) {
-                    for(unsigned int i=0; i<=nextColour; i++)
-                        delete[] cycleList[i];
+                    //std::cout << " bigger on " << j << std::endl;
+                    //for(unsigned int k=1; k<=nextColour; k++) {
+                    //    for(unsigned int l=0; l < cycleListLengths[k]; l++) {
+                    //        signed int val;
+                    //        if ( l == offset[k] ) {
+                    //            std::cout << "(";
+                    //        }
+                    //        if (cycleList[k][l] % 2 == 1) {
+                    //            val = - ( cycleList[k][l]-1)/2;
+                    //        } else {
+                    //            val = cycleList[k][l]/2;
+                    //        }
+                    //        std::cout << val;
+                    //        if ( l == offset[k] ) {
+                    //            std::cout << ")";
+                    //        }
+                    //        std::cout << " ";
+                    //    }
+                    //    std::cout << std::endl;
+                    //}
+                    //std::cout << "---" << std::endl;
+                    for(unsigned int k=1; k<=nextColour; k++)
+                        delete[] cycleList[k];
                     return false;
                 }
                 // this automorphism is definitely worse, so go to next.
@@ -650,11 +669,14 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
 
                 // Increment counter in appropriate direction.
                 if (cycleList[i][offset[i]] %2 == 1) { // Negative
-                    if ( --counterA == 0) {
-                        counterA = cycleListLengths[i];
+                    if ( counterA == 0) {
+                        counterA = cycleListLengths[i]-1;
+                    } else {
+                        counterA--;
                     }
                 } else {
-                    if ( ++counterA == cycleListLengths[i] ) {
+                    counterA++;
+                    if ( counterA == cycleListLengths[i] ) {
                         counterA = 0;
                     }
                 }
@@ -664,14 +686,35 @@ bool CycleDecompSearcher::isCanonical(unsigned int nextTet,
             if ( cycleLengths[i] < cycleListLengths[i] ) {
                 thisAuto=false;
             }
-            if ( cycleListLengths[i] < cycleLengths[i] ) {
-                for(unsigned int i=0; i<=nextColour; i++)
-                    delete[] cycleList[i];
+            if ( thisAuto && ( cycleListLengths[i] < cycleLengths[i] )) {
+                //std::cout << "Beaten by length at cycle " << i << std::endl;
+                //for(unsigned int k=1; k<=nextColour; k++) {
+                //    for(unsigned int l=0; l < cycleListLengths[k]; l++) {
+                //        signed int val;
+                //        if ( l == offset[k] ) {
+                //            std::cout << "(";
+                //        }
+                //        if (cycleList[k][l] % 2 == 1) {
+                //            val = - ( cycleList[k][l]-1)/2;
+                //        } else {
+                //            val = cycleList[k][l]/2;
+                //        }
+                //        std::cout << val;
+                //        if ( l == offset[k] ) {
+                //            std::cout << ")";
+                //        }
+                //        std::cout << " ";
+                //    }
+                //    std::cout << std::endl;
+                //}
+                //std::cout << "---" << std::endl;
+                for(unsigned int k=1; k<=nextColour; k++)
+                    delete[] cycleList[k];
                 return false;
             }
         }
     }
-    for(unsigned int i=0; i<=nextColour; i++)
+    for(unsigned int i=1; i<=nextColour; i++)
         delete[] cycleList[i];
     return true;
 }
@@ -699,20 +742,26 @@ unsigned int CycleDecompSearcher::compareCycles(signed int *cycleListA,
         // Move counters along.  Note that we have to check whether the first
         // edge is positive or negative.
         if (cycleListA[offsetA] %2 == 1) { // Negative
-            if ( --counterA == 0) {
-                counterA = lengthA;
+            if ( counterA == 0) {
+                counterA = lengthA-1;
+            } else {
+                counterA--;
             }
         } else {
-            if ( ++counterA == lengthA ) {
+            counterA++;
+            if ( counterA == lengthA ) {
                 counterA = 0;
             }
         }
         if (cycleListB[offsetB] %2 == 1) { // Negative
-            if ( --counterB == 0) {
-                counterB = lengthB;
+            if ( counterB == 0) {
+                counterB = lengthB-1;
+            } else {
+                counterB--;
             }
         } else {
-            if ( ++counterB == lengthB ) {
+            counterB++;
+            if ( counterB == lengthB ) {
                 counterB = 0;
             }
         }
@@ -802,23 +851,25 @@ CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
         unsigned int newStartTet = iso->tetImage(startTet);
         unsigned int newEndFace = iso->facePerm(endTet)[endFace];
         unsigned int newEndTet = iso->tetImage(endTet);
-        
+        signed int iIndex = edges[i].index; 
         for(unsigned int j=0; j< nEdges;j++) {
             if (( newStartTet == edges[j].ends[0]->tet->index) &&
                 ( newStartFace == edges[j].ends[0]->face) &&
                 ( newEndTet == edges[j].ends[1]->tet->index) &&
                 ( newEndFace == edges[j].ends[1]->face)) {
                 // Edge parity stays the same.
-                realEdgeMap[i+1] = 2*(j-1);
-                realEdgeMap[std::ptrdiff_t(- (signed int)(i+1))] = 2*j-1;
+                signed int jIndex = edges[j].index;
+                realEdgeMap[iIndex] = jIndex;
+                realEdgeMap[std::ptrdiff_t(-iIndex)] = -jIndex;
                 break;
             }
             if (( newEndTet == edges[j].ends[0]->tet->index) &&
                 ( newEndFace == edges[j].ends[0]->face) &&
                 ( newStartTet == edges[j].ends[1]->tet->index) &&
                 ( newStartFace == edges[j].ends[1]->face)) {
-                realEdgeMap[i+1] = 2*j-1;
-                realEdgeMap[std::ptrdiff_t(- (signed int)(i+1))] = 2*(j-1);
+                signed int jIndex = edges[j].index;
+                realEdgeMap[iIndex] = -jIndex;
+                realEdgeMap[std::ptrdiff_t(-iIndex)] = jIndex;
                 break;
             }
         }

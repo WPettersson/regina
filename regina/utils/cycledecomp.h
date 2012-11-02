@@ -260,21 +260,15 @@ class CycleDecompSearcher {
         bool minimal_;
             /**< Is the search only looking for minimal triangulations. */
 
-        void colourOnTetrahedra(unsigned int tet);
-            /**< Start colouring a cycle on tetrahedra tet. */
+        void colourLowestEdge();
+            /**< Start colouring a cycle on the lowest edge. */
        
         bool checkColourOk();
             /**< Checks whether the cycle indicated by colour nextColour
              *   is a valid cycle. */
 
-        bool isCanonical(unsigned int tet, unsigned int internal);
+        bool isCanonical();
             /**< Determine whether the current internal edge allocation, as
-             *   defined by the parameters passed to the function, is
-             *   canonical, where canonical means all prior cycles that have
-             *   been completed are still the same, and for the current partial
-             *   cycle, each (internal) edge selected-in-turn is as 
-             *   lexicographically small as possible. 
-             *
              *   The parameter otherOption, if non-zero, */
 
         void  nextPath(EdgeEnd *start, unsigned int firstEdge, EdgeEnd *now);
