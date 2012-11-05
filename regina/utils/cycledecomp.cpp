@@ -527,8 +527,10 @@ bool CycleDecompSearcher::isCanonical() {
     signed int *cycleList[nextColour+1];
     unsigned int cycleListLengths[nextColour+1];
     signed offset[nCycles];
-    for(unsigned int i=1; i<=nextColour; i++)
-        cycleList[i] = new int[cycleLengths[i]]; 
+    for(unsigned int i=1; i<=nextColour; i++) {
+        cycleList[i] = new int[cycleLengths[i]];
+        std::cout << "cycleList["<<i<<"] has size " << cycleLengths[i] << std::endl;
+    }
     //std::cout << "Checking" << std::endl;
     //for(unsigned int k=1; k<=nextColour; k++) {
     //    for(unsigned int l=0; l < cycleLengths[k]; l++) {
@@ -564,19 +566,17 @@ bool CycleDecompSearcher::isCanonical() {
                     checkNextPair=false;
                 }
                 // New lowest edge used in this cycle.
-                if ( newEdge < min ) { // GCC throws a warning about 
-                                       // unsigned vs signed comparisons. This
-                                       // is ok since we force newEdge > 0.
+                if ( (unsigned int)newEdge < min ) { 
                     min = newEdge;
                     offset[i] = j;
                 } else {
                     // Check to see if we have a tie.
-                    if ( newEdge == min ) { // See above for GCC warning.
+                    if ( (unsigned int)newEdge == min ) { 
                         // Have to check whether the next edge is smaller or
                         // not.  Don't forget that "next" might be previous if
                         // the lowest edge is a -ve.
                        
-                        if ( newEdge %2 == 1) { // current lowest is a -ve
+                        if ( newEdge %2 == 1) { // lowest edge is a -ve
                             // If the current lowest is negative, we will be
                             // flipping the signs of all edges, so don't forget
                             // that in this comparison.
@@ -594,12 +594,27 @@ bool CycleDecompSearcher::isCanonical() {
                                     offset[i]=j;
                                 }
                             }
-                        } else { // current lowest is positive. make a note 
+                        } else { // lowest edge is positive. 
+                            if ( j == (cycleLengths[i]-1) ) {
+                                if ( cycleList[i][offset[i]+1] < cycleList[i][0] ) {
+
+                                 // make a note 
                                  // to check the next pair.
+                                 }
+                            } else {
                             checkNextPair = true;
+                            }
+                        }
+                    } else {
+                        // This check here is for when the current "lowest edge in
+                        // the cycle" is positive, but the edge we're checking now
+                        // is negative but has same absolute value.
+                        if ( ((unsigned int)newEdge == (min+1)) && (min%2 == 1))  {
+                            
                         }
                     }
                 }
+                std::cout << "Writing at cycleList["<<i<<","<<j<<"]"<<std::endl;
                 cycleList[i][j] = newEdge;
             }
             cycleListLengths[i] = cycleLengths[i];
@@ -615,7 +630,8 @@ bool CycleDecompSearcher::isCanonical() {
                 if ( compareCycles(cycleList[j],        cycleList[j-1],
                                    cycleListLengths[j], cycleListLengths[j-1],
                                    offset[j],           offset[j-1]) == 0) {
-                    signed int *temp = cycleList[j];
+                    signed int *temp;
+                    temp = cycleList[j];
                     cycleList[j] = cycleList[i];
                     cycleList[i] = temp;
                     unsigned int temp2 = offset[j];
