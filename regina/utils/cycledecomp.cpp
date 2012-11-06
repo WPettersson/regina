@@ -524,11 +524,11 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
 bool CycleDecompSearcher::isCanonical() {
     unsigned int autoNo;
     bool thisAuto;
-    signed int *cycleList[nextColour+1];
+    unsigned int *cycleList[nextColour+1];
     unsigned int cycleListLengths[nextColour+1];
-    signed offset[nCycles];
+    unsigned int offset[nCycles];
     for(unsigned int i=1; i<=nextColour; i++) {
-        cycleList[i] = new int[cycleLengths[i]];
+        cycleList[i] = new unsigned int[cycleLengths[i]];
         std::cout << "cycleList["<<i<<"] has size " << cycleLengths[i] << std::endl;
     }
     //std::cout << "Checking" << std::endl;
@@ -549,29 +549,67 @@ bool CycleDecompSearcher::isCanonical() {
         for(unsigned int i=1; i<=nextColour; i++) {
             unsigned int min = nEdges;
             offset[i]=0;
+            // offset[i] is going to hold the current "starting" place for the
+            // cycle.
+
+            unsigned int nextEdge;
+            // nextEdge will store the "second" edge in the cycle, if offset[i]
+            // is the first edge.  Note that the "second" edge may be the one
+            // before the first edge, if the first edge is negative (since
+            // swapping signs also reverses direction).
+
             bool checkNextPair=false;
-            for(unsigned int j=0; j < cycleLengths[i]; j++) {
-                signed int newEdge = 2*(*automorphisms[autoNo])[cycles[i][j]];
-                if (newEdge < 0) {
-                    newEdge = (-newEdge) + 1;
+            bool setNextEdge=false;
+            for(unsigned int j=1; j < cycleLengths[i]; j++) {
+                signed int tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][j]];
+                if (tempNewEdge < 0) {
+                    tempNewEdge = (-tempNewEdge) + 1;
                 }
+                unsigned int newEdge = (unsigned int)tempNewEdge;
+                // Initialise the "nextEdge" variable.
+                if ( j==1 ) {
+                    nextEdge = newEdge;
+                }
+
                 // If checkNextPair is true, that means the last edge we
                 // checked was equal-smallest.  We check this new edge against
                 // the "next" edge from the current smallest, and if we have a
                 // smaller edge, update the offset.
                 if (checkNextPair) {
-                    if (newEdge < cycleList[i][offset[i]+1]) {
+                    if (newEdge < nextEdge) {
                         offset[i]=j-1;
+                        nextEdge = newEdge;
                     }
                     checkNextPair=false;
                 }
+                // If setNextEdge is true, that means we reset the offset in
+                // the last iteration through, so we need to update what the
+                // "next" edge after the offset is.
+                if (setNextEdge) {
+                    nextEdge = newEdge;
+                    setNextEdge = false;
+                }
                 // New lowest edge used in this cycle.
-                if ( (unsigned int)newEdge < min ) { 
+                if ( newEdge < min ) { 
                     min = newEdge;
                     offset[i] = j;
+                    if (min%2 ==1) {
+                        // Negative
+                            
+                        // If i%2 == 0, then 1 - 2*(i%2) == 1 
+                        // If i%2 == 1, then 1 - 2*(i%2) == -1
+                        //
+                        // So the line below adds one (if i%2 ==0) or
+                        // subtracts one (if i%2 == 1), which flips the
+                        // sign.
+                        nextEdge = cycleList[i][j-1] + (1- 2*(cycleList[i][j-1]%2));
+                    } else {
+                        // Positive
+                        setNextEdge = true;
+                    }
                 } else {
                     // Check to see if we have a tie.
-                    if ( (unsigned int)newEdge == min ) { 
+                    if ( newEdge == min ) { 
                         // Have to check whether the next edge is smaller or
                         // not.  Don't forget that "next" might be previous if
                         // the lowest edge is a -ve.
@@ -580,37 +618,55 @@ bool CycleDecompSearcher::isCanonical() {
                             // If the current lowest is negative, we will be
                             // flipping the signs of all edges, so don't forget
                             // that in this comparison.
-                            if (cycleList[i][j-1] < cycleList[i][offset[i]-1]) {
-                                if ((cycleList[i][offset[i]-1] - cycleList[i][j-1] == 1) &&
-                                    (cycleList[i][j-1] % 2 == 0)) {
-                                    // The difference between the two is 1, and
-                                    // the smaller is even.  That means the
-                                    // two edges have the same absolute index,
-                                    // but the (current_offset+1) is negative.
-                                    // Thus, when swapping signs this new edge
-                                    // will be negative, so don't change
-                                    // offset.
-                                } else {
+
+                            // If i%2 == 0, then 1 - 2*(i%2) == 1 
+                            // If i%2 == 1, then 1 - 2*(i%2) == -1
+                            //
+                            // So the line below adds one (if i%2 ==0) or
+                            // subtracts one (if i%2 == 1), which flips the
+                            // sign.
+                            unsigned int newNext = cycleList[i][j-1] + (1 - 2*(cyceList[i][j-1]%2));
+
+                            if (newNext < nextEdge) {
                                     offset[i]=j;
+                                    nextEdge = newNext;
+                                    // min stays the same.
                                 }
                             }
-                        } else { // lowest edge is positive. 
-                            if ( j == (cycleLengths[i]-1) ) {
-                                if ( cycleList[i][offset[i]+1] < cycleList[i][0] ) {
-
-                                 // make a note 
-                                 // to check the next pair.
-                                 }
+                        } else { 
+                            // min and current edges are positive. 
+                            if ( j == (cycleLengths[i]-1) ) { 
+                                // If we're at the end, the "next" edge is the
+                                // first one.
+                                if ( cycleList[i][0] < cycleList[i][offset[i]+1] ) {
+                                    min = newEdge;
+                                    offset[i] = j;
+                                }
                             } else {
-                            checkNextPair = true;
+                                // We need to check the next edge against the
+                                // "next edge" from the current minimum, so
+                                // make this note.
+                                checkNextPair = true;
                             }
                         }
                     } else {
                         // This check here is for when the current "lowest edge in
                         // the cycle" is positive, but the edge we're checking now
                         // is negative but has same absolute value.
-                        if ( ((unsigned int)newEdge == (min+1)) && (min%2 == 1))  {
-                            
+                        if ( (newEdge == (min+1)) && (min%2 == 0)) {
+                        
+                            // If i%2 == 0, then 1 - 2*(i%2) == 1 
+                            // If i%2 == 1, then 1 - 2*(i%2) == -1
+                            //
+                            // So the line below adds one (if i%2 ==0) or
+                            // subtracts one (if i%2 == 1), which flips the
+                            // sign.
+                            unsigned int newNext = cycleList[i][j-1] + (1 - 2*(cyceList[i][j-1]%2));
+                            if ( newNext < nextEdge) {
+                                min = newEdge;
+                                nextEdge = newNext;
+                                offset[i]=j;
+                            }
                         }
                     }
                 }
