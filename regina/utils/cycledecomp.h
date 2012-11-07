@@ -283,7 +283,7 @@ class CycleDecompSearcher {
         unsigned int findTetWithMostInternalEdgesUsed();
             /**< Finds the tetrahedra with the most used internal edges. */
 
-        unsigned int compareCycles(signed int *cycleListA, signed int *cycleListB, 
+        unsigned int compareCycles(unsigned int *cycleListA, unsigned int *cycleListB, 
                 unsigned int lengthA, unsigned int lengthB,
                 unsigned int offsetA, unsigned int offsetB); 
             /**< Check to see which of two cycles is more canonical.  Return values are

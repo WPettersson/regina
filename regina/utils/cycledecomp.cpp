@@ -180,7 +180,6 @@ CycleDecompSearcher::~CycleDecompSearcher() {
     delete[] tets;
     delete[] edges;
     delete[] ends;
-    delete[] firstEdge;
 }
 
 void CycleDecompSearcher::colourLowestEdge() {
@@ -434,7 +433,7 @@ NTriangulation* CycleDecompSearcher::triangulate() const {
         simp[t] = ans->newSimplex();
     int perms[4];
     Edge *e;
-    //dumpData(std::cout);
+    dumpData(std::cout);
     for (t = 0; t < nEdges; ++t) {
         e = &(edges[t]);
         // The edge e has 3 colours in it. These are denoted by k,
@@ -486,12 +485,13 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
         }
         out << std::endl;
     }
-    for (i = 0; i < nTets; i++) {
-        for(j = 0; j < 6; j++) {
-            out << tets[i].internalEdges[j] << " ";
-        }
-        out << ": ";
-    }
+    out << "------------------" << std::endl;
+    //for (i = 0; i < nTets; i++) {
+    //    for(j = 0; j < 6; j++) {
+    //        out << tets[i].internalEdges[j] << " ";
+    //    }
+    //    out << ": ";
+    //}
     //for (i = 0; i < nEdges; i++) {
     //    out << "Edge " << i << ": [";
     //    for(j = 0; j < 6; j++) {
@@ -528,17 +528,28 @@ bool CycleDecompSearcher::isCanonical() {
     unsigned int cycleListLengths[nextColour+1];
     unsigned int offset[nCycles];
     for(unsigned int i=1; i<=nextColour; i++) {
-        cycleList[i] = new unsigned int[cycleLengths[i]];
-        std::cout << "cycleList["<<i<<"] has size " << cycleLengths[i] << std::endl;
+        cycleList[i] = new unsigned int[3*nEdges];//cycleLengths[i]];
+        //std::cout << "cycleList["<<i<<"] has size " << cycleLengths[i];
+        //std::cout << " At " << cycleList[i] << std::endl;
     }
-    //std::cout << "Checking" << std::endl;
-    //for(unsigned int k=1; k<=nextColour; k++) {
-    //    for(unsigned int l=0; l < cycleLengths[k]; l++) {
-    //        std::cout << cycles[k][l] << " ";
-    //    }
-    //    std::cout << std::endl;
-    //}
-    //std::cout << "---" << std::endl;
+    std::cout << "Checking" << std::endl;
+    for(unsigned int k=1; k<=nextColour; k++) {
+        for(unsigned int l=0; l < cycleLengths[k]; l++) {
+            std::cout << cycles[k][l] << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "---" << std::endl;
+
+    bool debug=false;
+    if ( false && (cycles[1][0] == 1) &&
+         (cycles[1][1] == 2) &&
+         (cycles[2][0] == 1) &&
+         (cycles[2][1] == -2) &&
+         (cycles[2][2] == -2) &&
+         (cycles[2][3] == 1)) {
+        debug=true;
+    }
     
     for(autoNo=0; autoNo < nAutos; autoNo++) {
         // As long as thisAuto is true, we keep looking at this automorphism.
@@ -557,15 +568,22 @@ bool CycleDecompSearcher::isCanonical() {
             // is the first edge.  Note that the "second" edge may be the one
             // before the first edge, if the first edge is negative (since
             // swapping signs also reverses direction).
+            signed int tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][0]];
+            if (tempNewEdge < 0) {
+                tempNewEdge = (-tempNewEdge) + 1;
+            }
+            assert(tempNewEdge>0);
+            unsigned int newEdge = tempNewEdge;
+            cycleList[i][0] = newEdge;
 
             bool checkNextPair=false;
             bool setNextEdge=false;
             for(unsigned int j=1; j < cycleLengths[i]; j++) {
-                signed int tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][j]];
+                tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][j]];
                 if (tempNewEdge < 0) {
                     tempNewEdge = (-tempNewEdge) + 1;
                 }
-                unsigned int newEdge = (unsigned int)tempNewEdge;
+                newEdge = tempNewEdge;
                 // Initialise the "nextEdge" variable.
                 if ( j==1 ) {
                     nextEdge = newEdge;
@@ -625,23 +643,24 @@ bool CycleDecompSearcher::isCanonical() {
                             // So the line below adds one (if i%2 ==0) or
                             // subtracts one (if i%2 == 1), which flips the
                             // sign.
-                            unsigned int newNext = cycleList[i][j-1] + (1 - 2*(cyceList[i][j-1]%2));
+                            unsigned int newNext = cycleList[i][j-1] + (1 - 2*(cycleList[i][j-1]%2));
 
                             if (newNext < nextEdge) {
                                     offset[i]=j;
                                     nextEdge = newNext;
                                     // min stays the same.
-                                }
                             }
                         } else { 
-                            // min and current edges are positive. 
-                            if ( j == (cycleLengths[i]-1) ) { 
-                                // If we're at the end, the "next" edge is the
-                                // first one.
-                                if ( cycleList[i][0] < cycleList[i][offset[i]+1] ) {
-                                    min = newEdge;
-                                    offset[i] = j;
+                                // min and current edges are positive. 
+
+                            if ( j == cycleLengths[i]-1) {
+                                // "next" edge is first
+                                unsigned int newNext = cycleList[i][0];
+                                if  ( newNext < nextEdge) {
+                                    offset[i]=j;
+                                    // no need to change nextEdge
                                 }
+
                             } else {
                                 // We need to check the next edge against the
                                 // "next edge" from the current minimum, so
@@ -661,7 +680,7 @@ bool CycleDecompSearcher::isCanonical() {
                             // So the line below adds one (if i%2 ==0) or
                             // subtracts one (if i%2 == 1), which flips the
                             // sign.
-                            unsigned int newNext = cycleList[i][j-1] + (1 - 2*(cyceList[i][j-1]%2));
+                            unsigned int newNext = cycleList[i][j-1] + (1 - 2*(cycleList[i][j-1]%2));
                             if ( newNext < nextEdge) {
                                 min = newEdge;
                                 nextEdge = newNext;
@@ -670,11 +689,34 @@ bool CycleDecompSearcher::isCanonical() {
                         }
                     }
                 }
-                std::cout << "Writing at cycleList["<<i<<","<<j<<"]"<<std::endl;
                 cycleList[i][j] = newEdge;
             }
             cycleListLengths[i] = cycleLengths[i];
         }
+        if (debug) {
+            std::cout << "Before sorting" << std::endl;
+            for(unsigned int k=1; k<=nextColour; k++) {
+                for(unsigned int l=0; l < cycleListLengths[k]; l++) {
+                    signed int val = cycleList[k][l];
+                    if ( l == offset[k] ) {
+                        std::cout << "(";
+                    }
+                    if (val % 2 == 1) {
+                        val = - ( val-1)/2;
+                    } else {
+                        val = val/2;
+                    }
+                    std::cout << val;
+                    if ( l == offset[k] ) {
+                        std::cout << ")";
+                    }
+                    std::cout << " ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << "---" << std::endl;
+        }
+
         // Sort cycleList based on values of cycleList[i][offset[i]] 
         
         // Reverse bubble sort order so position[0] is definitely lowest
@@ -686,49 +728,73 @@ bool CycleDecompSearcher::isCanonical() {
                 if ( compareCycles(cycleList[j],        cycleList[j-1],
                                    cycleListLengths[j], cycleListLengths[j-1],
                                    offset[j],           offset[j-1]) == 0) {
-                    signed int *temp;
+                    unsigned int *temp;
                     temp = cycleList[j];
                     cycleList[j] = cycleList[i];
                     cycleList[i] = temp;
                     unsigned int temp2 = offset[j];
                     offset[j] = offset[i];
                     offset[i] = temp2;
-                    temp2 = cycleListLengths[i];
-                    cycleListLengths[i] = cycleListLengths[j];
-                    cycleListLengths[j] = temp2;
+                    temp2 = cycleListLengths[j];
+                    cycleListLengths[j] = cycleListLengths[i];
+                    cycleListLengths[i] = temp2;
                 }
 
+            }
+            if (debug) {
+                std::cout << "Sorted " << i << " time(s)" << std::endl;
+                for(unsigned int k=1; k<=nextColour; k++) {
+                    for(unsigned int l=0; l < cycleListLengths[k]; l++) {
+                        signed int val = cycleList[k][l];
+                        if ( l == offset[k] ) {
+                            std::cout << "(";
+                        }
+                        if (val % 2 == 1) {
+                            val = - ( val-1)/2;
+                        } else {
+                            val = val/2;
+                        }
+                        std::cout << val;
+                        if ( l == offset[k] ) {
+                            std::cout << ")";
+                        }
+                        std::cout << " ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << "---" << std::endl;
             }
             unsigned int counterA=offset[i];
             unsigned int maxLength = cycleLengths[i] < cycleListLengths[i] ? cycleLengths[i] : cycleListLengths[i];
             for(unsigned int j=0; j < maxLength; j++) {
-                signed int e = 2*cycles[i][j];
-                if (e < 0) {
-                    e = (-e)+1;
+                signed int t = 2*cycles[i][j];
+                if (t < 0) {
+                    t = (-t)+1;
                 }
+                unsigned int e = t;
                 // the automorphism gives a more canonical representation
                 if (e > cycleList[i][counterA]) {
-                    //std::cout << " bigger on " << j << std::endl;
-                    //for(unsigned int k=1; k<=nextColour; k++) {
-                    //    for(unsigned int l=0; l < cycleListLengths[k]; l++) {
-                    //        signed int val;
-                    //        if ( l == offset[k] ) {
-                    //            std::cout << "(";
-                    //        }
-                    //        if (cycleList[k][l] % 2 == 1) {
-                    //            val = - ( cycleList[k][l]-1)/2;
-                    //        } else {
-                    //            val = cycleList[k][l]/2;
-                    //        }
-                    //        std::cout << val;
-                    //        if ( l == offset[k] ) {
-                    //            std::cout << ")";
-                    //        }
-                    //        std::cout << " ";
-                    //    }
-                    //    std::cout << std::endl;
-                    //}
-                    //std::cout << "---" << std::endl;
+                    std::cout << " bigger on " << j << std::endl;
+                    for(unsigned int k=1; k<=nextColour; k++) {
+                        for(unsigned int l=0; l < cycleListLengths[k]; l++) {
+                            signed int val = cycleList[k][l];
+                            if ( l == offset[k] ) {
+                                std::cout << "(";
+                            }
+                            if (val % 2 == 1) {
+                                val = - ( val-1)/2;
+                            } else {
+                                val = val/2;
+                            }
+                            std::cout << val;
+                            if ( l == offset[k] ) {
+                                std::cout << ")";
+                            }
+                            std::cout << " ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << "---" << std::endl;
                     for(unsigned int k=1; k<=nextColour; k++)
                         delete[] cycleList[k];
                     return false;
@@ -759,27 +825,27 @@ bool CycleDecompSearcher::isCanonical() {
                 thisAuto=false;
             }
             if ( thisAuto && ( cycleListLengths[i] < cycleLengths[i] )) {
-                //std::cout << "Beaten by length at cycle " << i << std::endl;
-                //for(unsigned int k=1; k<=nextColour; k++) {
-                //    for(unsigned int l=0; l < cycleListLengths[k]; l++) {
-                //        signed int val;
-                //        if ( l == offset[k] ) {
-                //            std::cout << "(";
-                //        }
-                //        if (cycleList[k][l] % 2 == 1) {
-                //            val = - ( cycleList[k][l]-1)/2;
-                //        } else {
-                //            val = cycleList[k][l]/2;
-                //        }
-                //        std::cout << val;
-                //        if ( l == offset[k] ) {
-                //            std::cout << ")";
-                //        }
-                //        std::cout << " ";
-                //    }
-                //    std::cout << std::endl;
-                //}
-                //std::cout << "---" << std::endl;
+                std::cout << "Beaten by length at cycle " << i << std::endl;
+                for(unsigned int k=1; k<=nextColour; k++) {
+                    for(unsigned int l=0; l < cycleListLengths[k]; l++) {
+                        signed int val = cycleList[k][l];
+                        if ( l == offset[k] ) {
+                            std::cout << "(";
+                        }
+                        if (val % 2 == 1) {
+                            val = - (val-1)/2;
+                        } else {
+                            val = val/2;
+                        }
+                        std::cout << val;
+                        if ( l == offset[k] ) {
+                            std::cout << ")";
+                        }
+                        std::cout << " ";
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << "---" << std::endl;
                 for(unsigned int k=1; k<=nextColour; k++)
                     delete[] cycleList[k];
                 return false;
@@ -794,8 +860,8 @@ bool CycleDecompSearcher::isCanonical() {
 //  0 if A < B
 //  1 if B > A
 //  2 if A == B
-unsigned int CycleDecompSearcher::compareCycles(signed int *cycleListA, 
-        signed int *cycleListB, unsigned int lengthA, unsigned int lengthB,
+unsigned int CycleDecompSearcher::compareCycles(unsigned int *cycleListA, 
+        unsigned int *cycleListB, unsigned int lengthA, unsigned int lengthB,
         unsigned int offsetA, unsigned int offsetB) {
     unsigned int maxLength = lengthA < lengthB ? lengthA : lengthB;
     unsigned int counterA=offsetA;
@@ -946,6 +1012,10 @@ CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
             }
         }
     }
+    //std::cout << " New Auto " << std::endl;
+    //for(unsigned int i=1; i<= nEdges; i++) {
+    //    std::cout << "auto["<<i<<"] = " << realEdgeMap[i] << std::endl;
+    //}
 }
 
 CycleDecompSearcher::Automorphism::~Automorphism() {
