@@ -772,8 +772,20 @@ bool CycleDecompSearcher::isCanonical() {
                     t = (-t)+1;
                 }
                 unsigned int e = t;
+                unsigned newE = cycleList[i][counterA];
+                if (cycleList[i][offset[i]] %2 == 1) {
+                    // If i%2 == 0, then 1 - 2*(i%2) == 1 
+                    // If i%2 == 1, then 1 - 2*(i%2) == -1
+                    //
+                    // So the line below adds one (if i%2 ==0) or
+                    // subtracts one (if i%2 == 1), which flips the
+                    // sign.
+                    newE += (1 - 2*(newE%2));
+                }
+                std::cout << "Comparing "<< e <<" with " << newE << std::endl;
+
                 // the automorphism gives a more canonical representation
-                if (e > cycleList[i][counterA]) {
+                if (e > newE) {
                     std::cout << " bigger on " << j << std::endl;
                     for(unsigned int k=1; k<=nextColour; k++) {
                         for(unsigned int l=0; l < cycleListLengths[k]; l++) {
@@ -800,7 +812,7 @@ bool CycleDecompSearcher::isCanonical() {
                     return false;
                 }
                 // this automorphism is definitely worse, so go to next.
-                if (e < cycleList[i][counterA]) {
+                if (e < newE) {
                     thisAuto=false;
                     break;
                 }
@@ -868,9 +880,28 @@ unsigned int CycleDecompSearcher::compareCycles(unsigned int *cycleListA,
     unsigned int counterB=offsetB;
     for(unsigned int i=0 ; i < maxLength; i++) {
         // Find next edges
-        signed int edgeA = cycleListA[counterA];
-        signed int edgeB = cycleListB[counterB];
+        unsigned int edgeA = cycleListA[counterA];
+        unsigned int edgeB = cycleListB[counterB];
 
+        if (cycleListA[offsetA] %2 == 1) {
+            // If i%2 == 0, then 1 - 2*(i%2) == 1 
+            // If i%2 == 1, then 1 - 2*(i%2) == -1
+            //
+            // So the line below adds one (if i%2 ==0) or
+            // subtracts one (if i%2 == 1), which flips the
+            // sign.
+            edgeA += (1 - 2*(edgeA%2));
+        }
+
+        if (cycleListB[offsetB] %2 == 1) {
+            // If i%2 == 0, then 1 - 2*(i%2) == 1 
+            // If i%2 == 1, then 1 - 2*(i%2) == -1
+            //
+            // So the line below adds one (if i%2 ==0) or
+            // subtracts one (if i%2 == 1), which flips the
+            // sign.
+            edgeB += (1 - 2*(edgeB%2));
+        }
         // Compare edges
         if (edgeA < edgeB)
             return 0;
