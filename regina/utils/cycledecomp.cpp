@@ -730,14 +730,14 @@ bool CycleDecompSearcher::isCanonical() {
                                    offset[j],           offset[j-1]) == 0) {
                     unsigned int *temp;
                     temp = cycleList[j];
-                    cycleList[j] = cycleList[i];
-                    cycleList[i] = temp;
+                    cycleList[j] = cycleList[j-1];
+                    cycleList[j-1] = temp;
                     unsigned int temp2 = offset[j];
-                    offset[j] = offset[i];
-                    offset[i] = temp2;
+                    offset[j] = offset[j-1];
+                    offset[j-1] = temp2;
                     temp2 = cycleListLengths[j];
-                    cycleListLengths[j] = cycleListLengths[i];
-                    cycleListLengths[i] = temp2;
+                    cycleListLengths[j] = cycleListLengths[j-1];
+                    cycleListLengths[j-1] = temp2;
                 }
 
             }
