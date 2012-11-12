@@ -433,7 +433,7 @@ NTriangulation* CycleDecompSearcher::triangulate() const {
         simp[t] = ans->newSimplex();
     int perms[4];
     Edge *e;
-    dumpData(std::cout);
+    //dumpData(std::cout);
     for (t = 0; t < nEdges; ++t) {
         e = &(edges[t]);
         // The edge e has 3 colours in it. These are denoted by k,
