@@ -320,14 +320,17 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         // In the following loop, dir=0 means the edge has already been used in
         // the opposite direction.
         if (orientable) {
-            for(unsigned j=0; j< cycleLengths[nextColour];j++) {
-                if (cycles[nextColour][j] == -1*dir) {
-                    dir=0;
-                    break;  
+            if (nTets >=3) {
+                for(unsigned j=0; j< cycleLengths[nextColour];j++) {
+                    if (cycles[nextColour][j] == dir) {
+                        dir=0;
+                        break;  
+                    }
+                }
+                if (dir == 0)  {
+                    continue;
                 }
             }
-            if (dir == 0) 
-                continue;
         }
         
         //if ((nextColour == 1) && (! isCanonical(nextTet->index, nextInternal) )) {
