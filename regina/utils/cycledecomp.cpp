@@ -553,7 +553,6 @@ bool CycleDecompSearcher::isCanonical() {
         thisAuto=true;
         // Generate new cycle lists
         for(unsigned int i=1; i<=nextColour; i++) {
-            unsigned int min = nEdges;
             offset[i]=0;
             // offset[i] is going to hold the current "starting" place for the
             // cycle.
@@ -570,6 +569,7 @@ bool CycleDecompSearcher::isCanonical() {
             assert(tempNewEdge>0);
             unsigned int newEdge = tempNewEdge;
             cycleList[i][0] = newEdge;
+            unsigned int min = newEdge;
 
             bool checkNextPair=false;
             bool setNextEdge=false;
