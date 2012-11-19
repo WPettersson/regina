@@ -536,39 +536,39 @@ bool CycleDecompSearcher::isCanonical() {
         //std::cout << " At " << cycleList[i] << std::endl;
     }
     bool debug = false;
-    if ( nextColour == 4 && 
-         (cycleLengths[1] == 1) &&
-         (cycleLengths[2] == 8) &&
-         (cycleLengths[3] == 9) &&
-         (cycleLengths[4] == 5) &&
-         (cycleLengths[5] == 1) 
-         //(cycles[0][0] == 1) &&
-         //(cycles[1][0] == 1) &&
-         //(cycles[1][1] == 2) &&
-         //(cycles[1][2] == 4) &&
-         //(cycles[1][3] == -3) &&
-         //(cycles[1][4] == -1) &&
-         //(cycles[1][5] == 3) &&
-         //(cycles[1][6] == -5) &&
-         //(cycles[1][7] == -2) &&
-         //(cycles[2][0] == 2) &&
-         //(cycles[2][1] == 6) &&
-         //(cycles[2][2] == -7) &&
-         //(cycles[2][3] == -5) &&
-         //(cycles[2][4] == 4 &&
-         //(cycles[2][5] == 7) &&
-         //(cycles[2][6] == 8) &&
-         //(cycles[2][7] == -7) &&
-         //(cycles[2][8] == -3) &&
-         //(cycles[3][0] == 4) &&
-         //(cycles[3][1] == -5) &&
-         //(cycles[3][2] == 6) &&
-         //(cycles[3][3] == 8) &&
-         //(cycles[3][4] == -6) &&
-         //(cycles[4][0] == 8))
-         ) {
-             debug=true;
-    }
+    //if ( nextColour == 5 && 
+    //     (cycleLengths[1] == 1) &&
+    //     (cycleLengths[2] == 8) &&
+    //     (cycleLengths[3] == 9) &&
+    //     (cycleLengths[4] == 5) &&
+    //     (cycleLengths[5] == 1) && 
+    //     (cycles[1][0] == 1) &&
+    //     (cycles[2][0] == 1) &&
+    //     (cycles[2][1] == 2) &&
+    //     (cycles[2][2] == 4) &&
+    //     (cycles[2][3] == -3) &&
+    //     (cycles[2][4] == -1) &&
+    //     (cycles[2][5] == 3) &&
+    //     (cycles[2][6] == -5) &&
+    //     (cycles[2][7] == -2) &&
+    //     (cycles[3][0] == 2) &&
+    //     (cycles[3][1] == 6) &&
+    //     (cycles[3][2] == -7) &&
+    //     (cycles[3][3] == -5) &&
+    //     (cycles[3][4] == 4) &&
+    //     (cycles[3][5] == 7) &&
+    //     (cycles[3][6] == 8) &&
+    //     (cycles[3][7] == -7) &&
+    //     (cycles[3][8] == -3) &&
+    //     (cycles[4][0] == 4) &&
+    //     (cycles[4][1] == -5) &&
+    //     (cycles[4][2] == 6) &&
+    //     (cycles[4][3] == 8) &&
+    //     (cycles[4][4] == -6) &&
+    //     (cycles[5][0] == 8)
+    //     ) {
+    //         debug=true;
+    //}
     if (debug) {
         std::cout << "Checking" << std::endl;
         for(unsigned int k=1; k<=nextColour; k++) {
@@ -600,6 +600,7 @@ bool CycleDecompSearcher::isCanonical() {
             if (tempNewEdge < 0) {
                 tempNewEdge = (-tempNewEdge) + 1;
             }
+                
             assert(tempNewEdge>0);
             unsigned int newEdge = tempNewEdge;
             cycleList[i][0] = newEdge;
@@ -617,7 +618,9 @@ bool CycleDecompSearcher::isCanonical() {
                 }
                 nextEdge = tempNewEdge;
             }
+            if (debug) std::cout << "Pos: 0   Offset: 0   Start: " << min << " Next: " << nextEdge << std::endl; 
             for(unsigned int j=1; j < cycleLengths[i]; j++) {
+                if (debug) std::cout << "Pos: "<<i<<"   Offset: "<<offset[i]<<"   Start: " << min << " Next: " << nextEdge << std::endl; 
                 tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][j]];
                 if (tempNewEdge < 0) {
                     tempNewEdge = (-tempNewEdge) + 1;
