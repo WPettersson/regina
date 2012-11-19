@@ -591,7 +591,7 @@ bool CycleDecompSearcher::isCanonical() {
             // offset[i] is going to hold the current "starting" place for the
             // cycle.
 
-            unsigned int nextEdge;
+            unsigned int nextEdge = 255;
             // nextEdge will store the "second" edge in the cycle, if offset[i]
             // is the first edge.  Note that the "second" edge may be the one
             // before the first edge, if the first edge is negative (since
@@ -607,17 +607,22 @@ bool CycleDecompSearcher::isCanonical() {
 
             bool checkNextPair=false;
             bool setNextEdge=false;
+            if ( newEdge %2 == 0) {
+                // first edge +ve
+                setNextEdge = true;
+            } else {
+                tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][cycleLengths[i]-1]];
+                if ( tempNewEdge < 0) {
+                    tempNewEdge = (-tempNewEdge) + 1;
+                }
+                nextEdge = tempNewEdge;
+            }
             for(unsigned int j=1; j < cycleLengths[i]; j++) {
                 tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][j]];
                 if (tempNewEdge < 0) {
                     tempNewEdge = (-tempNewEdge) + 1;
                 }
                 newEdge = tempNewEdge;
-                // Initialise the "nextEdge" variable.
-                if ( j==1 ) {
-
-                    nextEdge = newEdge;
-                }
 
                 // If checkNextPair is true, that means the last edge we
                 // checked was equal-smallest.  We check this new edge against
@@ -639,21 +644,40 @@ bool CycleDecompSearcher::isCanonical() {
                 }
                 // New lowest edge used in this cycle.
                 if ( newEdge < min ) { 
-                    min = newEdge;
-                    offset[i] = j;
-                    if (min%2 ==1) {
-                        // Negative
-                            
-                        // If i%2 == 0, then 1 - 2*(i%2) == 1 
-                        // If i%2 == 1, then 1 - 2*(i%2) == -1
-                        //
-                        // So the line below adds one (if i%2 ==0) or
-                        // subtracts one (if i%2 == 1), which flips the
-                        // sign.
-                        nextEdge = cycleList[i][j-1] + (1- 2*(cycleList[i][j-1]%2));
+                    if ((min%2 == 1) && ( newEdge + 1 == min )) {
+                        // Current lowest is negative, new one is positive.
+                        // Need to check "next".
+                        if ( j == cycleLengths[i]-1) {
+                            // "next" edge is first
+                            unsigned int newNext = cycleList[i][0];
+                            if  ( newNext < nextEdge) {
+                                offset[i]=j;
+                                // no need to change nextEdge
+                            }
+
+                        } else {
+                            // We need to check the next edge against the
+                            // "next edge" from the current minimum, so
+                            // make this note.
+                            checkNextPair = true;
+                        }
                     } else {
-                        // Positive
-                        setNextEdge = true;
+                        min = newEdge;
+                        offset[i] = j;
+                        if (min%2 ==1) {
+                            // Negative
+                                
+                            // If i%2 == 0, then 1 - 2*(i%2) == 1 
+                            // If i%2 == 1, then 1 - 2*(i%2) == -1
+                            //
+                            // So the line below adds one (if i%2 ==0) or
+                            // subtracts one (if i%2 == 1), which flips the
+                            // sign.
+                            nextEdge = cycleList[i][j-1] + (1- 2*(cycleList[i][j-1]%2));
+                        } else {
+                            // Positive
+                            setNextEdge = true;
+                        }
                     }
                 } else {
                     // Check to see if we have a tie.
