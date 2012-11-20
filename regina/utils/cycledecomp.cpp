@@ -222,7 +222,7 @@ void CycleDecompSearcher::colourLowestEdge() {
         cycleLengths[nextColour]++;
 
         // Minimal triangulations won't have degree one edges.
-        if (! minimal_ ) {
+        if ((nTets < 3) || (! minimal_) ) {
             // Try to complete the cycle
             if (nextEdgeEnd == start) {
                 nextEdgeEnd->map[iEdge] = nextEdgeEnd->edge->used;
@@ -259,6 +259,9 @@ bool CycleDecompSearcher::checkColourOk() {
     // The tests below only apply if we are looking for minimal triangulations.
     if (! minimal_) 
         return true;
+    // Tests only work if we have 3 or more tetrahedron.
+    if (nTets < 3)
+        return true;
     // No short cycles
     if ( cycleLengths[nextColour] < 3) 
         return false;
@@ -294,7 +297,7 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
     // a minimal triangulation (else we won't actually know how many cycles we
     // are looking for.
    
-    if (minimal_) {
+    if ((nTets >= 3) && (minimal_)) {
         if (edgesLeft < 3*(nCycles - nextColour)) 
             return;
     } else { 
