@@ -1056,7 +1056,7 @@ inline CycleDecompSearcher::EdgeEnd* CycleDecompSearcher::Edge::otherEnd(EdgeEnd
 
 CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
         const Edge *edges, const unsigned int _nEdges) : nEdges(_nEdges)  {
-    edgeMap = new signed int[2*(nEdges+1)];
+    edgeMap = new unsigned int[2*(nEdges+1)];
     realEdgeMap = edgeMap+nEdges;
     for (unsigned int i=0; i < nEdges;i++) {
         unsigned int startFace = edges[i].ends[0]->face;
