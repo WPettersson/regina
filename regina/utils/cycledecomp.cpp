@@ -322,7 +322,7 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         if (orientable) {
             if (nTets >=3) {
                 for(unsigned j=0; j< cycleLengths[nextColour];j++) {
-                    if (cycles[nextColour][j] == dir) {
+                    if (cycles[nextColour][j] == -dir) {
                         dir=0;
                         break;  
                     }
