@@ -170,7 +170,8 @@ class CycleDecompSearcher {
             public:
                 Automorphism( const regina::NIsomorphism * iso, 
                               const Edge* edges,
-                              const unsigned int _nEdges);
+                              const unsigned int _nEdges,
+                              const unsigned int nCycles);
                     /**< Constructor from regina type isomorphism. */
                 ~Automorphism();
                     /**< Destructor. */
@@ -181,6 +182,13 @@ class CycleDecompSearcher {
                                unsigned int oldTet, unsigned int oldInternal);
                     /**< As above, returns the equivalent tet/internal_edge
                      *   pair under this automorphism. */
+                unsigned int **cycles;
+                    /**< An array to store the cycles in the current
+                     *   decomposition after the automorphism is applied. */
+                unsigned int *offset;
+                    /**< Where the "lowest" edge in each cycle is. */
+                unsigned int *cycleLength;
+                    /**< How long each cycle is. */
             private:
                 unsigned int nEdges;
                     /**< Number of edges. */
@@ -196,15 +204,6 @@ class CycleDecompSearcher {
                     /**< An array storing the relationship between edges. 
                      *   This is simply a pointer to edgeMap[nEdge] so pointer
                      *   arithmetic is simpler when accessing mappings. */
-                //unsigned int *newTets;
-                    /**< An array storing how tetrahedra change under this
-                     *   automorphism. */
-                //unsigned int **newInts;
-                    /**< An array of arrays, storing how internal edges change
-                     *   under this  automorphism. For example, newInts[i][j]
-                     *   will return a value from 0 to 5 inclusive, telling us
-                     *   that internal edge j, of tetrahedron i, will be mapped
-                     *   to internal edge "newInts[i][j]" in some tetrahedron. */
         };
 
         Tetrahedron *tets;
