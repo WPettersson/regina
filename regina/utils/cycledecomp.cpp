@@ -596,13 +596,9 @@ bool CycleDecompSearcher::isCanonical() {
             // is the first edge.  Note that the "second" edge may be the one
             // before the first edge, if the first edge is negative (since
             // swapping signs also reverses direction).
-            signed int tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][0]];
-            if (tempNewEdge < 0) {
-                tempNewEdge = (-tempNewEdge) + 1;
-            }
-                
-            assert(tempNewEdge>0);
-            unsigned int newEdge = tempNewEdge;
+            // A value of 255 means something is broken.
+            
+            unsigned int newEdge = (*automorphisms[autoNo])[cycles[i][0]];
             cycleList[i][0] = newEdge;
             unsigned int min = newEdge;
 
@@ -612,20 +608,12 @@ bool CycleDecompSearcher::isCanonical() {
                 // first edge +ve
                 setNextEdge = true;
             } else {
-                tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][cycleLengths[i]-1]];
-                if ( tempNewEdge < 0) {
-                    tempNewEdge = (-tempNewEdge) + 1;
-                }
-                nextEdge = tempNewEdge;
+                nextEdge =(*automorphisms[autoNo])[cycles[i][cycleLengths[i]-1]];
             }
             if (debug) std::cout << "Pos: 0   Offset: 0   Start: " << min << " Next: " << nextEdge << std::endl; 
             for(unsigned int j=1; j < cycleLengths[i]; j++) {
                 if (debug) std::cout << "Pos: "<<i<<"   Offset: "<<offset[i]<<"   Start: " << min << " Next: " << nextEdge << std::endl; 
-                tempNewEdge = 2*(*automorphisms[autoNo])[cycles[i][j]];
-                if (tempNewEdge < 0) {
-                    tempNewEdge = (-tempNewEdge) + 1;
-                }
-                newEdge = tempNewEdge;
+                newEdge = (*automorphisms[autoNo])[cycles[i][j]];
 
                 // If checkNextPair is true, that means the last edge we
                 // checked was equal-smallest.  We check this new edge against
@@ -1087,18 +1075,18 @@ CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
                 ( newEndTet == edges[j].ends[1]->tet->index) &&
                 ( newEndFace == edges[j].ends[1]->face)) {
                 // Edge parity stays the same.
-                signed int jIndex = edges[j].index;
+                unsigned int jIndex = 2*edges[j].index;
                 realEdgeMap[iIndex] = jIndex;
-                realEdgeMap[std::ptrdiff_t(-iIndex)] = -jIndex;
+                realEdgeMap[std::ptrdiff_t(-iIndex)] = jIndex+1;
                 break;
             }
             if (( newEndTet == edges[j].ends[0]->tet->index) &&
                 ( newEndFace == edges[j].ends[0]->face) &&
                 ( newStartTet == edges[j].ends[1]->tet->index) &&
                 ( newStartFace == edges[j].ends[1]->face)) {
-                signed int jIndex = edges[j].index;
-                realEdgeMap[iIndex] = -jIndex;
+                unsigned int jIndex = 2*edges[j].index;
                 realEdgeMap[std::ptrdiff_t(-iIndex)] = jIndex;
+                realEdgeMap[iIndex] = jIndex+1;
                 break;
             }
         }
@@ -1116,7 +1104,7 @@ CycleDecompSearcher::Automorphism::~Automorphism() {
 //    delete[] newInts;
 }
 
-signed int inline CycleDecompSearcher::Automorphism::operator [] (const signed int in) {
+unsigned int inline CycleDecompSearcher::Automorphism::operator [] (const signed int in) {
   //return edgeMap[in+nEdges];
   return realEdgeMap[(std::ptrdiff_t)(in)];
 }

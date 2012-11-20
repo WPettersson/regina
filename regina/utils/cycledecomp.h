@@ -174,7 +174,7 @@ class CycleDecompSearcher {
                     /**< Constructor from regina type isomorphism. */
                 ~Automorphism();
                     /**< Destructor. */
-                signed int operator [] ( const signed int initial);
+                unsigned int operator [] ( const signed int initial);
                     /**< Returns the equivalent edge under the automorphism in
                      *   question. */
                 void tetAndInt(unsigned int *newTet, unsigned int *newInternal,
@@ -184,7 +184,7 @@ class CycleDecompSearcher {
             private:
                 unsigned int nEdges;
                     /**< Number of edges. */
-                signed int *edgeMap;
+                unsigned int *edgeMap;
                     /**< An array storing the relationship between edges.  
                      *   These are stored such that for edge e,
                      *   edgeMap[nEdge + e] gives the mapping.
@@ -192,7 +192,7 @@ class CycleDecompSearcher {
                      *   range edgeMap[0] .. edgeMap[nEdge-1] and positive edge
                      *   mappings are stored in the range edgeMap[nEdge+1] ..
                      *   edgeMap[2*nEdge].*/
-                signed int *realEdgeMap;
+                unsigned int *realEdgeMap;
                     /**< An array storing the relationship between edges. 
                      *   This is simply a pointer to edgeMap[nEdge] so pointer
                      *   arithmetic is simpler when accessing mappings. */
