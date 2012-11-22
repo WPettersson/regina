@@ -254,6 +254,14 @@ class CycleDecompSearcher {
              *   adding edge j, isAutoOk[i] = j.
              *   The value of j here is purely a number indicating how many
              *   edges have been added so far. */
+
+        unsigned int ** parityArrays;
+            /**< An array of arrays.  Each array is used in a union-find
+             *   algorithm to track which set of edges is considere "above" or
+             *   below any particular cycle. */
+
+
+
         bool orientable;
             /**< Whether we are searching for orientable manifolds. */
         bool minimal_;
@@ -278,7 +286,15 @@ class CycleDecompSearcher {
         bool checkComplete();
             /**< Checks to see if a decomposition has been found. This is done
              *   by checking to see that each Edge has 3 cycles on it. */
-  
+
+        unsigned int ufJoin(unsigned int col, unsigned int A, unsigned int B);
+            /**< Performs a union-join of values A and B in array
+             *   parityArray[col]. */
+
+        void ufUnJoin(unsigned int col, unsigned int A, unsigned int B);
+            /**< Undoes a union-join of values A and B in array
+             *   parityArray[col]. */
+
         unsigned int findTetWithMostInternalEdgesUsed();
             /**< Finds the tetrahedra with the most used internal edges. */
 

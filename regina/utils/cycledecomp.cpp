@@ -102,9 +102,16 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     cycleLengths = new unsigned int[nCycles+1];
     
     cycles = new signed int*[nCycles+1];
+    parityArrays = new unsigned int*[nCycles+1];
     for( unsigned int i=0; i < nCycles+1; i++ ) {
         cycleLengths[i] = 0;
         cycles[i] = new signed int[3*nEdges];
+        // Don't forget, in parityArrays edges start at 0 and 
+        // go up to 3*nEdges + 2
+        parityArrays[i] = new unsigned int[3*(nEdges+1)];
+        for( unsigned int j=0; j< 3*(nEdges+1); j++) {
+            parityArrays[i][j] = 0;
+        }
     }
     
 
@@ -168,14 +175,16 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
 }
 
 CycleDecompSearcher::~CycleDecompSearcher() {
-    for( unsigned int i=0; i < nTets+1; i++ ) {
+    for( unsigned int i=0; i < nCycles+1; i++ ) {
         delete[] cycles[i];
+        delete[] parityArrays[i];
     }
     for( unsigned int i=0; i < nAutos; i++ ) {
         delete automorphisms[i];
     }
     delete[] automorphisms;
     delete[] cycles;
+    delete[] parityArrays;
     delete[] cycleLengths;    
     delete[] tets;
     delete[] edges;
@@ -201,6 +210,9 @@ void CycleDecompSearcher::colourLowestEdge() {
 
         tets[tet].internalEdges[iEdge] = nextColour;
         tets[tet].used++;
+                
+        // Note that edgeVertex[a] gives the two vertices on edge a
+        // We want the two corresponding faces, so do edgeVertex[5-a]
         unsigned int startFace = NEdge::edgeVertex[5-iEdge][0];
         EdgeEnd *start = tets[tet].externalEdgeEnd[startFace];
         if ( start == nextEdge->ends[0] ) {
@@ -351,26 +363,104 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         nextEdge->colour(nextColour);
         outEnd->map[nextInternal] = nextEdge->used;
         edgesLeft--;
-      
-        // Try to complete the cycle
-        if (nextEnd == start) {
-            start->map[firstEdge] = start->edge->used;
-            if (checkColourOk() && isCanonical()) {
-                if ( (edgesLeft == 0) && checkComplete()) {
-                    use_(this, useArgs_);
-                } else {
-                    // At most nCycles cycles.  Remember nextColour starts at
-                    // 1, and colourOnLowestEdge() increments it by one.
-                    if (nextColour < nCycles)
-                        colourLowestEdge();
-                }
-            } 
-            start->map[firstEdge] = 0;
-        }
-        // Try to find more paths.
-        nextPath(start, firstEdge, nextEnd);
+     
+        bool goodGluing = true;
 
+        if ( nextTet->used == 6) {
+            // nextTet has just been fully completed.  Iterate over all
+            // internal edges and check whether edges are above or below.
+            for (unsigned int i=0; i< 6;i++) {
+                // Find the ends for this actual internal edge.
+                
+                // Note that edgeVertex[a] gives the two vertices on edge a
+                // We want the two corresponding faces, so do edgeVertex[5-a]
+                unsigned int endA = NEdge::edgeVertex[5-i][0];
+                unsigned int endB = NEdge::edgeVertex[5-i][1];
+                std::cout << "i=" << i << std::endl;
+                std::cout << "endA=" << endA << std::endl;
+                std::cout << "endB=" << endB << std::endl;
+
+                unsigned int result = 0;
+                for (unsigned int j=0; j < 3; j++) {
+                    unsigned int e = faceEdges[endA][j];
+                    // Don't map the current cycle anywhere, only the two edges
+                    // around it.
+                    if (e == i) {
+                        continue;
+                    }
+                    // Find the resultant edge.
+                    signed int eb = edgeParity[i][e];
+                    std::cout << "i " << i << " e " << e << std::endl;
+                    assert(eb>=0);
+                    // Convert the objects into a numberical value
+                    EdgeEnd *a = nextTet->externalEdgeEnd[endA];
+                    EdgeEnd *b = nextTet->externalEdgeEnd[endB];
+                    unsigned int valA = 3*(a->edge->index) + a->map[e]; 
+                    unsigned int valB = 3*(b->edge->index) + b->map[eb]; 
+                    unsigned int res = ufJoin(nextColour,valA,valB);
+                    if (result == 0) {
+                        result = res;
+                    } else {
+                        if (result == res) {
+                            std::cout << "Bad triangulation" << std::endl;
+                            dumpData(std::cout);
+                            goodGluing = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (goodGluing) {
+            // Try to complete the cycle
+            if (nextEnd == start) {
+                start->map[firstEdge] = start->edge->used;
+                if (checkColourOk() && isCanonical()) {
+                    if ( (edgesLeft == 0) && checkComplete()) {
+                        use_(this, useArgs_);
+                    } else {
+                        // At most nCycles cycles.  Remember nextColour starts at
+                        // 1, and colourOnLowestEdge() increments it by one.
+                        if (nextColour < nCycles)
+                            colourLowestEdge();
+                    }
+                } 
+                start->map[firstEdge] = 0;
+            }
+            // Try to find more paths.
+            nextPath(start, firstEdge, nextEnd);
+        }
         
+        if ( nextTet->used == 6) {
+            // nextTet has just been fully completed.  Iterate over all
+            // internal edges and remove parity checks.
+            for (unsigned int i=0; i< 6;i++) {
+                // Find the ends for this actual internal edge.
+
+                // Note that edgeVertex[a] gives the two vertices on edge a
+                // We want the two corresponding faces, so do edgeVertex[5-a]
+                unsigned int endA = NEdge::edgeVertex[5-i][0];
+                unsigned int endB = NEdge::edgeVertex[5-i][1];
+                for (unsigned int j=0; j < 3; j++) {
+                    unsigned int e = faceEdges[endA][j];
+                    // Don't map the current cycle anywhere, only the two edges
+                    // around it.
+                    if (e == i) {
+                        continue;
+                    }
+                    // Find the resultant edge.
+                    signed int eb = edgeParity[i][e];
+                    assert(eb>=0);
+
+                    // Convert the objects into a numberical value
+                    EdgeEnd *a = nextTet->externalEdgeEnd[endA];
+                    EdgeEnd *b = nextTet->externalEdgeEnd[endB];
+                    unsigned int valA = 3*(a->edge->index) + a->map[e]; 
+                    unsigned int valB = 3*(b->edge->index) + b->map[eb]; 
+                    ufUnJoin(nextColour,valA,valB);
+                }
+            }
+        }
 
         cycleLengths[nextColour]--;
         cycles[nextColour][cycleLengths[nextColour]]=0;
@@ -384,6 +474,35 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
     }
 }
  
+unsigned int CycleDecompSearcher::ufJoin(unsigned int col, unsigned int A, unsigned int B) {
+    // Ensure A<B
+    if ( B < A ) {
+        return ufJoin(col, B, A);
+    }
+    // if A==B (which is possible) we don't need to update the array.  Still
+    // find the "smallest" entry though.
+    unsigned int *arr = parityArrays[col];
+    if ( A < B ) {
+        arr[B] = A;
+    }
+    unsigned int temp = A;
+    while ( arr[temp] > 0) {
+        temp = arr[temp];
+    }
+    return temp;
+}
+
+
+void CycleDecompSearcher::ufUnJoin(unsigned int col, unsigned int A, unsigned int B) {
+    // Ensure A<B
+    if ( B < A ) {
+        ufUnJoin(col, B, A);
+    } else {
+        unsigned int *arr = parityArrays[col];
+        arr[B] = 0;
+    }
+}
+
 
 bool CycleDecompSearcher::checkComplete() {
     for(unsigned int i=0; i< nEdges; i++) {
