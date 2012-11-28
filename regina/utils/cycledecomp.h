@@ -255,10 +255,13 @@ class CycleDecompSearcher {
              *   The value of j here is purely a number indicating how many
              *   edges have been added so far. */
 
-        unsigned int ** parityArrays;
-            /**< An array of arrays.  Each array is used in a union-find
-             *   algorithm to track which set of edges is considere "above" or
-             *   below any particular cycle. */
+        unsigned int * parityArray;
+            /**< An array for storing the number of "flips" the +/- pairs go
+             *   through while following a specific cycle. */
+        
+        unsigned int * parityArrayCount;
+            /**< An array for storing the number of +/- pairs that have been
+             *   inspected while following a specific cycle. */
 
 
 

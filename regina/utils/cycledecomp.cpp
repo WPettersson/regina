@@ -102,16 +102,11 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     cycleLengths = new unsigned int[nCycles+1];
     
     cycles = new signed int*[nCycles+1];
-    parityArrays = new unsigned int*[nCycles+1];
+    parityArray = new unsigned int[nCycles+1];
+    parityArrayCount = new unsigned int[nCycles+1];
     for( unsigned int i=0; i < nCycles+1; i++ ) {
         cycleLengths[i] = 0;
         cycles[i] = new signed int[3*nEdges];
-        // Don't forget, in parityArrays edges start at 0 and 
-        // go up to 3*nEdges + 2
-        parityArrays[i] = new unsigned int[3*(nEdges+1)];
-        for( unsigned int j=0; j< 3*(nEdges+1); j++) {
-            parityArrays[i][j] = 0;
-        }
     }
     
 
@@ -177,14 +172,14 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
 CycleDecompSearcher::~CycleDecompSearcher() {
     for( unsigned int i=0; i < nCycles+1; i++ ) {
         delete[] cycles[i];
-        delete[] parityArrays[i];
     }
     for( unsigned int i=0; i < nAutos; i++ ) {
         delete automorphisms[i];
     }
     delete[] automorphisms;
     delete[] cycles;
-    delete[] parityArrays;
+    delete[] parityArray;
+    delete[] parityArrayCount;
     delete[] cycleLengths;    
     delete[] tets;
     delete[] edges;
@@ -313,6 +308,8 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         if (edgesLeft < 3*(nCycles - nextColour)) 
             return;
     } else { 
+        // We don't actually know how many cycles we might have, so we just
+        // have to keep using edges til they run out.
         if (edgesLeft <= 0)
             return;
     }
@@ -376,11 +373,17 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
                 // We want the two corresponding faces, so do edgeVertex[5-a]
                 unsigned int endA = NEdge::edgeVertex[5-i][0];
                 unsigned int endB = NEdge::edgeVertex[5-i][1];
-                std::cout << "i=" << i << std::endl;
-                std::cout << "endA=" << endA << std::endl;
-                std::cout << "endB=" << endB << std::endl;
-
-                unsigned int result = 0;
+                // Get the colour
+                unsigned int col = nextTet->internalEdges[i];
+                assert(col>0);
+                //std::cout << "i=" << i << std::endl;
+                //std::cout << "endA=" << endA << std::endl;
+                //std::cout << "endB=" << endB << std::endl;
+                unsigned int a=0;
+                unsigned int b=0;
+                unsigned int c=0;
+                unsigned int d=0;
+                //unsigned int result = 0;
                 for (unsigned int j=0; j < 3; j++) {
                     unsigned int e = faceEdges[endA][j];
                     // Don't map the current cycle anywhere, only the two edges
@@ -390,23 +393,57 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
                     }
                     // Find the resultant edge.
                     signed int eb = edgeParity[i][e];
-                    std::cout << "i " << i << " e " << e << std::endl;
+                    //std::cout << "i " << i << " e:eb " << e <<":"<<eb<< std::endl;
                     assert(eb>=0);
-                    // Convert the objects into a numberical value
-                    EdgeEnd *a = nextTet->externalEdgeEnd[endA];
-                    EdgeEnd *b = nextTet->externalEdgeEnd[endB];
-                    unsigned int valA = 3*(a->edge->index) + a->map[e]; 
-                    unsigned int valB = 3*(b->edge->index) + b->map[eb]; 
-                    unsigned int res = ufJoin(nextColour,valA,valB);
-                    if (result == 0) {
-                        result = res;
+                    // Convert the objects into a numerical value
+                    EdgeEnd *aa = nextTet->externalEdgeEnd[endA];
+                    EdgeEnd *bb = nextTet->externalEdgeEnd[endB];
+                    unsigned int valA = 3*(aa->edge->index) + aa->map[e]; 
+                    unsigned int valB = 3*(bb->edge->index) + bb->map[eb]; 
+
+                    if (a==0) {
+                        a=valA;
+                        b=valB;
                     } else {
-                        if (result == res) {
-                            std::cout << "Bad triangulation" << std::endl;
-                            dumpData(std::cout);
-                            goodGluing = false;
-                        }
+                        c=valA;
+                        d=valB;
                     }
+                    
+                    //unsigned int res = ufJoin(col,valA,valB);
+                    //if (result == 0) {
+                    //    result = res;
+                    //} else {
+                    //    if (result == res) {
+                    //        std::cout << "Bad triangulation, res = " << res << std::endl;
+                    //        std::cout << "Completed tet " << nextTet->index << std::endl;
+                    //        std::cout << "Completed colour " << col << std::endl;
+                    //        std::cout << "Edges joined = " << aa->edge->index << ", " <<
+                    //            bb->edge->index << std::endl;
+                    //        std::cout << "A,B = " << valA << " , " << valB << std::endl;
+                    //        std::cout << "Next colour " << nextColour << std::endl;
+                    //        std::cout << "Arr " << std::endl;
+                    //        for( unsigned int j=0; j< 3*(nEdges+1); j++) {
+                    //            std::cout << parityArrays[col][j] << " ";
+                    //        }
+                    //        std::cout << std::endl;
+                    //        dumpData(std::cout);
+                    //        goodGluing = false;
+                    //    }
+                    //}
+                }
+                // a,b,c,d have been assigned such that (a,c) <-> (b,d)
+                // Check whether parity has changed.
+                if ( ((a<b) && (d<c)) || ( (b<a) && (c<d))) {
+                    parityArray[col]+=1;
+                }
+                parityArrayCount[col]+=1;
+                // Now check to see if this results in a 2-sided projective
+                // plane.  In other words, see if the "positive" and "negative" edges
+                // swap an odd number of times. Note that we can only do this
+                // if we have completed the current cycle, and also found all
+                // possible "flips".
+                if (( c < nextColour ) && (parityArrayCount[col] == cycleLengths[col]) && ( parityArray[col]%2 == 1)) {
+                    goodGluing=false;
                 }
             }
         }
@@ -441,6 +478,13 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
                 // We want the two corresponding faces, so do edgeVertex[5-a]
                 unsigned int endA = NEdge::edgeVertex[5-i][0];
                 unsigned int endB = NEdge::edgeVertex[5-i][1];
+                // Get the colour
+                unsigned int col = nextTet->internalEdges[i];
+                assert(col>0);
+                unsigned int a=0;
+                unsigned int b=0;
+                unsigned int c=0;
+                unsigned int d=0;
                 for (unsigned int j=0; j < 3; j++) {
                     unsigned int e = faceEdges[endA][j];
                     // Don't map the current cycle anywhere, only the two edges
@@ -451,14 +495,30 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
                     // Find the resultant edge.
                     signed int eb = edgeParity[i][e];
                     assert(eb>=0);
+                    
 
-                    // Convert the objects into a numberical value
-                    EdgeEnd *a = nextTet->externalEdgeEnd[endA];
-                    EdgeEnd *b = nextTet->externalEdgeEnd[endB];
-                    unsigned int valA = 3*(a->edge->index) + a->map[e]; 
-                    unsigned int valB = 3*(b->edge->index) + b->map[eb]; 
-                    ufUnJoin(nextColour,valA,valB);
+                    // Convert the objects into a numerical value
+                    EdgeEnd *aa = nextTet->externalEdgeEnd[endA];
+                    EdgeEnd *bb = nextTet->externalEdgeEnd[endB];
+                    unsigned int valA = 3*(aa->edge->index) + aa->map[e]; 
+                    unsigned int valB = 3*(bb->edge->index) + bb->map[eb]; 
+                    //ufUnJoin(col,valA,valB);
+                    
+                    if (a==0) {
+                        a=valA;
+                        b=valB;
+                    } else {
+                        c=valA;
+                        d=valB;
+                    }
                 }
+                
+                // a,b,c,d have been assigned such that (a,c) <-> (b,d)
+                // Check whether parity has changed, and undo the changes
+                if ( ((a<b) && (d<c)) || ( (b<a) && (c<d))) {
+                    parityArray[col]-=1;
+                }
+                parityArrayCount[col]-=1;
             }
         }
 
@@ -481,7 +541,8 @@ unsigned int CycleDecompSearcher::ufJoin(unsigned int col, unsigned int A, unsig
     }
     // if A==B (which is possible) we don't need to update the array.  Still
     // find the "smallest" entry though.
-    unsigned int *arr = parityArrays[col];
+    unsigned int *arr = parityArray;
+    assert(1==0);
     if ( A < B ) {
         arr[B] = A;
     }
@@ -489,6 +550,7 @@ unsigned int CycleDecompSearcher::ufJoin(unsigned int col, unsigned int A, unsig
     while ( arr[temp] > 0) {
         temp = arr[temp];
     }
+    assert(temp>0);
     return temp;
 }
 
@@ -498,7 +560,8 @@ void CycleDecompSearcher::ufUnJoin(unsigned int col, unsigned int A, unsigned in
     if ( B < A ) {
         ufUnJoin(col, B, A);
     } else {
-        unsigned int *arr = parityArrays[col];
+        unsigned int *arr = parityArray;
+        assert(1==0);
         arr[B] = 0;
     }
 }
@@ -601,7 +664,7 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
 
     unsigned int i;
     unsigned int j;
-    for (i = 1; i < nCycles && cycleLengths[i] > 0; i++) {
+    for (i = 1; i <= nCycles && cycleLengths[i] > 0; i++) {
         out << i << ": ";
         for(j = 0; j < cycleLengths[i]; j++) {
             out << cycles[i][j];
@@ -610,13 +673,15 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
         }
         out << std::endl;
     }
+    for (i = 0; i < nTets; i++) {
+        for(j = 0; j < 6; j++) {
+            out << tets[i].internalEdges[j] << " ";
+        }
+        if (i != (nTets-1))
+            out << ": ";
+    }
+    out << std::endl;
     out << "------------------" << std::endl;
-    //for (i = 0; i < nTets; i++) {
-    //    for(j = 0; j < 6; j++) {
-    //        out << tets[i].internalEdges[j] << " ";
-    //    }
-    //    out << ": ";
-    //}
     //for (i = 0; i < nEdges; i++) {
     //    out << "Edge " << i << ": [";
     //    for(j = 0; j < 6; j++) {
