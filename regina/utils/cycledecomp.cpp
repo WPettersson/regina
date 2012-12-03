@@ -192,34 +192,37 @@ void CycleDecompSearcher::colourLowestEdge() {
     for (edge=0; edges[edge].used == 3; edge++) 
         assert(edge<=nEdges);
     Edge *nextEdge = &edges[edge];
-    unsigned int tet = nextEdge->ends[0]->tet->index;
+    Tetrahedron * tet = nextEdge->ends[0]->tet;
+    tet->used++;
 
     nextColour++;
+    nextEdge->colour(nextColour);
     // Try each unused internal edge to start this cycle.
     for(unsigned int i=0; i < 3; i++) {
         unsigned int iEdge = faceEdges[nextEdge->ends[0]->face][i];
-        if (tets[tet].internalEdges[iEdge] != 0)
+        if (tet->internalEdges[iEdge] != 0)
             continue;
 
         assert(cycleLengths[nextColour] == 0);
 
-        tets[tet].internalEdges[iEdge] = nextColour;
-        tets[tet].used++;
+        tet->internalEdges[iEdge] = nextColour;
                 
         // Note that edgeVertex[a] gives the two vertices on edge a
         // We want the two corresponding faces, so do edgeVertex[5-a]
         unsigned int startFace = NEdge::edgeVertex[5-iEdge][0];
-        EdgeEnd *start = tets[tet].externalEdgeEnd[startFace];
+        EdgeEnd *start = tet->externalEdgeEnd[startFace];
+        
+        
         if ( start == nextEdge->ends[0] ) {
             startFace = NEdge::edgeVertex[5-iEdge][1];
-            start = tets[tet].externalEdgeEnd[startFace];
+            start = tet->externalEdgeEnd[startFace];
         }
 
 
-        nextEdge->colour(nextColour);
         nextEdge->ends[0]->map[iEdge] = nextEdge->used;
         edgesLeft--;
-        EdgeEnd *nextEdgeEnd = nextEdge->ends[1];
+        EdgeEnd *nextEdgeEnd;
+        nextEdgeEnd = nextEdge->ends[1];
         
 
         signed int dir = nextEdge->index;
@@ -255,10 +258,10 @@ void CycleDecompSearcher::colourLowestEdge() {
         
         edgesLeft++;
         nextEdge->ends[0]->map[iEdge] = 0;
-        nextEdge->unColour(); 
-        tets[tet].used--;
-        tets[tet].internalEdges[iEdge] = 0;
+        tet->internalEdges[iEdge] = 0;
     }
+    tet->used--;
+    nextEdge->unColour(); 
     nextColour--;
 }
 
