@@ -309,6 +309,13 @@ class CycleDecompSearcher {
              *   1 if B > A
              *   2 if A == B
              *   */
+
+        bool finishTet(Tetrahedron *tet);
+            /**< Completes any checks that are valid when a tetrahedron has
+             *   been completed (all faces are completely glued). */
+
+        void unFinishTet(Tetrahedron *tet);
+            /**< Undoes any checks that were done in the above function. */
     public:
         static const char dataTag_;
             /**< A character used to identify this class when reading

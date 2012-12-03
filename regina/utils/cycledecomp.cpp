@@ -84,7 +84,11 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     edges = new Edge[nEdges];
     ends = new EdgeEnd[nEnds];
   
-    if (minimal) 
+    // Any minimal triangulation that is not a triangulation of one of RP^3,
+    // S^3 or L(3,1) has precisely one vertex.  
+    // If we force the number of edges in the triangulation to be n+1 we get
+    // \chi = 0 (Euler's formula).
+    if (nTets >= 3 && minimal) 
         nCycles = nTets+1;
     else
         nCycles = 3*nEdges;
@@ -106,6 +110,8 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     parityArrayCount = new unsigned int[nCycles+1];
     for( unsigned int i=0; i < nCycles+1; i++ ) {
         cycleLengths[i] = 0;
+        parityArray[i] = 0;
+        parityArrayCount[i] = 0;
         cycles[i] = new signed int[3*nEdges];
     }
     
@@ -230,13 +236,16 @@ void CycleDecompSearcher::colourLowestEdge() {
         
         cycles[nextColour][cycleLengths[nextColour]]=dir;
         cycleLengths[nextColour]++;
+        
 
-        // Minimal triangulations won't have degree one edges.
+
+        // Minimal triangulations with >= 3 tets won't have degree one edges.
         if ((nTets < 3) || (! minimal_) ) {
             // Try to complete the cycle
             if (nextEdgeEnd == start) {
                 nextEdgeEnd->map[iEdge] = nextEdgeEnd->edge->used;
-                if (checkColourOk() && isCanonical()) {
+                bool goodGluing = finishTet(tet);
+                if (goodGluing && checkColourOk() && isCanonical()) {
                     if ( (edgesLeft == 0) &&  checkComplete()) {
                         use_(this, useArgs_);
                     } else {
@@ -247,12 +256,19 @@ void CycleDecompSearcher::colourLowestEdge() {
                         }
                     }
                 }
+                unFinishTet(tet);
                 nextEdgeEnd->map[iEdge] = 0;
             }
         }
-        // Try to find more paths.
-        nextPath(start, iEdge, nextEdgeEnd);
-        
+
+        bool goodGluing = finishTet(tet);
+        if (goodGluing) {
+            // Try to find more paths.
+            nextPath(start, iEdge, nextEdgeEnd);
+        }
+
+        unFinishTet(tet);
+
         cycles[nextColour][cycleLengths[nextColour]]=0;
         cycleLengths[nextColour]--;
         
@@ -364,166 +380,29 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         outEnd->map[nextInternal] = nextEdge->used;
         edgesLeft--;
      
-        bool goodGluing = true;
-
-        if ( nextTet->used == 6) {
-            // nextTet has just been fully completed.  Iterate over all
-            // internal edges and check whether edges are above or below.
-            for (unsigned int i=0; i< 6;i++) {
-                // Find the ends for this actual internal edge.
-                
-                // Note that edgeVertex[a] gives the two vertices on edge a
-                // We want the two corresponding faces, so do edgeVertex[5-a]
-                unsigned int endA = NEdge::edgeVertex[5-i][0];
-                unsigned int endB = NEdge::edgeVertex[5-i][1];
-                // Get the colour
-                unsigned int col = nextTet->internalEdges[i];
-                assert(col>0);
-                //std::cout << "i=" << i << std::endl;
-                //std::cout << "endA=" << endA << std::endl;
-                //std::cout << "endB=" << endB << std::endl;
-                unsigned int a=0;
-                unsigned int b=0;
-                unsigned int c=0;
-                unsigned int d=0;
-                //unsigned int result = 0;
-                for (unsigned int j=0; j < 3; j++) {
-                    unsigned int e = faceEdges[endA][j];
-                    // Don't map the current cycle anywhere, only the two edges
-                    // around it.
-                    if (e == i) {
-                        continue;
-                    }
-                    // Find the resultant edge.
-                    signed int eb = edgeParity[i][e];
-                    //std::cout << "i " << i << " e:eb " << e <<":"<<eb<< std::endl;
-                    assert(eb>=0);
-                    // Convert the objects into a numerical value
-                    EdgeEnd *aa = nextTet->externalEdgeEnd[endA];
-                    EdgeEnd *bb = nextTet->externalEdgeEnd[endB];
-                    unsigned int valA = 3*(aa->edge->index) + aa->map[e]; 
-                    unsigned int valB = 3*(bb->edge->index) + bb->map[eb]; 
-
-                    if (a==0) {
-                        a=valA;
-                        b=valB;
-                    } else {
-                        c=valA;
-                        d=valB;
-                    }
-                    
-                    //unsigned int res = ufJoin(col,valA,valB);
-                    //if (result == 0) {
-                    //    result = res;
-                    //} else {
-                    //    if (result == res) {
-                    //        std::cout << "Bad triangulation, res = " << res << std::endl;
-                    //        std::cout << "Completed tet " << nextTet->index << std::endl;
-                    //        std::cout << "Completed colour " << col << std::endl;
-                    //        std::cout << "Edges joined = " << aa->edge->index << ", " <<
-                    //            bb->edge->index << std::endl;
-                    //        std::cout << "A,B = " << valA << " , " << valB << std::endl;
-                    //        std::cout << "Next colour " << nextColour << std::endl;
-                    //        std::cout << "Arr " << std::endl;
-                    //        for( unsigned int j=0; j< 3*(nEdges+1); j++) {
-                    //            std::cout << parityArrays[col][j] << " ";
-                    //        }
-                    //        std::cout << std::endl;
-                    //        dumpData(std::cout);
-                    //        goodGluing = false;
-                    //    }
-                    //}
+        // Try to complete the cycle
+        if (nextEnd == start) {
+            start->map[firstEdge] = start->edge->used;
+            bool goodGluing = finishTet(nextTet);
+            if (goodGluing && checkColourOk() && isCanonical()) {
+                if ( (edgesLeft == 0) && checkComplete()) {
+                    use_(this, useArgs_);
+                } else {
+                    // At most nCycles cycles.  Remember nextColour starts at
+                    // 1, and colourOnLowestEdge() increments it by one.
+                    if (nextColour < nCycles)
+                        colourLowestEdge();
                 }
-                // a,b,c,d have been assigned such that (a,c) <-> (b,d)
-                // Check whether parity has changed.
-                if ( ((a<b) && (d<c)) || ( (b<a) && (c<d))) {
-                    parityArray[col]+=1;
-                }
-                parityArrayCount[col]+=1;
-                // Now check to see if this results in a 2-sided projective
-                // plane.  In other words, see if the "positive" and "negative" edges
-                // swap an odd number of times. Note that we can only do this
-                // if we have completed the current cycle, and also found all
-                // possible "flips".
-                if (( c < nextColour ) && (parityArrayCount[col] == cycleLengths[col]) && ( parityArray[col]%2 == 1)) {
-                    goodGluing=false;
-                }
-            }
+            } 
+            unFinishTet(nextTet);
+            start->map[firstEdge] = 0;
         }
-
+        // Try to find more paths.
+        bool goodGluing = finishTet(nextTet);
         if (goodGluing) {
-            // Try to complete the cycle
-            if (nextEnd == start) {
-                start->map[firstEdge] = start->edge->used;
-                if (checkColourOk() && isCanonical()) {
-                    if ( (edgesLeft == 0) && checkComplete()) {
-                        use_(this, useArgs_);
-                    } else {
-                        // At most nCycles cycles.  Remember nextColour starts at
-                        // 1, and colourOnLowestEdge() increments it by one.
-                        if (nextColour < nCycles)
-                            colourLowestEdge();
-                    }
-                } 
-                start->map[firstEdge] = 0;
-            }
-            // Try to find more paths.
             nextPath(start, firstEdge, nextEnd);
-        }
-        
-        if ( nextTet->used == 6) {
-            // nextTet has just been fully completed.  Iterate over all
-            // internal edges and remove parity checks.
-            for (unsigned int i=0; i< 6;i++) {
-                // Find the ends for this actual internal edge.
-
-                // Note that edgeVertex[a] gives the two vertices on edge a
-                // We want the two corresponding faces, so do edgeVertex[5-a]
-                unsigned int endA = NEdge::edgeVertex[5-i][0];
-                unsigned int endB = NEdge::edgeVertex[5-i][1];
-                // Get the colour
-                unsigned int col = nextTet->internalEdges[i];
-                assert(col>0);
-                unsigned int a=0;
-                unsigned int b=0;
-                unsigned int c=0;
-                unsigned int d=0;
-                for (unsigned int j=0; j < 3; j++) {
-                    unsigned int e = faceEdges[endA][j];
-                    // Don't map the current cycle anywhere, only the two edges
-                    // around it.
-                    if (e == i) {
-                        continue;
-                    }
-                    // Find the resultant edge.
-                    signed int eb = edgeParity[i][e];
-                    assert(eb>=0);
-                    
-
-                    // Convert the objects into a numerical value
-                    EdgeEnd *aa = nextTet->externalEdgeEnd[endA];
-                    EdgeEnd *bb = nextTet->externalEdgeEnd[endB];
-                    unsigned int valA = 3*(aa->edge->index) + aa->map[e]; 
-                    unsigned int valB = 3*(bb->edge->index) + bb->map[eb]; 
-                    //ufUnJoin(col,valA,valB);
-                    
-                    if (a==0) {
-                        a=valA;
-                        b=valB;
-                    } else {
-                        c=valA;
-                        d=valB;
-                    }
-                }
-                
-                // a,b,c,d have been assigned such that (a,c) <-> (b,d)
-                // Check whether parity has changed, and undo the changes
-                if ( ((a<b) && (d<c)) || ( (b<a) && (c<d))) {
-                    parityArray[col]-=1;
-                }
-                parityArrayCount[col]-=1;
-            }
-        }
+        } 
+        unFinishTet(nextTet);
 
         cycleLengths[nextColour]--;
         cycles[nextColour][cycleLengths[nextColour]]=0;
@@ -534,6 +413,239 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         nextEdge->unColour();
         nextTet->internalEdges[nextInternal] = 0;
         nextTet->used--;
+    }
+}
+
+
+// Return true if there is nothing wrong.
+bool CycleDecompSearcher::finishTet(Tetrahedron *tet) {
+    if (nTets <= 3) {
+        return true;
+    }
+    if ( tet->used < 6 ) {
+        return true;
+    }
+    bool goodGluing = true;
+    //std::cout << "Finished tet " << tet->index << std::endl;
+    //std::cout << "Internal: " << tet->internalEdges[0] << 
+    //            " " << tet->internalEdges[1]  <<
+    //            " " << tet->internalEdges[2]  <<
+    //            " " << tet->internalEdges[3]  <<
+    //            " " << tet->internalEdges[4]  <<
+    //            " " << tet->internalEdges[5]  <<
+    //            std::endl;
+    // tet has just been fully completed.  Iterate over all
+    // internal edges and check whether edges are above or below.
+    for (unsigned int i=0; i< 6;i++) {
+        // Find the ends for this actual internal edge.
+        
+        // Note that edgeVertex[a] gives the two vertices on edge a
+        // We want the two corresponding faces, so do edgeVertex[5-a]
+        unsigned int endA = NEdge::edgeVertex[5-i][0];
+        unsigned int endB = NEdge::edgeVertex[5-i][1];
+        // Convert the objects into a numerical value
+        EdgeEnd *aa = tet->externalEdgeEnd[endA];
+        EdgeEnd *bb = tet->externalEdgeEnd[endB];
+        // Get the colour
+        unsigned int col = tet->internalEdges[i];
+        assert(col>0);
+        //std::cout << "i=" << i << std::endl;
+        //std::cout << "endA=" << endA << std::endl;
+        //std::cout << "endB=" << endB << std::endl;
+        unsigned int a=0;
+        unsigned int b=0;
+        unsigned int c=0;
+        unsigned int d=0;
+        //if (col == 2) {
+        //    std::cout << "OnTet "<< tet->index << " with internal " << i << std::endl;
+        //    std::cout << "Faces are " << endA << " and " << endB << std::endl;
+        //    std::cout << "Count on col " << col << " is " << parityArrayCount[col]  << std::endl;
+        //}
+        //unsigned int result = 0;
+        for (unsigned int j=0; j < 3; j++) {
+            unsigned int e = faceEdges[endA][j];
+            // Don't map the current cycle anywhere, only the two edges
+            // around it.
+            if (e == i) {
+                continue;
+            }
+            // Find the resultant edge.
+            signed int eb = edgeParity[i][e];
+            //std::cout << "i " << i << " e:eb " << e <<":"<<eb<< std::endl;
+            assert(eb>=0);
+
+
+            // If we have started a new cycle on this tet, then we may not have
+            // set up the map[] array on the very last edge.  If not, since
+            // it's the last edge to be added, we know it must be the "third"
+            // one used.
+            unsigned int aAdjust = aa->map[e];
+            if (aAdjust == 0) {
+                aAdjust = 3;
+            }
+            unsigned int bAdjust = bb->map[eb];
+            if (bAdjust == 0) {
+                bAdjust = 3;
+            }
+
+            unsigned int valA = 3*(aa->edge->index) + aAdjust; 
+            unsigned int valB = 3*(bb->edge->index) + bAdjust; 
+
+            if (a==0) {
+                a=valA;
+                b=valB;
+                //if (col == 2) {
+                //    std::cout << "e: " << e << " eb: " << eb <<  std::endl;
+                //    std::cout << "a: " << a << " b: " << b <<  std::endl;
+                //}
+            } else {
+                c=valA;
+                d=valB;
+                //if (col == 2) {
+                //    std::cout << "e: " << e << " eb: " << eb <<  std::endl;
+                //    std::cout << "c: " << c << " d: " << d <<  std::endl;
+                //}
+            }
+            
+            //unsigned int res = ufJoin(col,valA,valB);
+            //if (result == 0) {
+            //    result = res;
+            //} else {
+            //    if (result == res) {
+            //        std::cout << "Bad triangulation, res = " << res << std::endl;
+            //        std::cout << "Completed tet " << tet->index << std::endl;
+            //        std::cout << "Completed colour " << col << std::endl;
+            //        std::cout << "Edges joined = " << aa->edge->index << ", " <<
+            //            bb->edge->index << std::endl;
+            //        std::cout << "A,B = " << valA << " , " << valB << std::endl;
+            //        std::cout << "Next colour " << nextColour << std::endl;
+            //        std::cout << "Arr " << std::endl;
+            //        for( unsigned int j=0; j< 3*(nEdges+1); j++) {
+            //            std::cout << parityArrays[col][j] << " ";
+            //        }
+            //        std::cout << std::endl;
+            //        dumpData(std::cout);
+            //        goodGluing = false;
+            //    }
+            //}
+        }
+        assert(a!=0);
+        assert(b!=0);
+        assert(c!=0);
+        assert(d!=0);
+        
+        parityArrayCount[col]+=1;
+
+        // a,b,c,d have been assigned such that (a,c) <-> (b,d)
+        // Check whether parity has changed.
+        if ( ((a<c) && (d<b)) || ( (c<a) && (b<d))) {
+            parityArray[col]+=1;
+            //if (col == 2) {
+            //    std::cout << "Flip on col " << col << " with " << a << " " << b << " " << c << " " << d << std::endl;
+            //    std::cout << "Flips on col " << col << " is " << parityArray[col]  << std::endl;
+            //}
+        }
+        //std::cout << "Col: " << col << " Len: " << cycleLengths[col] << " Count: " << parityArrayCount[col] << std::endl;
+        //if (( col < nextColour ) && (parityArrayCount[col] == cycleLengths[col]) ) {
+        //    std::cout << "Finished parity for colour " << col << std::endl;
+        //    std::cout << "Parity is " << parityArray[col] << std::endl;
+        //}
+
+        // Now check to see if this results in a 2-sided projective
+        // plane.  In other words, see if the "positive" and "negative" edges
+        // swap an odd number of times. Note that we can only do this
+        // if we have completed the current cycle, and also found all
+        // possible "flips".
+        if (( col < nextColour ) && (parityArrayCount[col] == cycleLengths[col]) && ( parityArray[col]%2 == 1)) {
+            std::cout << "Bad triangulation" << std::endl;
+            std::cout << "Completed tet " << tet->index << std::endl;
+            std::cout << "Completed colour " << col << std::endl;
+            std::cout << "Next colour " << nextColour << std::endl;
+            dumpData(std::cout);
+            std::cout << "Done" << std::endl;
+            goodGluing=false;
+        }
+    }
+    return goodGluing;
+}
+
+void CycleDecompSearcher::unFinishTet(Tetrahedron *tet) {
+    if (nTets <= 3) {
+        return;
+    }
+    if ( tet->used < 6) {
+        return;
+    }
+    // tet has just been fully completed.  Iterate over all
+    // internal edges and remove parity checks.
+    for (unsigned int i=0; i< 6;i++) {
+        // Find the ends for this actual internal edge.
+
+        // Note that edgeVertex[a] gives the two vertices on edge a
+        // We want the two corresponding faces, so do edgeVertex[5-a]
+        unsigned int endA = NEdge::edgeVertex[5-i][0];
+        unsigned int endB = NEdge::edgeVertex[5-i][1];
+        // Get the colour
+        unsigned int col = tet->internalEdges[i];
+        assert(col>0);
+        EdgeEnd *aa = tet->externalEdgeEnd[endA];
+        EdgeEnd *bb = tet->externalEdgeEnd[endB];
+        unsigned int a=0;
+        unsigned int b=0;
+        unsigned int c=0;
+        unsigned int d=0;
+        for (unsigned int j=0; j < 3; j++) {
+            unsigned int e = faceEdges[endA][j];
+            // Don't map the current cycle anywhere, only the two edges
+            // around it.
+            if (e == i) {
+                continue;
+            }
+            // Find the resultant edge.
+            signed int eb = edgeParity[i][e];
+            assert(eb>=0);
+            
+
+            // If we have started a new cycle on this tet, then we may not have
+            // set up the map[] array on the very last edge.  If not, since
+            // it's the last edge to be added, we know it must be the "third"
+            // one used.
+            unsigned int aAdjust = aa->map[e];
+            if (aAdjust == 0) {
+                aAdjust = 3;
+            }
+            unsigned int bAdjust = bb->map[eb];
+            if (bAdjust == 0) {
+                bAdjust = 3;
+            }
+
+            // Convert the objects into a numerical value
+            unsigned int valA = 3*(aa->edge->index) + aAdjust; 
+            unsigned int valB = 3*(bb->edge->index) + bAdjust; 
+            //ufUnJoin(col,valA,valB);
+            
+            if (a==0) {
+                a=valA;
+                b=valB;
+            } else {
+                c=valA;
+                d=valB;
+            }
+        }
+        
+        parityArrayCount[col]-=1;
+        //if (col == 2) {
+        //    std::cout << "Undo on col " << col << " with " << a << " " << b << " " << c << " " << d << std::endl;
+        //}
+        // a,b,c,d have been assigned such that (a,c) <-> (b,d)
+        // Check whether parity has changed, and undo the changes
+        if ( ((a<c) && (b>d)) || ( (a>c) && (b<d))) {
+            parityArray[col]-=1;
+            //if (col == 2) {
+            //    std::cout << "unFlip on col " << col << " with " << a << " " << b << " " << c << " " << d << std::endl;
+            //    std::cout << "Flips on col " << col << " is " << parityArray[col]  << std::endl;
+            //}
+        }
     }
 }
  
