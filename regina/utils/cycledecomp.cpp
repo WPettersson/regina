@@ -324,7 +324,7 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
     // are looking for.
    
     if ((nTets >= 3) && (minimal_)) {
-        if (edgesLeft < 3*(nCycles - nextColour)) 
+        if (edgesLeft < 4*(nCycles - nextColour)) 
             return;
     } else { 
         // We don't actually know how many cycles we might have, so we just
@@ -557,12 +557,12 @@ bool CycleDecompSearcher::finishTet(Tetrahedron *tet) {
         // if we have completed the current cycle, and also found all
         // possible "flips".
         if (( col < nextColour ) && (parityArrayCount[col] == cycleLengths[col]) && ( parityArray[col]%2 == 1)) {
-            std::cout << "Bad triangulation" << std::endl;
-            std::cout << "Completed tet " << tet->index << std::endl;
-            std::cout << "Completed colour " << col << std::endl;
-            std::cout << "Next colour " << nextColour << std::endl;
-            dumpData(std::cout);
-            std::cout << "Done" << std::endl;
+            //std::cout << "Bad triangulation" << std::endl;
+            //std::cout << "Completed tet " << tet->index << std::endl;
+            //std::cout << "Completed colour " << col << std::endl;
+            //std::cout << "Next colour " << nextColour << std::endl;
+            //dumpData(std::cout);
+            //std::cout << "Done" << std::endl;
             goodGluing=false;
         }
     }
@@ -788,14 +788,20 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
         }
         out << std::endl;
     }
-    for (i = 0; i < nTets; i++) {
-        for(j = 0; j < 6; j++) {
-            out << tets[i].internalEdges[j] << " ";
-        }
-        if (i != (nTets-1))
-            out << ": ";
-    }
-    out << std::endl;
+    //for (i = 0; i < nEdges; i++) {
+    //    out << i << ": " << edges[i].colours[0]
+    //        << ", " << edges[i].colours[1]
+    //        << ", " << edges[i].colours[2] << std::endl;
+    //}
+
+    //for (i = 0; i < nTets; i++) {
+    //    for(j = 0; j < 6; j++) {
+    //        out << tets[i].internalEdges[j] << " ";
+    //    }
+    //    if (i != (nTets-1))
+    //        out << ": ";
+    //}
+    //out << std::endl;
     out << "------------------" << std::endl;
     //for (i = 0; i < nEdges; i++) {
     //    out << "Edge " << i << ": [";
