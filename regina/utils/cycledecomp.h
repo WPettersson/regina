@@ -206,6 +206,13 @@ class CycleDecompSearcher {
                      *   arithmetic is simpler when accessing mappings. */
         };
 
+        class ThreeCycle {
+            public:
+              ThreeCycle(Edge *loop, unsigned int f1, unsigned int f2);
+              Edge *loop;
+              unsigned int otherFaces[2];
+        }
+
         Tetrahedron *tets;
             /**< The tetrahedron representations in the face pairing graph. */
         unsigned int nTets;
@@ -397,7 +404,8 @@ class CycleDecompSearcher {
 
         // Overridden methods:
         virtual void dumpData(std::ostream& out) const;
-        virtual void runSearch(long maxDepth = -1);
+        virtual void runSearch(long maxDepth = -1, std::vector<ThreeCycle *> = 0,
+                unsigned int threeCyclseDone = 0);
 
 
     protected:

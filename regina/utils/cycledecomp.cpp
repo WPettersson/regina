@@ -289,25 +289,8 @@ bool CycleDecompSearcher::checkColourOk() {
     if (nTets < 3)
         return true;
     // No short cycles
-    if ( cycleLengths[nextColour] < 3) 
+    if ( cycleLengths[nextColour] < 4) 
         return false;
-    // A length 3 cycle on 3 distinct tetrahedra implies a 3-2 move.
-    // Therefore one of the edges must be a loop.
-    if ( cycleLengths[nextColour] == 3 ) {
-        bool foundLoop = false;
-        for(unsigned int i=0;i<3;i++) { 
-            unsigned int ind = abs(cycles[nextColour][i]);
-            // edges[0] has index 1
-            Edge *e = &(edges[ind-1]);
-            if (e->ends[0]->tet == e->ends[1]->tet) {
-                foundLoop = true;
-                break;
-            }
-        }
-        if (foundLoop == false) 
-            return false;
-    }
-
     return true;
 }
 
@@ -318,7 +301,7 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
     Edge *nextEdge;
     Tetrahedron *nextTet = now->tet;
     // Count the number of edges left. We are working on cycle number 
-    // nextColour. We need 3 edges for each of the (nCycles - nextColour) 
+    // nextColour. We need 4 edges for each of the (nCycles - nextColour) 
     // cycles after this one. Note that this only applies if we are looking for
     // a minimal triangulation (else we won't actually know how many cycles we
     // are looking for.
@@ -705,7 +688,8 @@ unsigned int CycleDecompSearcher::findTetWithMostInternalEdgesUsed() {
     return tet;
 }
 
-void CycleDecompSearcher::runSearch(long maxDepth) {
+void CycleDecompSearcher::runSearch(long maxDepth, 
+        std::vector<ThreeCycle*> threeCyclesEdges, unsigned int threeCyclesDone) {
     // Preconditions:
     //     Only closed prime minimal P2-irreducible triangulations are needed.
     //     The given face pairing is closed with order >= 3.
@@ -723,8 +707,510 @@ void CycleDecompSearcher::runSearch(long maxDepth) {
     }
 
 
-    colourLowestEdge();
-    use_(0, useArgs_);
+    if ( threeCycleEdges == 0 ) {
+        // Find all appropriate places where cycles of length 3 can be placed
+        threeCycleEdges = new std::vector<ThreeCycle*>;
+        for(unsigned int i=0; i < nEdges; i++) {
+            Edge *e = edges[i];
+            unsigned int f1,f2;
+            if (e->end[0]->tet == e->end[1]->tet) {
+                // e is a loop. Check two other edges on this tet are parallel
+                Tet *t = e->end[0]->tet;
+                Tet *t2 = 0;
+                Tet *t3 = 0;
+                for(unsigned int j=0; j < 4; j++) {
+                    if (t2 == 0) {
+                        // Assign t2
+                        t2 =(t->externalEdgeEnd[j]->edge->otherEnd(t->externalEdgeEnd[j]))->tet; 
+                        // If t2 == t, then this edge is actually the "loop"
+                        // edge.
+                        if (t2 == t)
+                            t2 = 0;
+                        else
+                            f1 = j;
+                    } else {
+                        // Assign t3
+                        t3 =(t->externalEdgeEnd[j]->edge->otherEnd(t->externalEdgeEnd[j]))->tet; 
+                        // If t3 == t, then this edge is actually the "loop"
+                        // edge.
+                        if (t3 == t)
+                            t3 = 0;
+                        else
+                            f2 = j;
+                    }
+                }
+                if ((t2 != 0) && (t2 == t3)) {
+                    threeCycleEdges.push_back(ThreeCycle(e,f1,f2));
+                }
+            }
+        }
+    }
+    
+    if (threeCyclesDone < threeCycleEdges.size()) {
+        runSearch(maxDepth,threeCycleEdges,threeCyclesDone+1);
+        // Colour 3 cycle
+
+
+        // Extract all three edges
+        Edge *e = threeCycleEdges[threeCyclesDone].loop;
+        unsigned int o1 = threeCycleEdges[threeCyclesDone].otherFaces[0];
+        unsigned int o2 = threeCycleEdges[threeCyclesDone].otherFaces[1];
+
+        unsigned int i;
+        Tet *t = e->ends[0]->tet;
+        EdgeEnd *ee2 = t->externalEdgeEnd[o1];
+        Edge *e2 = ee2->edge;
+        EdgeEnd *e2o = e2->otherEnd(ee2);
+        Tet *t2 = e2o->tet;
+        EdgeEnd *ee3 = t->externalEdgeEnd[o2];
+        Edge *e3 = ee3->edge;
+        EdgeEnd *e3o = e3->otherEnd(ee3);
+
+        // Find smallest index edge
+        if (e->index < e2->index) {
+            if ( e->index < e3->index) {
+                // e is smallest
+                if ( e2->index < e3->index ) {
+                    // e,e,e2,e3
+                    nextColour++;
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+
+                    signed dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used;
+                    
+                    i = NEdge::edgeNumber[e->ends[1]->face][o1];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+                    signed dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e2->colour(nextColour);
+                    edgesLeft--;
+                    ee2->map[i] = e2->used;
+                    
+                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    t2->internalEdges[i] = nextColour;
+                    e2o->map[i] = e2->used;
+                    signed dir = e2->index;
+                    if (e2->ends[0] == e2o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e3->colour(nextColour);
+                    edgesLeft--;
+                    e3o->map[i] = e3->used;
+                    i = NEdge::edgeNumber[o2][e->ends[0]->face];
+                    t->internalEdges[i] = nextColour;
+                    ee3->map[i] = e3->used;
+                    e->ends[0]->map[i] = 1; 
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    signed dir = e3->index;
+                    if (e3->ends[0] != e3o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                } else {
+                    // e,e,e3,e2
+                    nextColour++;
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+
+                    signed dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used;
+                    
+                    i = NEdge::edgeNumber[e->ends[1]->face][o2];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e3->colour(nextColour);
+                    edgesLeft--;
+                    ee3->map[i] = e3->used;
+                    
+                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    t2->internalEdges[i] = nextColour;
+                    e3o->map[i] = e3->used;
+                    dir = e3->index;
+                    if (e3->ends[0] == e3o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e2->colour(nextColour);
+                    edgesLeft--;
+                    e2o->map[i] = e2->used;
+                    i = NEdge::edgeNumber[o1][e->ends[0]->face];
+                    t->internalEdges[i] = nextColour;
+                    ee2->map[i] = e2->used;
+                    e->ends[0]->map[i] = 1; 
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    dir = e2->index;
+                    if (e2->ends[0] != e2o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                }
+            } else { 
+                // e3 is smallest.
+                
+                if (e3->ends[0] == ee3) { 
+                    // e3,e2,e,e
+                    nextColour++;
+                    e3->colour(nextColour);
+                    edgesLeft--;
+                    
+                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    t2->internalEdges[i] = nextColour;
+                    e3o->map[i] = e3->used;
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    signed dir = e3->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e2->colour(nextColour);
+                    edgesLeft--;
+                    e2o->map[i] = e2->used;
+                    
+                    i = NEdge::edgeNumber[e->ends[0]->face][o1];
+                    t->internalEdges[i] = nextColour;
+                    ee2->map[i] = e2->used;
+                    dir = e2->index;
+                    if (e2->ends[1] == e2o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used; 
+                    
+                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used;
+                    
+                    i = NEdge::edgeNumber[o2][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    ee3->map[i] = 1;
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                } else {
+                    // e3,e,e,e2
+                    nextColour++;
+                    e3->colour(nextColour);
+                    edgesLeft--;
+                    i = NEdge::edgeNumber[o2][e->ends[0]->face];
+                    t->internalEdges[i] = nextColour;
+                    ee3->map[i] = e3->used;
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    signed dir = e3->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used; 
+                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used;
+                    
+                    i = NEdge::edgeNumber[e->ends[1]->face][o1];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e2->colour(nextColour);
+                    edgesLeft--;
+                    ee2->map[i] = e2->used;
+                    
+                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    t2->internalEdges[i] = nextColour;
+                    e2o->map[i] = e2->used;
+                    // e3 only used once in a three-cycle so this still works.
+                    e3o->map[i] = e3->used;
+                    dir = e2->index;
+                    if (e2->ends[0] == e2o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                }
+            }
+        } else { 
+            // e2 < e
+            if ( e2->index < e3->index) {
+                // e2 smallest
+                if (ee2 == e2->ends[0]) { 
+                    // e2,e3,e,e
+                    nextColour++;
+                    
+                    e2->colour(nextColour);
+                    edgesLeft--;
+                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    t2->internalEdges[i] = nextColour;
+                    e2o->map[i] = e2->used;
+                    signed dir = e2->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e3->colour(nextColour);
+                    edgesLeft--;
+                    e3o->map[i] = e3->used;
+                    i = NEdge::edgeNumber[o2][e->ends[0]->face];
+                    t->internalEdges[i] = nextColour;
+                    ee3->map[i] = e3->used;
+                    dir = 32->index;
+                    if (e3->ends[0] != e3o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used; 
+                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used;
+                    
+                    i = NEdge::edgeNumber[e->ends[1]->face][o1];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    ee2->map[i] = e2->used;
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                } else {
+                    // e2,e,e,e3
+                    nextColour++;
+                    
+                    e2->colour(nextColour);
+                    edgesLeft--;
+                    i = NEdge::edgeNumber[e->ends[0]->face][o1];
+                    t2->internalEdges[i] = nextColour;
+                    e2o->map[i] = e2->used;
+                    signed dir = e2->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used; 
+                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used;
+                    
+                    i = NEdge::edgeNumber[o2][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e3->colour(nextColour);
+                    edgesLeft--;
+                    ee3->map[i] = e3->used;
+                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    t->internalEdges[i] = nextColour;
+                    e3o->map[i] = e3->used;
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    ee2->map[i] = e2->used;
+                    dir = e3->index;
+                    if (e3->ends[0] != e3o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                }
+            } else { 
+                // e3 is smallest.
+                    
+                if (e3->ends[0] == ee3) { 
+                    // e3,e2,e,e
+                    nextColour++;
+                    e3->colour(nextColour);
+                    edgesLeft--;
+                    
+                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    t2->internalEdges[i] = nextColour;
+                    e3o->map[i] = e3->used;
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    signed dir = e3->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e2->colour(nextColour);
+                    edgesLeft--;
+                    e2o->map[i] = e2->used;
+                    
+                    i = NEdge::edgeNumber[e->ends[0]->face][o1];
+                    t->internalEdges[i] = nextColour;
+                    ee2->map[i] = e2->used;
+                    dir = e2->index;
+                    if (e2->ends[1] == e2o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used; 
+                    
+                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used;
+                    
+                    i = NEdge::edgeNumber[o2][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    ee3->map[i] = 1;
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                } else {
+                    // e3,e,e,e2
+                    nextColour++;
+                    e3->colour(nextColour);
+                    edgesLeft--;
+                    i = NEdge::edgeNumber[o2][e->ends[0]->face];
+                    t->internalEdges[i] = nextColour;
+                    ee3->map[i] = e3->used;
+                    // 3-cycles never appear with shared edges in common 
+                    // so we can know these values.
+                    signed dir = e3->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used; 
+                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                    
+                    e->colour(nextColour);
+                    edgesLeft--;
+                    e->ends[0]->map[i] = e->used;
+                    
+                    i = NEdge::edgeNumber[e->ends[1]->face][o1];
+                    t->internalEdges[i] = nextColour;
+                    e->ends[1]->map[i] = e->used;
+                    dir = e->index;
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+
+                    e2->colour(nextColour);
+                    edgesLeft--;
+                    ee2->map[i] = e2->used;
+                    
+                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    t2->internalEdges[i] = nextColour;
+                    e2o->map[i] = e2->used;
+                    // e3 only used once in a three-cycle so this still works.
+                    e3o->map[i] = e3->used;
+                    dir = e2->index;
+                    if (e2->ends[0] == e2o) {
+                        dir = -dir;
+                    }
+                    cycles[nextColour][cycleLengths[nextColour]] = dir;
+                    cycleLengths[nextColour]++;
+                }
+            }
+        }
+
+
+        runSearch(maxDepth,threeCycleEdges,threeCyclesDone+1);
+        // Uncolour 3 cycle
+    } else {
+        colourLowestEdge();
+        use_(0, useArgs_);
+    }
 }
 
 NTriangulation* CycleDecompSearcher::triangulate() const {
@@ -1432,12 +1918,11 @@ unsigned int inline CycleDecompSearcher::Automorphism::operator [] (const signed
   return realEdgeMap[(std::ptrdiff_t)(in)];
 }
 
-//void CycleDecompSearcher::Automorphism::tetAndInt(
-//        unsigned int *newTet, unsigned int *newInternal, 
-//        unsigned int oldTet, unsigned int oldInternal) {
-//  *newTet = newTets[oldTet];
-//  *newInternal = newInts[oldTet][oldInternal];
-//  return;
-//}
+CycleDecompSearcher::ThreeCycle::ThreeCycle(Edge *e, 
+        unsigned int f1, unsigned int f2) {
+    loop = e;
+    otherFaces[0] = f1;
+    otherFaces[1] = f2;
+}
 
 /* vim: set ts=4 sw=4 expandtab: */
