@@ -179,10 +179,12 @@ CycleDecompSearcher::~CycleDecompSearcher() {
     for( unsigned int i=0; i < nCycles+1; i++ ) {
         delete[] cycles[i];
     }
-    for( unsigned int i=0; i < nAutos; i++ ) {
-        delete automorphisms[i];
+    if (automorphisms != 0) {
+        for( unsigned int i=0; i < nAutos; i++ ) {
+            delete automorphisms[i];
+        }
+        delete[] automorphisms;
     }
-    delete[] automorphisms;
     delete[] cycles;
     delete[] parityArray;
     delete[] parityArrayCount;
@@ -1319,6 +1321,9 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
 }
 
 bool CycleDecompSearcher::isCanonical() {
+    if ( automorphisms == 0 ) {
+        return true;
+    }
     unsigned int autoNo;
     bool thisAuto;
     unsigned int *cycleList[nextColour+1];
