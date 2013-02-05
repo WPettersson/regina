@@ -1894,7 +1894,7 @@ CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
     cycleLength = new unsigned int[nCycles+1];
     offset = new unsigned int[nCycles+1];
     for(unsigned int i=0;i< nCycles+1;i++) {
-        cycles[i] = new unsigned int[3*nEdges];
+        cycles[i] = new unsigned int[3*(nCycles-1)];
     }
     for (unsigned int i=0; i < nEdges;i++) {
         unsigned int startFace = edges[i].ends[0]->face;
