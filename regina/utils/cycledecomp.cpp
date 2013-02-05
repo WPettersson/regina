@@ -1893,8 +1893,8 @@ CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
     cycles = new unsigned int*[nCycles+1];
     cycleLength = new unsigned int[nCycles+1];
     offset = new unsigned int[nCycles+1];
-    for(unsigned int i=0;i< nCycles+1;i++) {
-        cycles[i] = new unsigned int[3*(nCycles-1)];
+    for(unsigned int i=1;i< nCycles+1;i++) {
+        cycles[i] = new unsigned int[3*(nCycles-1)-2];
     }
     for (unsigned int i=0; i < nEdges;i++) {
         unsigned int startFace = edges[i].ends[0]->face;
@@ -1932,7 +1932,7 @@ CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
 }
 
 CycleDecompSearcher::Automorphism::~Automorphism() {
-    for(unsigned int i=0;i< nCycles+1;i++) {
+    for(unsigned int i=1;i< nCycles+1;i++) {
         delete[] cycles[i];
     }
     delete[] cycles;
