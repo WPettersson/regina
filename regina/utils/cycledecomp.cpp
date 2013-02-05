@@ -161,8 +161,13 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     // All done for the orderAssigned[] array.  Tidy up.
     delete[] orderAssigned;
 
+    // Generate the list of face pairing automorphisms if necessary.
+    if (autos == 0) {
+        autos = new NFacePairing::IsoList();
+        pairing->findAutomorphisms(const_cast<NFacePairing::IsoList&>(*autos));
+    }
 
-    if ( autos ) {
+    if (autos) {
         nAutos = 0;
         automorphisms = new Automorphism*[autos->size()];
         for( NFacePairing::IsoList::const_iterator it = autos->begin();
