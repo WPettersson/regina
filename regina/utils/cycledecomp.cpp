@@ -1882,7 +1882,7 @@ inline CycleDecompSearcher::EdgeEnd* CycleDecompSearcher::Edge::otherEnd(EdgeEnd
 
 CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
         const Edge *edges, const unsigned int _nEdges, 
-        const unsigned int nCycles) : nEdges(_nEdges)  {
+        const unsigned int _nCycles) : nEdges(_nEdges), nCycles(_nCycles)  {
     edgeMap = new unsigned int[2*(nEdges+1)];
     realEdgeMap = edgeMap+nEdges;
     cycles = new unsigned int*[nCycles+1];
