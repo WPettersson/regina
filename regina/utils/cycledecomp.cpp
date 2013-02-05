@@ -691,7 +691,7 @@ unsigned int CycleDecompSearcher::findTetWithMostInternalEdgesUsed() {
 }
 
 void CycleDecompSearcher::runSearch(long maxDepth, 
-        std::vector<ThreeCycle*> threeCyclesEdges, unsigned int threeCyclesDone) {
+        std::vector<ThreeCycle*> *threeCycleEdges, unsigned int threeCyclesDone) {
     // Preconditions:
     //     Only closed prime minimal P2-irreducible triangulations are needed.
     //     The given face pairing is closed with order >= 3.
@@ -713,83 +713,77 @@ void CycleDecompSearcher::runSearch(long maxDepth,
         // Find all appropriate places where cycles of length 3 can be placed
         threeCycleEdges = new std::vector<ThreeCycle*>;
         for(unsigned int i=0; i < nEdges; i++) {
-            Edge *e = edges[i];
+            Edge *e = &edges[i]; // edges start at 1 and go to nEdges
             unsigned int f1,f2;
-            if (e->end[0]->tet == e->end[1]->tet) {
+            if (e->ends[0]->tet == e->ends[1]->tet) {
                 // e is a loop. Check two other edges on this tet are parallel
-                Tet *t = e->end[0]->tet;
-                Tet *t2 = 0;
-                Tet *t3 = 0;
-                for(unsigned int j=0; j < 4; j++) {
+                Tetrahedron *t = e->ends[0]->tet;
+                Tetrahedron *t2 = 0;
+                Tetrahedron *t3 = 0;
+                // Break out of this cycle once we've found t3 (which means
+                // we've also found t2)
+                for(unsigned int j=0; (t3 == 0) && (j < 4); j++) {
                     if (t2 == 0) {
                         // Assign t2
                         t2 =(t->externalEdgeEnd[j]->edge->otherEnd(t->externalEdgeEnd[j]))->tet; 
                         // If t2 == t, then this edge is actually the "loop"
                         // edge.
-                        if (t2 == t)
+                        if (t2 == t) {
                             t2 = 0;
-                        else
+                        } else {
                             f1 = j;
+                        }
                     } else {
                         // Assign t3
-                        t3 =(t->externalEdgeEnd[j]->edge->otherEnd(t->externalEdgeEnd[j]))->tet; 
+                        t3 = (t->externalEdgeEnd[j]->edge->otherEnd(t->externalEdgeEnd[j]))->tet; 
                         // If t3 == t, then this edge is actually the "loop"
                         // edge.
-                        if (t3 == t)
+                        if (t3 == t) {
                             t3 = 0;
-                        else
+                        } else {
                             f2 = j;
+                        }
                     }
                 }
                 if ((t2 != 0) && (t2 == t3)) {
-                    threeCycleEdges.push_back(ThreeCycle(e,f1,f2));
+                    threeCycleEdges->push_back(new ThreeCycle(e,f1,f2));
                 }
             }
         }
     }
     
-    if (threeCyclesDone < threeCycleEdges.size()) {
+    if (threeCyclesDone < threeCycleEdges->size()) {
+        // Try the search with this 3-cycle not coloured.
         runSearch(maxDepth,threeCycleEdges,threeCyclesDone+1);
         // Colour 3 cycle
 
 
         // Extract all three edges
-        Edge *e = threeCycleEdges[threeCyclesDone].loop;
-        unsigned int o1 = threeCycleEdges[threeCyclesDone].otherFaces[0];
-        unsigned int o2 = threeCycleEdges[threeCyclesDone].otherFaces[1];
+        Edge *e = (*threeCycleEdges)[threeCyclesDone]->loop;
+        unsigned int o1 = (*threeCycleEdges)[threeCyclesDone]->otherFaces[0];
+        unsigned int o2 = (*threeCycleEdges)[threeCyclesDone]->otherFaces[1];
 
         unsigned int i;
-        Tet *t = e->ends[0]->tet;
+        Tetrahedron *t = e->ends[0]->tet;
         EdgeEnd *ee2 = t->externalEdgeEnd[o1];
         Edge *e2 = ee2->edge;
         EdgeEnd *e2o = e2->otherEnd(ee2);
-        Tet *t2 = e2o->tet;
+        Tetrahedron *t2 = e2o->tet;
         EdgeEnd *ee3 = t->externalEdgeEnd[o2];
         Edge *e3 = ee3->edge;
         EdgeEnd *e3o = e3->otherEnd(ee3);
 
+        nextColour++;
+        cycleLengths[nextColour]=0;
         // Find smallest index edge
         if (e->index < e2->index) {
             if ( e->index < e3->index) {
                 // e is smallest
                 if ( e2->index < e3->index ) {
-                    // e,e,e2,e3
-                    nextColour++;
+                    // e,e2,e3
                     e->colour(nextColour);
                     edgesLeft--;
-                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
-                    t->internalEdges[i] = nextColour;
-                    e->ends[1]->map[i] = e->used;
-
-                    signed dir = e->index;
-                    cycles[nextColour][cycleLengths[nextColour]] = dir;
-                    cycleLengths[nextColour]++;
-                    
-                    e->colour(nextColour);
-                    edgesLeft--;
-                    e->ends[0]->map[i] = e->used;
-                    
-                    i = NEdge::edgeNumber[e->ends[1]->face][o1];
+                    i = 5-NEdge::edgeNumber[e->ends[1]->face][o1];
                     t->internalEdges[i] = nextColour;
                     e->ends[1]->map[i] = e->used;
                     signed dir = e->index;
@@ -800,10 +794,10 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     edgesLeft--;
                     ee2->map[i] = e2->used;
                     
-                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    i = 5-NEdge::edgeNumber[e2o->face][e3o->face];
                     t2->internalEdges[i] = nextColour;
                     e2o->map[i] = e2->used;
-                    signed dir = e2->index;
+                    dir = e2->index;
                     if (e2->ends[0] == e2o) {
                         dir = -dir;
                     }
@@ -813,39 +807,25 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     e3->colour(nextColour);
                     edgesLeft--;
                     e3o->map[i] = e3->used;
-                    i = NEdge::edgeNumber[o2][e->ends[0]->face];
+                    i = 5-NEdge::edgeNumber[o2][e->ends[0]->face];
                     t->internalEdges[i] = nextColour;
                     ee3->map[i] = e3->used;
-                    e->ends[0]->map[i] = 1; 
-                    // 3-cycles never appear with shared edges in common 
-                    // so we can know these values.
-                    signed dir = e3->index;
+                    e->ends[0]->map[i] = e->used; 
+                    dir = e3->index;
                     if (e3->ends[0] != e3o) {
                         dir = -dir;
                     }
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
                     cycleLengths[nextColour]++;
                 } else {
-                    // e,e,e3,e2
-                    nextColour++;
+                    // e,e3,e2
                     e->colour(nextColour);
                     edgesLeft--;
-                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    
+                    i = 5-NEdge::edgeNumber[e->ends[1]->face][o2];
                     t->internalEdges[i] = nextColour;
                     e->ends[1]->map[i] = e->used;
-
                     signed dir = e->index;
-                    cycles[nextColour][cycleLengths[nextColour]] = dir;
-                    cycleLengths[nextColour]++;
-                    
-                    e->colour(nextColour);
-                    edgesLeft--;
-                    e->ends[0]->map[i] = e->used;
-                    
-                    i = NEdge::edgeNumber[e->ends[1]->face][o2];
-                    t->internalEdges[i] = nextColour;
-                    e->ends[1]->map[i] = e->used;
-                    dir = e->index;
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
                     cycleLengths[nextColour]++;
 
@@ -853,7 +833,7 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     edgesLeft--;
                     ee3->map[i] = e3->used;
                     
-                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    i = 5-NEdge::edgeNumber[e2o->face][e3o->face];
                     t2->internalEdges[i] = nextColour;
                     e3o->map[i] = e3->used;
                     dir = e3->index;
@@ -866,12 +846,10 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     e2->colour(nextColour);
                     edgesLeft--;
                     e2o->map[i] = e2->used;
-                    i = NEdge::edgeNumber[o1][e->ends[0]->face];
+                    i = 5-NEdge::edgeNumber[o1][e->ends[0]->face];
                     t->internalEdges[i] = nextColour;
                     ee2->map[i] = e2->used;
-                    e->ends[0]->map[i] = 1; 
-                    // 3-cycles never appear with shared edges in common 
-                    // so we can know these values.
+                    e->ends[0]->map[i] = e->used; 
                     dir = e2->index;
                     if (e2->ends[0] != e2o) {
                         dir = -dir;
@@ -883,16 +861,13 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                 // e3 is smallest.
                 
                 if (e3->ends[0] == ee3) { 
-                    // e3,e2,e,e
-                    nextColour++;
+                    // e3,e2,e
                     e3->colour(nextColour);
                     edgesLeft--;
                     
-                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    i = 5-NEdge::edgeNumber[e2o->face][e3o->face];
                     t2->internalEdges[i] = nextColour;
                     e3o->map[i] = e3->used;
-                    // 3-cycles never appear with shared edges in common 
-                    // so we can know these values.
                     signed dir = e3->index;
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
                     cycleLengths[nextColour]++;
@@ -901,7 +876,7 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     edgesLeft--;
                     e2o->map[i] = e2->used;
                     
-                    i = NEdge::edgeNumber[e->ends[0]->face][o1];
+                    i = 5-NEdge::edgeNumber[e->ends[0]->face][o1];
                     t->internalEdges[i] = nextColour;
                     ee2->map[i] = e2->used;
                     dir = e2->index;
@@ -914,34 +889,19 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     edgesLeft--;
                     e->ends[0]->map[i] = e->used; 
                     
-                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    i = 5-NEdge::edgeNumber[o2][e->ends[1]->face];
                     t->internalEdges[i] = nextColour;
                     e->ends[1]->map[i] = e->used;
-
-                    dir = e->index;
-                    cycles[nextColour][cycleLengths[nextColour]] = dir;
-                    cycleLengths[nextColour]++;
-                    
-                    e->colour(nextColour);
-                    edgesLeft--;
-                    e->ends[0]->map[i] = e->used;
-                    
-                    i = NEdge::edgeNumber[o2][e->ends[1]->face];
-                    t->internalEdges[i] = nextColour;
-                    e->ends[1]->map[i] = e->used;
-                    // 3-cycles never appear with shared edges in common 
-                    // so we can know these values.
-                    ee3->map[i] = 1;
+                    ee3->map[i] = e3->used;
                     dir = e->index;
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
                     cycleLengths[nextColour]++;
 
                 } else {
-                    // e3,e,e,e2
-                    nextColour++;
+                    // e3,e,e2
                     e3->colour(nextColour);
                     edgesLeft--;
-                    i = NEdge::edgeNumber[o2][e->ends[0]->face];
+                    i = 5-NEdge::edgeNumber[o2][e->ends[0]->face];
                     t->internalEdges[i] = nextColour;
                     ee3->map[i] = e3->used;
                     // 3-cycles never appear with shared edges in common 
@@ -953,19 +913,8 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     e->colour(nextColour);
                     edgesLeft--;
                     e->ends[0]->map[i] = e->used; 
-                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
-                    t->internalEdges[i] = nextColour;
-                    e->ends[1]->map[i] = e->used;
-
-                    dir = e->index;
-                    cycles[nextColour][cycleLengths[nextColour]] = dir;
-                    cycleLengths[nextColour]++;
                     
-                    e->colour(nextColour);
-                    edgesLeft--;
-                    e->ends[0]->map[i] = e->used;
-                    
-                    i = NEdge::edgeNumber[e->ends[1]->face][o1];
+                    i = 5-NEdge::edgeNumber[e->ends[1]->face][o1];
                     t->internalEdges[i] = nextColour;
                     e->ends[1]->map[i] = e->used;
                     dir = e->index;
@@ -976,10 +925,9 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     edgesLeft--;
                     ee2->map[i] = e2->used;
                     
-                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    i = 5-NEdge::edgeNumber[e2o->face][e3o->face];
                     t2->internalEdges[i] = nextColour;
                     e2o->map[i] = e2->used;
-                    // e3 only used once in a three-cycle so this still works.
                     e3o->map[i] = e3->used;
                     dir = e2->index;
                     if (e2->ends[0] == e2o) {
@@ -994,12 +942,11 @@ void CycleDecompSearcher::runSearch(long maxDepth,
             if ( e2->index < e3->index) {
                 // e2 smallest
                 if (ee2 == e2->ends[0]) { 
-                    // e2,e3,e,e
-                    nextColour++;
+                    // e2,e3,e
                     
                     e2->colour(nextColour);
                     edgesLeft--;
-                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    i = 5-NEdge::edgeNumber[e2o->face][e3o->face];
                     t2->internalEdges[i] = nextColour;
                     e2o->map[i] = e2->used;
                     signed dir = e2->index;
@@ -1009,10 +956,10 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     e3->colour(nextColour);
                     edgesLeft--;
                     e3o->map[i] = e3->used;
-                    i = NEdge::edgeNumber[o2][e->ends[0]->face];
+                    i = 5-NEdge::edgeNumber[o2][e->ends[0]->face];
                     t->internalEdges[i] = nextColour;
                     ee3->map[i] = e3->used;
-                    dir = 32->index;
+                    dir = e3->index;
                     if (e3->ends[0] != e3o) {
                         dir = -dir;
                     }
@@ -1022,36 +969,22 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     e->colour(nextColour);
                     edgesLeft--;
                     e->ends[0]->map[i] = e->used; 
-                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    
+                    i = 5-NEdge::edgeNumber[e->ends[1]->face][o1];
                     t->internalEdges[i] = nextColour;
                     e->ends[1]->map[i] = e->used;
-
-                    dir = e->index;
-                    cycles[nextColour][cycleLengths[nextColour]] = dir;
-                    cycleLengths[nextColour]++;
-                    
-                    e->colour(nextColour);
-                    edgesLeft--;
-                    e->ends[0]->map[i] = e->used;
-                    
-                    i = NEdge::edgeNumber[e->ends[1]->face][o1];
-                    t->internalEdges[i] = nextColour;
-                    e->ends[1]->map[i] = e->used;
-                    // 3-cycles never appear with shared edges in common 
-                    // so we can know these values.
                     ee2->map[i] = e2->used;
                     dir = e->index;
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
                     cycleLengths[nextColour]++;
                 } else {
-                    // e2,e,e,e3
-                    nextColour++;
+                    // e2,e,e3
                     
                     e2->colour(nextColour);
                     edgesLeft--;
-                    i = NEdge::edgeNumber[e->ends[0]->face][o1];
-                    t2->internalEdges[i] = nextColour;
-                    e2o->map[i] = e2->used;
+                    i = 5-NEdge::edgeNumber[e->ends[0]->face][o1];
+                    t->internalEdges[i] = nextColour;
+                    ee2->map[i] = e2->used;
                     signed dir = e2->index;
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
                     cycleLengths[nextColour]++;
@@ -1059,19 +992,8 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     e->colour(nextColour);
                     edgesLeft--;
                     e->ends[0]->map[i] = e->used; 
-                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
-                    t->internalEdges[i] = nextColour;
-                    e->ends[1]->map[i] = e->used;
-
-                    dir = e->index;
-                    cycles[nextColour][cycleLengths[nextColour]] = dir;
-                    cycleLengths[nextColour]++;
                     
-                    e->colour(nextColour);
-                    edgesLeft--;
-                    e->ends[0]->map[i] = e->used;
-                    
-                    i = NEdge::edgeNumber[o2][e->ends[1]->face];
+                    i = 5-NEdge::edgeNumber[o2][e->ends[1]->face];
                     t->internalEdges[i] = nextColour;
                     e->ends[1]->map[i] = e->used;
                     dir = e->index;
@@ -1081,14 +1003,12 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     e3->colour(nextColour);
                     edgesLeft--;
                     ee3->map[i] = e3->used;
-                    i = NEdge::edgeNumber[e2o->face][e3o->face];
-                    t->internalEdges[i] = nextColour;
+                    i = 5-NEdge::edgeNumber[e2o->face][e3o->face];
+                    t2->internalEdges[i] = nextColour;
                     e3o->map[i] = e3->used;
-                    // 3-cycles never appear with shared edges in common 
-                    // so we can know these values.
-                    ee2->map[i] = e2->used;
+                    e2o->map[i] = e2->used;
                     dir = e3->index;
-                    if (e3->ends[0] != e3o) {
+                    if (e3->ends[0] == e3o) {
                         dir = -dir;
                     }
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
@@ -1098,16 +1018,13 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                 // e3 is smallest.
                     
                 if (e3->ends[0] == ee3) { 
-                    // e3,e2,e,e
-                    nextColour++;
+                    // e3,e2,e
                     e3->colour(nextColour);
                     edgesLeft--;
                     
-                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    i = 5-NEdge::edgeNumber[e2o->face][e3o->face];
                     t2->internalEdges[i] = nextColour;
                     e3o->map[i] = e3->used;
-                    // 3-cycles never appear with shared edges in common 
-                    // so we can know these values.
                     signed dir = e3->index;
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
                     cycleLengths[nextColour]++;
@@ -1116,7 +1033,7 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     edgesLeft--;
                     e2o->map[i] = e2->used;
                     
-                    i = NEdge::edgeNumber[e->ends[0]->face][o1];
+                    i = 5-NEdge::edgeNumber[e->ends[0]->face][o1];
                     t->internalEdges[i] = nextColour;
                     ee2->map[i] = e2->used;
                     dir = e2->index;
@@ -1129,38 +1046,21 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     edgesLeft--;
                     e->ends[0]->map[i] = e->used; 
                     
-                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
+                    i = 5-NEdge::edgeNumber[o2][e->ends[1]->face];
                     t->internalEdges[i] = nextColour;
                     e->ends[1]->map[i] = e->used;
-
-                    dir = e->index;
-                    cycles[nextColour][cycleLengths[nextColour]] = dir;
-                    cycleLengths[nextColour]++;
-                    
-                    e->colour(nextColour);
-                    edgesLeft--;
-                    e->ends[0]->map[i] = e->used;
-                    
-                    i = NEdge::edgeNumber[o2][e->ends[1]->face];
-                    t->internalEdges[i] = nextColour;
-                    e->ends[1]->map[i] = e->used;
-                    // 3-cycles never appear with shared edges in common 
-                    // so we can know these values.
                     ee3->map[i] = 1;
                     dir = e->index;
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
                     cycleLengths[nextColour]++;
 
                 } else {
-                    // e3,e,e,e2
-                    nextColour++;
+                    // e3,e,e2
                     e3->colour(nextColour);
                     edgesLeft--;
-                    i = NEdge::edgeNumber[o2][e->ends[0]->face];
+                    i = 5-NEdge::edgeNumber[o2][e->ends[0]->face];
                     t->internalEdges[i] = nextColour;
                     ee3->map[i] = e3->used;
-                    // 3-cycles never appear with shared edges in common 
-                    // so we can know these values.
                     signed dir = e3->index;
                     cycles[nextColour][cycleLengths[nextColour]] = dir;
                     cycleLengths[nextColour]++;
@@ -1168,19 +1068,8 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     e->colour(nextColour);
                     edgesLeft--;
                     e->ends[0]->map[i] = e->used; 
-                    i = NEdge::edgeNumber[e->ends[0]->face][e->ends[1]->face];
-                    t->internalEdges[i] = nextColour;
-                    e->ends[1]->map[i] = e->used;
-
-                    dir = e->index;
-                    cycles[nextColour][cycleLengths[nextColour]] = dir;
-                    cycleLengths[nextColour]++;
                     
-                    e->colour(nextColour);
-                    edgesLeft--;
-                    e->ends[0]->map[i] = e->used;
-                    
-                    i = NEdge::edgeNumber[e->ends[1]->face][o1];
+                    i = 5-NEdge::edgeNumber[e->ends[1]->face][o1];
                     t->internalEdges[i] = nextColour;
                     e->ends[1]->map[i] = e->used;
                     dir = e->index;
@@ -1191,10 +1080,9 @@ void CycleDecompSearcher::runSearch(long maxDepth,
                     edgesLeft--;
                     ee2->map[i] = e2->used;
                     
-                    i = NEdge::edgeNumber[e2o->face][e3o->face];
+                    i = 5-NEdge::edgeNumber[e2o->face][e3o->face];
                     t2->internalEdges[i] = nextColour;
                     e2o->map[i] = e2->used;
-                    // e3 only used once in a three-cycle so this still works.
                     e3o->map[i] = e3->used;
                     dir = e2->index;
                     if (e2->ends[0] == e2o) {
@@ -1206,11 +1094,63 @@ void CycleDecompSearcher::runSearch(long maxDepth,
             }
         }
 
+        if (isCanonical()) {
+            runSearch(maxDepth,threeCycleEdges,threeCyclesDone+1);
+        }
+        
+        // Uncolour the 3 edges
+        e->unColour();
+        e2->unColour();
+        e3->unColour();
+        edgesLeft+=3;
 
-        runSearch(maxDepth,threeCycleEdges,threeCyclesDone+1);
-        // Uncolour 3 cycle
+
+        // Clear internal edges and edge-end mappings
+
+        // Note that below we "clear" 5 internal edges, yet we know only
+        // 3 were used. The two extras we know cannot have been used in any
+        // cycles since each 3-cycle in our decomposition cannot share the same
+        // main tetrahedra, so clearing them should not have any effect
+        i = 5-NEdge::edgeNumber[e->ends[0]->face][o1];
+        t->internalEdges[i] = 0;
+        e->ends[1]->map[i] = 0;
+        ee2->map[i] = 0;
+        
+        i = 5-NEdge::edgeNumber[e->ends[0]->face][o2];
+        t->internalEdges[i] = 0;
+        ee3->map[i] = 0;
+        e->ends[0]->map[i] = 0; 
+       
+        i = 5-NEdge::edgeNumber[e->ends[1]->face][o1];
+        t->internalEdges[i] = 0;
+        ee3->map[i] = 0;
+        e->ends[0]->map[i] = 0; 
+       
+        i = 5-NEdge::edgeNumber[e->ends[1]->face][o2];
+        t->internalEdges[i] = 0;
+        ee3->map[i] = 0;
+        e->ends[0]->map[i] = 0; 
+       
+        i = 5-NEdge::edgeNumber[e2o->face][e3o->face];
+        t2->internalEdges[i] = 0;
+        e2o->map[i] = 0;
+        e3o->map[i] = 0;
+
+
+
+        cycleLengths[nextColour]=0;
+        nextColour--;
     } else {
         colourLowestEdge();
+    }
+    // This function gets called recursively. Ensure that we "complete" the 
+    // search only if we are completely finished.
+    if ( threeCyclesDone == 0) {
+        for(std::vector<ThreeCycle*>::iterator iter = threeCycleEdges->begin();
+                iter != threeCycleEdges->end(); iter++ ) {
+            delete *iter;
+        }
+        delete threeCycleEdges;
         use_(0, useArgs_);
     }
 }
@@ -1259,6 +1199,7 @@ NTriangulation* CycleDecompSearcher::triangulate() const {
         NPerm4 gluing(perms[0],perms[1],perms[2],perms[3]);
         simp[thisTet]->joinTo(thisFace, simp[otherTet], gluing);
     }
+    delete[] simp;
     return ans;
 }
 
@@ -1570,12 +1511,91 @@ bool CycleDecompSearcher::isCanonical() {
         }
 
         // Sort cycleList based on values of cycleList[i][offset[i]] 
+
+        // Note that 3-cycles must come first in this implementation so we
+        // must sort 3-cycles first.
         
-        // Reverse bubble sort order so position[0] is definitely lowest
-        // after one run through.  We can then check to see if this is more or
-        // less canonical after 1 run through.
-        for(unsigned int i=1; thisAuto && i <= nextColour ; i++ ) {
+        
+        unsigned int i=1; 
+        // Can probably do this better.  This is actually one loop split into
+        // two. I decided to split it to ease readability.
+        for (;thisAuto &&i <= nextColour && (cycleListLengths[i] == 3) ; i++) {
+            // Reverse bubble sort order so position[0] is definitely lowest
+            // after one run through.  We can then check to see if this is more or
+            // less canonical after 1 run through.
+            for(unsigned int j=nextColour; j > i; j--) {
+                if ( cycleListLengths[j] != 3 ) {
+                    continue;
+                }
+                // Since we're working on 3-cycles (and >= 5 tets) , we know 
+                // the 'first/lowest' edges can never be the same so we only
+                // have to compare them.
+                if ( cycleList[j][offset[j]] < cycleList[j-1][offset[j-1]]) {
+                    unsigned int *temp;
+                    temp = cycleList[j];
+                    cycleList[j] = cycleList[j-1];
+                    cycleList[j-1] = temp;
+                    unsigned int temp2 = offset[j];
+                    offset[j] = offset[j-1];
+                    offset[j-1] = temp2;
+                    temp2 = cycleListLengths[j];
+                    cycleListLengths[j] = cycleListLengths[j-1];
+                    cycleListLengths[j-1] = temp2;
+                }
+            }
+            // Check the 3 edges
+            signed int add = (cycleList[i][offset[i]] % 2 == 0) ? 1 : -1;
+            unsigned int off = offset[i];
+            for (unsigned int j=0;j<3;j++) {
+
+                signed int cycleVal = 2*cycles[i][j];
+
+                if (cycleVal < 0) {
+                    cycleVal = (-cycleVal) + 1;
+                }
+
+                // Get the value of the edge in the automorphism
+                unsigned newE = cycleList[i][off];
+
+                // If the offset is negative, flip sign on this edge.
+                if (add == -1) {
+                    // If i%2 == 0, then 1 - 2*(i%2) == 1 
+                    // If i%2 == 1, then 1 - 2*(i%2) == -1
+                    //
+                    // So the line below adds one (if i%2 ==0) or
+                    // subtracts one (if i%2 == 1), which flips the
+                    // sign.
+                    newE += (1 - 2*(newE%2));
+                }
+                if ( cycleVal > newE ) {
+                    return false;
+                }
+                if ( cycleVal < newE ) {
+                    thisAuto=false;
+                    break;
+                }
+                if  ( add == 1) {
+                    off+=1;
+                    if (off == cycleListLengths[i] ) {
+                        off = 0;
+                    }
+                } else {
+                    // add == -1
+                    off-=1;
+                    if (off == -1) {
+                        off = cycleListLengths[i]-1;
+                    }
+                }
+            }
+        }
+        for(; thisAuto && i <= nextColour ; i++ ) {
             // Do some sorting!
+            assert(cycleListLengths[i] > 3);
+            
+
+            // Reverse bubble sort order so position[0] is definitely lowest
+            // after one run through.  We can then check to see if this is more or
+            // less canonical after 1 run through.
             for(unsigned int j=nextColour; j > i; j--) {
                 if ( compareCycles(cycleList[j],        cycleList[j-1],
                                    cycleListLengths[j], cycleListLengths[j-1],
@@ -1905,17 +1925,16 @@ CycleDecompSearcher::Automorphism::Automorphism(const NIsomorphism * iso,
             }
         }
     }
-    //std::cout << " New Auto " << std::endl;
-    //for(unsigned int i=1; i<= nEdges; i++) {
-    //    std::cout << "auto["<<i<<"] = " << realEdgeMap[i] << std::endl;
-    //}
 }
 
 CycleDecompSearcher::Automorphism::~Automorphism() {
+    for(unsigned int i=0;i< nCycles+1;i++) {
+        delete[] cycles[i];
+    }
+    delete[] cycles;
+    delete[] cycleLength;
+    delete[] offset;
     delete[] edgeMap;
-//    for (unsigned int i=0; i < nTets;i++) 
-//      delete[] newInts[i];
-//    delete[] newInts;
 }
 
 unsigned int inline CycleDecompSearcher::Automorphism::operator [] (const signed int in) {

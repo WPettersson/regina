@@ -192,6 +192,8 @@ class CycleDecompSearcher {
             private:
                 unsigned int nEdges;
                     /**< Number of edges. */
+                unsigned int nCycles;
+                    /**< Number of cycles. */
                 unsigned int *edgeMap;
                     /**< An array storing the relationship between edges.  
                      *   These are stored such that for edge e,
@@ -211,7 +213,7 @@ class CycleDecompSearcher {
               ThreeCycle(Edge *loop, unsigned int f1, unsigned int f2);
               Edge *loop;
               unsigned int otherFaces[2];
-        }
+        };
 
         Tetrahedron *tets;
             /**< The tetrahedron representations in the face pairing graph. */
@@ -404,8 +406,9 @@ class CycleDecompSearcher {
 
         // Overridden methods:
         virtual void dumpData(std::ostream& out) const;
-        virtual void runSearch(long maxDepth = -1, std::vector<ThreeCycle *> = 0,
-                unsigned int threeCyclseDone = 0);
+        virtual void runSearch(long maxDepth = -1, 
+                std::vector<ThreeCycle *>* threeCycleEdges = 0,
+                unsigned int threeCyclesDone = 0);
 
 
     protected:
