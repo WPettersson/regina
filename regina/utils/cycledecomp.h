@@ -135,8 +135,6 @@ class CycleDecompSearcher {
                     /**< The 3 cycles an edge may have. */
                 int used;
                     /**< The number of cycles currently using this edge. */
-                //unsigned int endTet[2];
-                    /**< The tetrahedron on either end  of this edge. */
                 EdgeEnd* ends[2];
                     /**< The edge-ends of this edge. */
                 unsigned int index;

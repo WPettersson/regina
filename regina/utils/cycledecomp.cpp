@@ -119,7 +119,7 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     bool* orderAssigned = new bool[nTets * 4];
         /* Have we placed a tetrahedron face or its partner in the
            order[] array yet? */
-
+    
     NTetFace face, adj;
     unsigned int edgesDone = 0;
     std::fill(orderAssigned, orderAssigned + 4 * nTets, false);
@@ -348,11 +348,6 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
                 }
             }
         }
-        
-        //if ((nextColour == 1) && (! isCanonical(nextTet->index, nextInternal) )) {
-        //    continue;
-        //}
-        
         
         assert(cycleLengths[nextColour] < 3*nEdges);
         cycles[nextColour][cycleLengths[nextColour]]=dir;
@@ -1223,14 +1218,14 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
     //        << ", " << edges[i].colours[2] << std::endl;
     //}
 
-    //for (i = 0; i < nTets; i++) {
-    //    for(j = 0; j < 6; j++) {
-    //        out << tets[i].internalEdges[j] << " ";
-    //    }
-    //    if (i != (nTets-1))
-    //        out << ": ";
-    //}
-    //out << std::endl;
+    for (i = 0; i < nTets; i++) {
+        for(j = 0; j < 6; j++) {
+            out << tets[i].internalEdges[j] << " ";
+        }
+        if (i != (nTets-1))
+            out << ": ";
+    }
+    out << std::endl;
     out << "------------------" << std::endl;
     //for (i = 0; i < nEdges; i++) {
     //    out << "Edge " << i << ": [";
@@ -1276,6 +1271,9 @@ bool CycleDecompSearcher::isCanonical() {
     //    //std::cout << " At " << cycleList[i] << std::endl;
     //}
     bool debug = false;
+    if (debug) {
+        std::cout << "CANON Test" << std::endl;
+    }
     //if ( nextColour == 5 && 
     //     (cycleLengths[1] == 1) &&
     //     (cycleLengths[2] == 8) &&
@@ -1309,16 +1307,6 @@ bool CycleDecompSearcher::isCanonical() {
     //     ) {
     //         debug=true;
     //}
-    if (debug) {
-        std::cout << "Checking" << std::endl;
-        for(unsigned int k=1; k<=nextColour; k++) {
-            for(unsigned int l=0; l < cycleLengths[k]; l++) {
-                std::cout << cycles[k][l] << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << "---" << std::endl;
-    }
 
     for(autoNo=0; autoNo < nAutos; autoNo++) {
         Automorphism *theAuto = automorphisms[autoNo];
@@ -1486,7 +1474,7 @@ bool CycleDecompSearcher::isCanonical() {
         theAuto->offset[nextColour] = offset[nextColour];
         cycleList[nextColour] = theAuto->cycles[nextColour];;
         cycleListLengths[nextColour] = cycleLengths[nextColour];
-        if (debug) {
+        if (false && debug) {
             std::cout << "Before sorting" << std::endl;
             for(unsigned int k=1; k<=nextColour; k++) {
                 for(unsigned int l=0; l < cycleListLengths[k]; l++) {
@@ -1611,7 +1599,6 @@ bool CycleDecompSearcher::isCanonical() {
                     cycleListLengths[j] = cycleListLengths[j-1];
                     cycleListLengths[j-1] = temp2;
                 }
-
             }
             if (debug) {
                 std::cout << "Sorted " << i << " time(s)" << std::endl;
@@ -1658,6 +1645,14 @@ bool CycleDecompSearcher::isCanonical() {
                 // the automorphism gives a more canonical representation
                 if (e > newE) {
                     if (debug) {
+                        std::cout << "Checking" << std::endl;
+                        for(unsigned int k=1; k<=nextColour; k++) {
+                            for(unsigned int l=0; l < cycleLengths[k]; l++) {
+                                std::cout << cycles[k][l] << " ";
+                            }
+                            std::cout << std::endl;
+                        }
+                        std::cout << "---" << std::endl;
                         std::cout << " bigger on " << j << std::endl;
                         for(unsigned int k=1; k<=nextColour; k++) {
                             for(unsigned int l=0; l < cycleListLengths[k]; l++) {
@@ -1821,10 +1816,14 @@ unsigned int CycleDecompSearcher::compareCycles(unsigned int *cycleListA,
 
 
 inline void CycleDecompSearcher::Edge::colour(unsigned newColour) {
+    assert(0 <= used);
+    assert(used < 3);
     colours[used++] = newColour;
 }
 
 inline void CycleDecompSearcher::Edge::unColour() {
+    assert(0 < used);
+    assert(used <= 3);
     colours[--used] = 0;
 }
 
