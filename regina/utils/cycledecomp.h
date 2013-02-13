@@ -115,6 +115,9 @@ class CycleDecompSearcher {
                 EdgeEnd* externalEdgeEnd[4];
                     /**< The EdgeEnds which are attached to each face of the
                      *   tetrahedron. */
+                unsigned int orientation;
+                    /**< The orientation of this tetrahedron. 0 means no
+                     *   currently assigned orientation. */
 
         };
 
@@ -288,6 +291,8 @@ class CycleDecompSearcher {
             /**< Determine whether the current internal edge allocation, as
              *   The parameter otherOption, if non-zero, */
 
+        Tetrahedron *checkOrientable(Edge *e, bool *goodOrientable);
+
         void  nextPath(EdgeEnd *start, unsigned int firstEdge, EdgeEnd *now);
             /**< Tries all choices for continuing a cycle from *now.
              *   Also checks to see if a cycle can be completed after using
@@ -432,6 +437,7 @@ inline CycleDecompSearcher::Tetrahedron::Tetrahedron() {
     used=0;
     for(unsigned int i=0; i<6;i++) 
         internalEdges[i]=0;
+    orientation=0;
 }
 
 #endif

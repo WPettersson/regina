@@ -207,7 +207,8 @@ void CycleDecompSearcher::colourLowestEdge() {
     Edge *nextEdge = &edges[edge];
     Tetrahedron * tet = nextEdge->ends[0]->tet;
     tet->used++;
-
+    if (nextColour == 0) 
+        tet->orientation=1;
     nextColour++;
     nextEdge->colour(nextColour);
     // Try each unused internal edge to start this cycle.
@@ -364,31 +365,55 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         nextEdge->colour(nextColour);
         outEnd->map[nextInternal] = nextEdge->used;
         edgesLeft--;
-     
+  
+        // Whether the orientability is broken
+        bool goodOrientable = true;
+        // If not-NULL, then the orientation of some tet has been set, and 
+        // needs to be removed before backtracking.
+        Tetrahedron *changedTet = NULL;
+
         // Try to complete the cycle
         if (nextEnd == start) {
             start->map[firstEdge] = start->edge->used;
+            if (orientable) { 
+                changedTet = checkOrientable(now->edge, &goodOrientable);
+            }
+            if (goodOrientable) {
+                bool goodGluing = finishTet(nextTet);
+                if (goodGluing && checkColourOk() && isCanonical()) {
+                    if ( (edgesLeft == 0) && checkComplete()) {
+                        use_(this, useArgs_);
+                    } else {
+                        // At most nCycles cycles.  Remember nextColour starts at
+                        // 1, and colourOnLowestEdge() increments it by one.
+                        if (nextColour < nCycles)
+                            colourLowestEdge();
+                    }
+                } 
+                unFinishTet(nextTet);
+            }
+            start->map[firstEdge] = 0;
+            if (orientable && (changedTet != NULL)) {
+                changedTet->orientation = 0;
+                changedTet = NULL;
+            }
+        }
+        goodOrientable = true; 
+        if (orientable) { 
+            changedTet = checkOrientable(now->edge, &goodOrientable);
+        }
+        if (goodOrientable) {
+            // Try to find more paths.
             bool goodGluing = finishTet(nextTet);
-            if (goodGluing && checkColourOk() && isCanonical()) {
-                if ( (edgesLeft == 0) && checkComplete()) {
-                    use_(this, useArgs_);
-                } else {
-                    // At most nCycles cycles.  Remember nextColour starts at
-                    // 1, and colourOnLowestEdge() increments it by one.
-                    if (nextColour < nCycles)
-                        colourLowestEdge();
-                }
+            if (goodGluing) {
+                nextPath(start, firstEdge, nextEnd);
             } 
             unFinishTet(nextTet);
-            start->map[firstEdge] = 0;
         }
-        // Try to find more paths.
-        bool goodGluing = finishTet(nextTet);
-        if (goodGluing) {
-            nextPath(start, firstEdge, nextEnd);
-        } 
-        unFinishTet(nextTet);
 
+        if (orientable && (changedTet != NULL)) {
+            changedTet->orientation = 0;
+        }
         cycleLengths[nextColour]--;
         cycles[nextColour][cycleLengths[nextColour]]=0;
 
@@ -401,6 +426,68 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
     }
 }
 
+CycleDecompSearcher::Tetrahedron *CycleDecompSearcher::checkOrientable(Edge *e, bool *goodOrientable) {
+    Tetrahedron *changedTet = NULL;
+    if (e->used == 3) {
+        Tetrahedron *lastTet = e->ends[0]->tet; 
+        Tetrahedron *nextTet = e->ends[1]->tet;
+        // The mapping[][] array will be used to map edges together, such that
+        // edge mapping[k][0] maps to edge mapping[k][1] for k \in \{0,1,2\}.
+        //
+        unsigned int mapping[3][2];
+        mapping[2][0] = 32767;
+        mapping[2][1] = 32767;
+        for(unsigned int x = 0; x < 6; x++) {
+            for (unsigned int k = 0; k < 3; k++) {
+                if (e->ends[0]->map[x] == (k+1)) 
+                    mapping[k][0] = x;
+                if (e->ends[1]->map[x] == (k+1))
+                    mapping[k][1] = x;
+            }
+        }
+        // Even if the edge is "used" 3 times, one of the ends might not be set
+        // yet. This only happens if the edge is being used 3 times in one
+        // cycle, and the end that is not set is where the cycle started.
+        if ((mapping[2][0] == 32767) || (mapping[2][1] == 32767)) {
+            return NULL;
+        }
+
+        unsigned int f0 = e->ends[0]->face;
+        unsigned int f1 = e->ends[1]->face;
+        NPerm4 perm(f0,f1,
+                    otherVert[f0][mapping[0][0]], otherVert[f1][mapping[0][1]],
+                    otherVert[f0][mapping[1][0]], otherVert[f1][mapping[1][1]],
+                    otherVert[f0][mapping[2][0]], otherVert[f1][mapping[2][1]]);
+        if ( perm.sign() == -1 ) { // Sign of permutation is -1, so both
+                                // tetrahedra have the same 
+                                // orientation
+            if ((lastTet->orientation != 0) && (nextTet->orientation != 0)) {
+                if (lastTet->orientation != nextTet->orientation) {
+                    *goodOrientable=false;
+                }
+            } else if (lastTet->orientation != 0) {
+                nextTet->orientation = lastTet->orientation;
+                changedTet = nextTet;
+            } else {
+                lastTet->orientation = nextTet->orientation;
+                changedTet = lastTet;
+            }
+        } else {
+            if ((lastTet->orientation != 0) && (nextTet->orientation != 0)) {
+                if (lastTet->orientation != -1*nextTet->orientation) {
+                    *goodOrientable=false;
+                }
+            } else if (lastTet->orientation != 0) {
+                nextTet->orientation = -1*lastTet->orientation;
+                changedTet = nextTet;
+            } else {
+                lastTet->orientation = -1*nextTet->orientation;
+                changedTet = lastTet;
+            }
+        }
+    }
+    return changedTet;
+}
 
 // Return true if there is nothing wrong.
 bool CycleDecompSearcher::finishTet(Tetrahedron *tet) {
