@@ -83,7 +83,8 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
     tets = new Tetrahedron[nTets];
     edges = new Edge[nEdges];
     ends = new EdgeEnd[nEnds];
-  
+ 
+    links = new VertexLink[4*nTets];
     // Any minimal triangulation that is not a triangulation of one of RP^3,
     // S^3 or L(3,1) has precisely one vertex.  
     // If we force the number of edges in the triangulation to be n+1 we get
@@ -359,30 +360,83 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         nextEdge->colour(nextColour);
         outEnd->map[nextInternal] = nextEdge->used;
         edgesLeft--;
+
+
+        // Check for vertex links being closed.
+        // First get the required faces/edges/etc
+        EdgeEnd* lastEnd = now->edge->otherEnd(now);
+        int vl_tet = lastEnd->tet->index;
+        int vl_internalEdge = 0;
+        // Short loop to work out which edge was used in the last gluing.
+        while(lastEnd->map[vl_internalEdge] != now->edge->used) {
+            vl_internalEdge++;
+        }
+        int vl_face = lastEnd->face;
+        // Get the vertex left on this face, but not on this edge.
+        int vl_vert = otherVert[vl_face][vl_internalEdge];
+
+        // First vertex link.
+        VertexLink * vl_1 = links[vl_tet*4 + vl_vert].getHead();
+
+        vl_tet = now->tet->index;
+        vl_internalEdge = nextInternal;
+        vl_face = now->face;
+        vl_vert = otherVert[vl_face][vl_internalEdge];
+
+        // Second vertex link.
+        VertexLink * vl_2 = links[vl_tet*4 + vl_vert].getHead();
      
-        // Try to complete the cycle
-        if (nextEnd == start) {
-            start->map[firstEdge] = start->edge->used;
+        // If we're gluing two faces of the same vertex link, we're just
+        // subtracting 2 unglued faces. Otherwise we need to also "join"
+        // the two vertex links.
+        int vl_val;
+        if (vl_1 != vl_2) {
+            vl_val = vl_2->get();
+        } else {
+            vl_val = 0;
+        }
+        // The number of unglued faces left on the new combined link is the sum
+        // of the unglued faces from the two earlier links, minus the 2 glued
+        // faces.
+        int complete = vl_1->add(vl_val-2);
+        // Make sure that either the vertex link has not been closed off, or
+        // possibly we have finished the decomposition.
+        if ((complete > 0) || (edgesLeft == 0)) {
+            // Ok, when looking for the number of unglued faces on vl_2, just
+            // check vl_1.
+            if (vl_val != 0) {
+                vl_2->setPtr(vl_1);
+            }
+            // Try to complete the cycle
+            if (nextEnd == start) {
+                start->map[firstEdge] = start->edge->used;
+                bool goodGluing = finishTet(nextTet);
+                if (goodGluing && checkColourOk() && isCanonical()) {
+                    if ( (edgesLeft == 0) && checkComplete()) {
+                        use_(this, useArgs_);
+                    } else {
+                        // At most nCycles cycles.  Remember nextColour starts at
+                        // 1, and colourOnLowestEdge() increments it by one.
+                        if (nextColour < nCycles)
+                            colourLowestEdge();
+                    }
+                } 
+                unFinishTet(nextTet);
+                start->map[firstEdge] = 0;
+            }
+            // Try to find more paths.
             bool goodGluing = finishTet(nextTet);
-            if (goodGluing && checkColourOk() && isCanonical()) {
-                if ( (edgesLeft == 0) && checkComplete()) {
-                    use_(this, useArgs_);
-                } else {
-                    // At most nCycles cycles.  Remember nextColour starts at
-                    // 1, and colourOnLowestEdge() increments it by one.
-                    if (nextColour < nCycles)
-                        colourLowestEdge();
-                }
+            if (goodGluing) {
+                nextPath(start, firstEdge, nextEnd);
             } 
             unFinishTet(nextTet);
-            start->map[firstEdge] = 0;
+            // Break the link between vl_1 and vl_2
+            if (vl_val != 0) {
+                vl_2->setPtr(NULL); // Unjoin the two vertex links.
+            }
         }
-        // Try to find more paths.
-        bool goodGluing = finishTet(nextTet);
-        if (goodGluing) {
-            nextPath(start, firstEdge, nextEnd);
-        } 
-        unFinishTet(nextTet);
+        // And reset the number of unglued faces on vl_1
+        vl_1->add(2-vl_val);
 
         cycleLengths[nextColour]--;
         cycles[nextColour][cycleLengths[nextColour]]=0;

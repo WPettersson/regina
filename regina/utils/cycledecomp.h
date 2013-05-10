@@ -161,6 +161,35 @@ class CycleDecompSearcher {
                      *   the edge. */
         };
 
+        class VertexLink {
+            /**< Keeps a track of the state of the vertex link of each vertex
+             * in this triangulation. Since we're only dealing with 1-vertex
+             * triangulations we only need to check whether the vertex is
+             * closed off or not, so we only track how many many edges around
+             * the vertex link are yet to be glued. */
+            public:
+                VertexLink();
+                int add(int val);
+                    /**< Add to the number of unglued faces around this vertex.
+                     * Returns the number of unglued faces after doing the
+                     * addition. */
+                int get();
+                    /**< Gets the number of unglued faces around this vertex,
+                     * following any pointers in the case where multiple
+                     * VertexLinks are joined together.
+                     * */
+                VertexLink * getHead();
+                    /**< Gets the head node that represents this vertex link.
+                     * */
+                void setPtr(VertexLink* ptr);
+                    /**< Used to combine two separate tetrahedra-vertices into
+                     * one triangulation-vertex. ptr will be a valid pointer to
+                     * another VertexLink. */
+            private:
+                VertexLink *ptr;
+                int unGluedFaces;
+        };
+
         class Automorphism {
             /**< This class represents an automorphism of the face pairing
              *   graph, in terms of a mapping between the edges of the graph
@@ -213,6 +242,7 @@ class CycleDecompSearcher {
               unsigned int otherFaces[2];
         };
 
+        VertexLink *links;
         Tetrahedron *tets;
             /**< The tetrahedron representations in the face pairing graph. */
         unsigned int nTets;
@@ -432,6 +462,40 @@ inline CycleDecompSearcher::Tetrahedron::Tetrahedron() {
     used=0;
     for(unsigned int i=0; i<6;i++) 
         internalEdges[i]=0;
+}
+
+inline CycleDecompSearcher::VertexLink::VertexLink() {
+    unGluedFaces = 3;
+    ptr = NULL;
+}
+
+inline int CycleDecompSearcher::VertexLink::add(int val) {
+    if ( ptr!= NULL ) {
+        return ptr->add(val);
+    } else {
+        unGluedFaces += val;
+        return unGluedFaces;
+    }
+}
+
+inline int CycleDecompSearcher::VertexLink::get() {
+    if ( ptr != NULL ) {
+        return ptr->get();
+    } else {
+        return unGluedFaces;
+    }
+}
+
+inline CycleDecompSearcher::VertexLink * CycleDecompSearcher::VertexLink::getHead() {
+    if ( ptr != NULL ) {
+        return ptr->getHead();
+    } else {
+        return this;
+    }
+}
+
+inline void CycleDecompSearcher::VertexLink::setPtr(VertexLink *newPtr) {
+    ptr = newPtr;
 }
 
 #endif
