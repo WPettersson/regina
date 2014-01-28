@@ -166,17 +166,12 @@ CycleDecompSearcher::CycleDecompSearcher(const NFacePairing* pairing,
         autos = new NFacePairing::IsoList();
         pairing->findAutomorphisms(const_cast<NFacePairing::IsoList&>(*autos));
     }
-
-    if (autos) {
-        nAutos = 0;
-        automorphisms = new Automorphism*[autos->size()];
-        for( NFacePairing::IsoList::const_iterator it = autos->begin();
-                it != autos->end(); it++) {
-            automorphisms[nAutos] = new Automorphism( (*it),edges,nEdges, nCycles);
-            nAutos++;
-        }
-    } else {
-        automorphisms = 0;
+    nAutos = 0;
+    automorphisms = new Automorphism*[autos->size()];
+    for( NFacePairing::IsoList::const_iterator it = autos->begin();
+            it != autos->end(); it++) {
+        automorphisms[nAutos] = new Automorphism( (*it),edges,nEdges, nCycles);
+        nAutos++;
     }
 }
 
