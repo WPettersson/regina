@@ -183,8 +183,11 @@ class CycleDecompSearcher {
                      * */
                 void setPtr(VertexLink* ptr);
                     /**< Used to combine two separate tetrahedra-vertices into
-                     * one triangulation-vertex. ptr will be a valid pointer to
+                     * one triangulation-vertex. ptr must be a valid pointer to
                      * another VertexLink. */
+                VertexLink * getPtr();
+                    /**<  Gets the current pointer of this link. This does not
+                     * traverse any of the internal structure.*/
             private:
                 VertexLink *ptr;
                 int unGluedFaces;
@@ -496,6 +499,10 @@ inline CycleDecompSearcher::VertexLink * CycleDecompSearcher::VertexLink::getHea
 
 inline void CycleDecompSearcher::VertexLink::setPtr(VertexLink *newPtr) {
     ptr = newPtr;
+}
+
+inline CycleDecompSearcher::VertexLink* CycleDecompSearcher::VertexLink::getPtr() {
+    return ptr;
 }
 
 #endif

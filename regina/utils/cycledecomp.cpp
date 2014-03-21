@@ -404,7 +404,10 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         if ((complete > 0) || (edgesLeft == 0)) {
             // Ok, when looking for the number of unglued faces on vl_2, just
             // check vl_1.
+            // Don't forget to store old ptr
+            VertexLink *old;
             if (vl_val != 0) {
+                old = vl_2->getPtr();
                 vl_2->setPtr(vl_1);
             }
             // Try to complete the cycle
@@ -432,7 +435,7 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
             unFinishTet(nextTet);
             // Break the link between vl_1 and vl_2
             if (vl_val != 0) {
-                vl_2->setPtr(NULL); // Unjoin the two vertex links.
+                vl_2->setPtr(old); // Unjoin the two vertex links.
             }
         }
         // And reset the number of unglued faces on vl_1
