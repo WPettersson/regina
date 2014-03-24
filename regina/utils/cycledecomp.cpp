@@ -385,7 +385,7 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
 
         // Second vertex link.
         VertexLink * vl_2 = links[vl_tet*4 + vl_vert].getHead();
-     
+
         // If we're gluing two faces of the same vertex link, we're just
         // subtracting 2 unglued faces. Otherwise we need to also "join"
         // the two vertex links.
