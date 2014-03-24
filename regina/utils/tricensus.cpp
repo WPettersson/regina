@@ -155,17 +155,10 @@ struct Dim3DecompParams {
     inline static void findAllPerms(const Pairing* p,
             const Pairing::IsoList* autos, bool orientableOnly,
             bool finiteOnly, int whichPurge, regina::NPacket* dest) {
-            std::cout << "nAutos = " << autos->size() <<std::endl;
-            if (3*autos->size() > p->size()*p->size()) {
-              regina::NGluingPermSearcher::findAllPerms(p, autos,
-                    orientableOnly, finiteOnly, whichPurge,
-                    foundGluingPerms<Dim3Params>, dest);
-            } else {
-                CycleDecompSearcher *searcher = new CycleDecompSearcher(p, autos,
-                orientableOnly, foundCycleDecomp<Dim3DecompParams>, dest, minimalPrimeP2);
-                searcher->runSearch();
-                delete searcher;
-            }
+            CycleDecompSearcher *searcher = new CycleDecompSearcher(p, autos,
+            orientableOnly, foundCycleDecomp<Dim3DecompParams>, dest, minimalPrimeP2);
+            searcher->runSearch();
+            delete searcher;
     }
 
     inline static bool mightBeMinimal(Triangulation* tri) {
