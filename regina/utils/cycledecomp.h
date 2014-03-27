@@ -440,6 +440,11 @@ class CycleDecompSearcher {
 
 
         void dumpTaggedData(std::ostream& out) const;
+
+        static CycleDecompSearcher* readTaggedData(std::istream& in,
+                UseCycles use, void *useArgs=0);
+        bool inputError() const;
+
         // Overridden methods:
         virtual void dumpData(std::ostream& out) const;
         virtual void runSearch(long maxDepth = -1, 
@@ -460,6 +465,15 @@ inline char CycleDecompSearcher::dataTag() const {
 inline const regina::NFacePairing* CycleDecompSearcher::getFacetPairing() const
 {
     return pairing_;
+}
+
+// TODO: Rebuild decompositions for partial constructions
+inline bool CycleDecompSearcher::inputError() const {
+    return true;
+}
+inline CycleDecompSearcher* CycleDecompSearcher::readTaggedData(
+        std::istream& in, UseCycles use, void *useArgs) {
+    return 0;
 }
 
 inline CycleDecompSearcher::Edge::Edge() {

@@ -53,7 +53,7 @@
 #include "packet/ncontainer.h"
 #include "packet/ntext.h"
 #include "triangulation/ntriangulation.h"
-
+#include "../cycledecomp.h"
 // Write messages tailored to the working dimension.
 #define WORD_face (dim4 ? "facet" : dim2 ? "edge" : "face")
 #define WORD_Face (dim4 ? "Facet" : dim2 ? "Edge" : "Face")
@@ -134,6 +134,34 @@ struct Dim3Params {
     }
 };
 
+struct Dim3DecompParams {
+    typedef regina::NFacePairing Pairing;
+    typedef CycleDecompSearcher GluingPermSearcher;
+    typedef regina::NTriangulation Triangulation;
+
+    inline static GluingPermSearcher* bestSearcher(Pairing* p,
+            bool orientableOnly, bool finiteOnly, int whichPurge) {
+        return  new CycleDecompSearcher(p, 0,
+                orientableOnly, ctrlFarmPartialSearch<Dim3DecompParams>);
+    }
+
+    inline static void findAllPerms(Pairing* p, bool orientableOnly,
+            bool finiteOnly, int whichPurge, regina::NPacket* dest) {
+            CycleDecompSearcher *searcher = new CycleDecompSearcher(p, 0,
+                orientableOnly, slaveFoundGluingPerms<Dim3DecompParams>, dest);
+            searcher->runSearch();
+            delete searcher;
+    }
+
+    inline static bool mightBeMinimal(Triangulation* tri) {
+        return regina::NCensus::mightBeMinimal(tri, 0);
+    }
+
+    inline static const Pairing* pairingFor(const GluingPermSearcher* s) {
+        return s->getFacetPairing();
+    }
+};
+
 #if SUPPORT_DIM4
 struct Dim4Params {
     typedef regina::Dim4FacetPairing Pairing;
@@ -177,6 +205,7 @@ int dim4 = 0;
 long depth = 0;
 int dryRun = 0;
 int sigs = 0;
+int cycleDecomp = 0;
 
 // Filenames read from the command line.
 std::string outputStub;
@@ -234,6 +263,8 @@ int parseCmdLine(int argc, const char* argv[], bool isController) {
         { "minprimep2", 'N', POPT_ARG_NONE, &minimalPrimeP2, 0,
             "Ignore obviously non-minimal, non-prime, disc-reducible and/or "
             "P2-reducible triangulations.", 0 },
+        { "cycledecomp" , 'C', POPT_ARG_NONE, &cycleDecomp, 0,
+            "Find permutations by cycle decompositions of the face pairing graph.", 0 },
         { "dim2", '2', POPT_ARG_NONE, &dim2, 0,
             "Run a census of 2-manifold triangulations, "
             "not 3-manifold triangulations.", 0 },
@@ -324,6 +355,10 @@ int parseCmdLine(int argc, const char* argv[], bool isController) {
     } else if (dim4 && (minimal || minimalPrime || minimalPrimeP2)) {
         if (isController)
             std::cerr << "Minimality options cannot be used with -4/--dim4.\n";
+        broken = true;
+    } else if (cycleDecomp && (dim2 || dim4)) {
+        std::cerr << "Cycle decompositions are only available in 3 "
+            << "dimensions.\n";
         broken = true;
     } else if (depth < 0) {
         if (isController)
@@ -723,6 +758,9 @@ void slaveDescribeCensusParameters(std::ostream& out) {
     else
         out << "Searching for 3-manifold triangulations\n";
 
+    if (cycleDecomp)
+        out << "Searching for manifold decompositions\n";
+
     if (finiteness == regina::NBoolSet::sTrue)
         out << "Finite only\n";
     else if (finiteness == regina::NBoolSet::sFalse)
@@ -1112,6 +1150,8 @@ int main(int argc, char* argv[]) {
                 else if (dim4)
                     retVal = mainController<Dim4Params>();
 #endif
+                else if (cycleDecomp)
+                    retVal = mainController<Dim3DecompParams>();
                 else
                     retVal = mainController<Dim3Params>();
             }
@@ -1123,6 +1163,8 @@ int main(int argc, char* argv[]) {
             else if (dim4)
                 retVal = mainSlave<Dim4Params>();
 #endif
+            else if (cycleDecomp)
+                retVal = mainSlave<Dim3DecompParams>();
             else
                 retVal = mainSlave<Dim3Params>();
         }
