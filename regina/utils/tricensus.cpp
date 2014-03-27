@@ -162,7 +162,11 @@ struct Dim3DecompParams {
     }
 
     inline static bool mightBeMinimal(Triangulation* tri) {
-        return true;
+        return regina::NCensus::mightBeMinimal(tri, 0);
+    }
+
+    inline static const Pairing* pairingFor(const GluingPermSearcher* s) {
+        return s->getFacetPairing();
     }
 };
 
