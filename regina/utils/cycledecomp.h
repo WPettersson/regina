@@ -400,6 +400,7 @@ class CycleDecompSearcher {
                 bool orientableOnly, UseCycles use, void* useArgs = 0,
                 bool minimal = true);
 
+        const regina::NFacePairing* getFacetPairing() const;
 
         /**
          * Create a triangulation from the data the search manager has 
@@ -452,6 +453,11 @@ class CycleDecompSearcher {
 
 inline char CycleDecompSearcher::dataTag() const {
     return CycleDecompSearcher::dataTag_;
+}
+
+inline const regina::NFacePairing* CycleDecompSearcher::getFacetPairing() const
+{
+    return pairing_;
 }
 
 inline CycleDecompSearcher::Edge::Edge() {
