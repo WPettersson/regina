@@ -1328,6 +1328,11 @@ void CycleDecompSearcher::dumpData(std::ostream& out) const {
     //}
 }
 
+void CycleDecompSearcher::dumpTaggedData(std::ostream& out) const {
+    out << dataTag() << std::endl;
+    dumpData(out);
+}
+
 bool CycleDecompSearcher::isCanonical() {
     if ( automorphisms == 0 ) {
         return true;

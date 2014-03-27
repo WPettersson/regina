@@ -438,6 +438,8 @@ class CycleDecompSearcher {
          */
         ~CycleDecompSearcher();
 
+
+        void dumpTaggedData(std::ostream& out) const;
         // Overridden methods:
         virtual void dumpData(std::ostream& out) const;
         virtual void runSearch(long maxDepth = -1, 
