@@ -186,8 +186,10 @@ class CycleDecompSearcher {
                      * one triangulation-vertex. ptr must be a valid pointer to
                      * another VertexLink. */
                 VertexLink * getPtr();
-                    /**<  Gets the current pointer of this link. This does not
+                    /**< Gets the current pointer of this link. This does not
                      * traverse any of the internal structure.*/
+                int depth;
+                    /**< The depth of the tree from this node.*/
             private:
                 VertexLink *ptr;
                 int unGluedFaces;
@@ -469,6 +471,7 @@ inline CycleDecompSearcher::Tetrahedron::Tetrahedron() {
 
 inline CycleDecompSearcher::VertexLink::VertexLink() {
     unGluedFaces = 3;
+    depth=0;
     ptr = NULL;
 }
 

@@ -386,6 +386,13 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
         // Second vertex link.
         VertexLink * vl_2 = links[vl_tet*4 + vl_vert].getHead();
 
+
+        if ( vl_2->depth > vl_1->depth) {
+            VertexLink *temp = vl_1;
+            vl_1 = vl_2;
+            vl_2 = temp;
+        }
+
         // If we're gluing two faces of the same vertex link, we're just
         // subtracting 2 unglued faces. Otherwise we need to also "join"
         // the two vertex links.
@@ -406,9 +413,14 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
             // check vl_1.
             // Don't forget to store old ptr
             VertexLink *old;
+            bool equal_depths = false;
             if (vl_val != 0) {
                 old = vl_2->getPtr();
                 vl_2->setPtr(vl_1);
+                if (vl_1->depth == vl_2->depth) {
+                    vl_1->depth++;
+                    equal_depths = true;
+                }
             }
             // Try to complete the cycle
             if (nextEnd == start) {
@@ -436,6 +448,9 @@ void CycleDecompSearcher::nextPath(EdgeEnd *start, unsigned int firstEdge,
             // Break the link between vl_1 and vl_2
             if (vl_val != 0) {
                 vl_2->setPtr(old); // Unjoin the two vertex links.
+                if (equal_depths) {
+                    vl_1->depth--;
+                }
             }
         }
         // And reset the number of unglued faces on vl_1
