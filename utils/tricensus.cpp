@@ -699,7 +699,7 @@ int runCensus() {
                     pairingList += pairingRep;
                     pairingList += '\n';
                 } else {
-                    std::cout << counter << ",\'" << pairing->str() << "\',";
+                    std::cout << counter << "," << pairing->str() << ",";
                     // TODO: Explicitly generate automorphisms here.
                     clock_t tics = clock();
                     foundFacePairing<CensusType>(pairing, 0, census);
