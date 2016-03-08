@@ -79,6 +79,10 @@ int genPairs = 0;
 int subContainers = 0;
 std::string outFile;
 
+unsigned long long xth = -1;
+unsigned long long modulo = -1;
+const char marker[] = "%d";
+
 // Variables used for a dump of face pairings.
 std::unique_ptr<std::ostream> dumpStream;
 unsigned long totPairings = 0;
@@ -220,7 +224,6 @@ template <class CensusType>
 void foundFacePairing(const typename CensusType::Pairing* pairing,
         const typename CensusType::Pairing::IsoList* autos, void* container) {
     if (pairing) {
-        std::cout << pairing->str() << std::endl;
         regina::NPacket* subContainer;
         // If creating a full .rga file, store triangulations for each face
         // pairing in a different container.
@@ -374,6 +377,10 @@ int main(int argc, const char* argv[]) {
             "Only generate face pairings, not triangulations.", 0 },
         { "usepairs", 'P', POPT_ARG_NONE, &usePairs, 0,
             "Only use face pairings read from standard input.", 0 },
+        { "xth", 'x', POPT_ARG_LONG, &xth, 0,
+            "Only operate on every (x mod y)'th input.", 0 },
+        { "modulo", 'y', POPT_ARG_LONG, &modulo, 0,
+            "Only operate on every (x mod y)'th input.", 0 },
         POPT_AUTOHELP
         { 0, 0, 0, 0, 0, 0, 0 }
     };
@@ -638,10 +645,27 @@ int runCensus() {
         pairingList += " pairings:\n\n";
 
         std::string pairingRep;
-        while (true) {
+        long long counter = 0;
+        while (!std::cin.eof()) {
             std::getline(std::cin, pairingRep);
+            counter += 1;
+            if ((xth != -1) && (modulo != -1)) {
+                if ( counter % modulo != xth)
+                    continue;
+            }
 
             if (pairingRep.length() > 0) {
+                size_t pos = outFile.find(marker);
+                if (pos != std::string::npos) {
+                    // Opening a new file for each fpg
+                    sigStream.close();
+                    char buff[128];
+                    std::snprintf(buff, 128, outFile.c_str(), counter);
+                    sigStream.open(buff);
+                } else {
+                    // Just output the pairing into the output file
+                    sigStream << "### " << pairingRep << std::endl;
+                }
                 typename CensusType::Pairing* pairing =
                     CensusType::Pairing::fromTextRep(pairingRep);
                 if (! pairing) {
@@ -657,17 +681,21 @@ int runCensus() {
                     pairingList += pairingRep;
                     pairingList += '\n';
                 } else {
-                    std::cout << pairing->str() << std::endl;
+                    std::cout << counter << "," << pairing->str() << ",";
                     // TODO: Explicitly generate automorphisms here.
+                    long long start = nSolns;
+                    clock_t tics = clock();
                     foundFacePairing<CensusType>(pairing, 0, census);
+                    double timeTaken = (clock()-tics);
+                    timeTaken /= CLOCKS_PER_SEC;
+                    std::cout.setf(std::ios::fixed);
+                    std::cout << timeTaken << "," << (nSolns - start) << std::endl;
                     pairingList += pairing->str();
                     pairingList += '\n';
                 }
                 delete pairing;
             }
 
-            if (std::cin.eof())
-                break;
         }
 
         // Store the face pairings used with the census.
