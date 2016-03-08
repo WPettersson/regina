@@ -108,7 +108,7 @@ CollapsedChainSearcher::CollapsedChainSearcher(const NFacePairing* pairing,
 
     numChains = 0;
     shortChain = new bool [nTets] {false};
-    chainEnds = new NTetFace [nTets];
+    chainEnds = new NTetFace [2*nTets];
     collapse = true;
     empty = false;
     NTetFace face;
@@ -130,8 +130,8 @@ CollapsedChainSearcher::CollapsedChainSearcher(const NFacePairing* pairing,
                 continue; // Not a loop
             if (face.facet > adj.facet)
                 continue; // Only traverse loops once
-            if (collapseChain(NFacePair(face.facet, adj.facet), adj.simp))
-                numChains++;
+            collapseChain(NFacePair(face.facet, adj.facet), adj.simp);
+            numChains++;
         }
         if (numChains > 0) {
             maxOrder = orderElt;
@@ -145,8 +145,8 @@ CollapsedChainSearcher::CollapsedChainSearcher(const NFacePairing* pairing,
             // at automorphisms of modified we can track which automorphisms
             // fix these ends
             for(int i=0; i < numChains; i++) {
-                chainEnds[i] = (*iso)[chainEnds[i]];
-                chainEnds[i+1] = (*iso)[chainEnds[i+1]];
+                chainEnds[2*i] = (*iso)[chainEnds[2*i]];
+                chainEnds[2*i+1] = (*iso)[chainEnds[2*i+1]];
             }
         } else {
             collapse = false;
@@ -201,8 +201,8 @@ void CollapsedChainSearcher::runSearch(long maxDepth) {
             // While this automorphism stabilizes the chain ends
             for(int i=0; stab && i < numChains; i++) {
                 // Mapping both ends to themselves is ok
-                if (( aut[chainEnds[i]] == chainEnds[i] ) &&
-                    (aut[chainEnds[i+1]] == chainEnds[i+1] ))
+                if ((aut[chainEnds[2*i]] == chainEnds[2*i] ) &&
+                    (aut[chainEnds[2*i+1]] == chainEnds[2*i+1] ))
                     continue;
                 stab = false;
             }
@@ -210,8 +210,6 @@ void CollapsedChainSearcher::runSearch(long maxDepth) {
                 stabilizers.push_back(automorph);
             }
         }
-//        std::cout << "|aut| = " << automorphs.size() << "\t|stab| = " <<
-//            stabilizers.size() << std::endl;
         if (enumDB) {
             std::list<NTriangulation*> results = enumDB->lookup(*modified);
             for(auto tri: results)
@@ -334,8 +332,8 @@ void CollapsedChainSearcher::extendTri(const NTriangulation *tri) {
         buildUp(); // Builds actual triangulation
 
         for(auto stab: stabilizers) {
-            NIsomorphism *i = new NIsomorphism((*stab)*(*automorph));
-            automorphsDone.insert(i);
+            NIsomorphism *iso = new NIsomorphism((*stab)*(*automorph));
+            automorphsDone.insert(iso);
         }
     }
     delete newInv;
@@ -417,8 +415,7 @@ void CollapsedChainSearcher::buildUp() {
         }
         NTetFace face = order[orderElt];
         NTetFace adj = (*pairing_)[face];
-        if ((orderType[orderElt] == EDGE_CHAIN_INTERNAL_FIRST) ||
-            (orderType[orderElt] == EDGE_CHAIN_END)) {
+        if ((orderType[orderElt] == EDGE_CHAIN_INTERNAL_FIRST)) {
             if (permIndex(face) < 0) {
                 permIndex(face) = chainPermIndices[2*orderElt];
             } else if (permIndex(face) == chainPermIndices[2*orderElt]) {
@@ -429,8 +426,18 @@ void CollapsedChainSearcher::buildUp() {
                 orderElt--;
                 continue;
             }
+        } else if (orderType[orderElt] == EDGE_CHAIN_END) {
+            // 'fixed' because automorphisms will rotate the whole chain
+            if (permIndex(face) < 0) {
+                permIndex(face) = chainPermIndices[2*orderElt];
+            } else {
+                permIndex(face) = -1;
+                permIndex(adj) = -1;
+                orderElt--;
+                continue;
+            }
         } else { // EDGE_CHAIN_INTERNAL_SECOND
-            // 'fixed', possibly by earlier choices
+            // 'fixed' by earlier choices
             if (permIndex(face) < 0) {
                 if (permIndex(order[orderElt - 1]) ==
                         chainPermIndices[2 * orderElt - 2])
@@ -509,7 +516,7 @@ CollapsedChainSearcher::CollapsedChainSearcher(std::istream& in,
 //        inputError_ = true;
 }
 
-bool CollapsedChainSearcher::collapseChain(NFacePair faces, int tet) {
+void CollapsedChainSearcher::collapseChain(NFacePair faces, int tet) {
     NFacePair comp = faces.complement();
     order[orderElt] = NTetFace(tet, faces.lower());
     chainPermIndices[2 * orderElt] = gluingToIndex(order[orderElt],
@@ -531,9 +538,11 @@ bool CollapsedChainSearcher::collapseChain(NFacePair faces, int tet) {
         // Short chain here. Bail early, reset things.
         shortChain[tet] = true;
         orderElt-=1;
+        chainEnds[2*numChains] = NTetFace(tet, faces.lower());
+        chainEnds[2*numChains+1] = NTetFace(tet, faces.upper());
         // order, orderType and other arrays will be overwritten, if required, so
         // no need to reset them.
-        return false;
+        return;
     }
     faces = faces.complement();
     // Currently tet and faces refer to the two faces of the base
@@ -617,11 +626,11 @@ bool CollapsedChainSearcher::collapseChain(NFacePair faces, int tet) {
         dest2 = NTetFace(tet, faces.upper());
         modified->unMatch(dest1);
         modified->unMatch(dest2);
-        chainEnds[numChains] = dest1;
-        chainEnds[numChains+1] = dest2;
+        chainEnds[2*numChains] = dest1;
+        chainEnds[2*numChains+1] = dest2;
         modified->match(dest1, dest2); // Add back the original loop.
     }
-    return true;
+    return;
 }
 
 } // namespace regina

@@ -227,11 +227,8 @@ class REGINA_API CollapsedChainSearcher : public NGluingPermSearcher {
          * Note that chains of length 0 (so a tetrahedron with two faces
          * identified together and remaining two faces identified with two
          * other distinct tetrahedra) will not be collapsed.
-         *
-         * Returns true if a chain was collapsed, false otherwise (most likely
-         * due to finding a short chain).
          */
-        bool collapseChain(NFacePair pair, int tet);
+        void collapseChain(NFacePair pair, int tet);
 
 };
 
