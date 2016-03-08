@@ -89,8 +89,8 @@ int subContainers = 0;
 std::string outFile;
 char *enumDB;
 
-long long xth = 0;
-long long modulo = 0;
+unsigned long long xth = -1;
+unsigned long long modulo = -1;
 const char marker[] = "%d";
 
 // Variables used for a dump of face pairings.
@@ -668,7 +668,7 @@ int runCensus() {
         while (!std::cin.eof()) {
             std::getline(std::cin, pairingRep);
             counter += 1;
-            if ((xth != 0) && (modulo != 0)) {
+            if ((xth != -1) && (modulo != -1)) {
                 if ( counter % modulo != xth)
                     continue;
                 else {
