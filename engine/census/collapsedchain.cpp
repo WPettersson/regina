@@ -417,7 +417,8 @@ void CollapsedChainSearcher::buildUp() {
         }
         NTetFace face = order[orderElt];
         NTetFace adj = (*pairing_)[face];
-        if (orderType[orderElt] == EDGE_CHAIN_INTERNAL_FIRST) {
+        if ((orderType[orderElt] == EDGE_CHAIN_INTERNAL_FIRST) ||
+            (orderType[orderElt] == EDGE_CHAIN_END)) {
             if (permIndex(face) < 0) {
                 permIndex(face) = chainPermIndices[2*orderElt];
             } else if (permIndex(face) == chainPermIndices[2*orderElt]) {
@@ -428,29 +429,14 @@ void CollapsedChainSearcher::buildUp() {
                 orderElt--;
                 continue;
             }
-        } else { // EGE_CHAIN_END or EDGE_CHAIN_INTERNAL_SECOND
-            // Both of these are 'fixed', possibly by earlier choices
+        } else { // EDGE_CHAIN_INTERNAL_SECOND
+            // 'fixed', possibly by earlier choices
             if (permIndex(face) < 0) {
-                // Chain end is not fixed TODO
-                if (orderType[orderElt] == EDGE_CHAIN_END) {
-                    if (permIndex(face) < 0) {
-                        permIndex(face) = chainPermIndices[2 * orderElt];
-                    } else if (permIndex(face) == chainPermIndices[2 *
-                            orderElt]) {
-                        permIndex(face) = chainPermIndices[2 * orderElt + 1];
-                    } else{
-                        permIndex(face) = -1;
-                        permIndex(adj) = -1;
-                        orderElt--;
-                        continue;
-                    }
-                } else {
-                    if (permIndex(order[orderElt - 1]) ==
-                            chainPermIndices[2 * orderElt - 2])
-                        permIndex(face) = chainPermIndices[2 * orderElt];
-                    else
-                        permIndex(face) = chainPermIndices[2 * orderElt + 1];
-                }
+                if (permIndex(order[orderElt - 1]) ==
+                        chainPermIndices[2 * orderElt - 2])
+                    permIndex(face) = chainPermIndices[2 * orderElt];
+                else
+                    permIndex(face) = chainPermIndices[2 * orderElt + 1];
             } else {
                 permIndex(face) = -1;
                 permIndex(adj) = -1;
