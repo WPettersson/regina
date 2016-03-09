@@ -240,17 +240,15 @@ void CollapsedChainSearcher::extendTriHelper(const NGluingPermSearcher *s, void 
     c->extendTri(s);
 }
 
-void CollapsedChainSearcher::extendTri(const NTriangulation *tri) {
+void CollapsedChainSearcher::extendTri(const NTriangulation *t) {
+    NTriangulation *tri = new NTriangulation(*t);
     // tri's face pairing is probably not canonical.
     NFacePairing fpg(*tri);
     // We don't need fpg to be canonical, strictly speaking, but we do need the
     // isomorphism which will make fpg canonical.
     NIsomorphism* newIso = fpg.makeCanonical();
-    NIsomorphism* newInv = newIso->inverse();
-
-    // For each triangulation found.
-    // copy pairing_ and apply reverse of iso
-    // Note that iso is the isomorphism from this to s
+    newIso->applyInPlace(tri);
+    // tri now has the "same" labelling as our modified face pairing graph.
 
     // Delete memory used by each completed automorphism
     for (auto a: automorphsDone)
@@ -270,61 +268,37 @@ void CollapsedChainSearcher::extendTri(const NTriangulation *tri) {
             // adj is adjacent (i.e. glued to) f in tri
             NTetFace adj(adjSimp,adjFacet);
             if ((f.simp == adj.simp) &&
-                    (!shortChain[isoInv->simpImage(newIso->simpImage(f.simp))])) {
+                    (!shortChain[isoInv->simpImage(f.simp)])) {
                 continue;
             }
 
-            // tri is a canonical triangulation, but that means that its face
-            // pairing graph is probably not canonical. we need to apply newIso
-            // to translate f and adj.
-            // modF is f, but translated to the modified face pairing graph
-            // modAdj is adj, translated to the modified face pairing graph
-            NTetFace modF(newIso->simpImage(f.simp),
-                    newIso->facetPerm(f.simp)[f.facet]);
-            NTetFace modAdj(newIso->simpImage(adj.simp),
-                    newIso->facetPerm(adj.simp)[adj.facet]);
-            // Now we translate modF and modAdj onto pairing_, the actual fpg
+            // Now we translate f and adj onto pairing_, the actual fpg
             // we are searching on.
             // my is f, translated onto pairing_
             // myAdj is adj, translated onto pairing_
-            int mySimp = isoInv->simpImage(newIso->simpImage(f.simp));
-            NPerm4 perm = isoInv->facetPerm(newIso->simpImage(f.simp))
-                * newIso->facetPerm(f.simp);
+            int mySimp = isoInv->simpImage(f.simp);
+            NPerm4 perm = isoInv->facetPerm(f.simp);
             int myFacet = perm[f.facet];
             NTetFace my(mySimp, myFacet);
             if (permIndex(my) != -1)
                 continue; // Already done.
-            int myAdjSimp = isoInv->simpImage(newIso->simpImage(adj.simp));
-            NPerm4 adjPerm = isoInv->facetPerm(newIso->simpImage(adj.simp))
-                * newIso->facetPerm(adj.simp);
+            int myAdjSimp = isoInv->simpImage(adj.simp);
+            NPerm4 adjPerm = isoInv->facetPerm(adj.simp);
             int myAdjFacet = adjPerm[adj.facet];
             NTetFace myAdj(myAdjSimp, myAdjFacet);
 
-            // We need to allow for automorphisms of the triangulation
-            // aut will be the image of modF under this automorphism
-            NTetFace aut(automorph->simpImage(modF.simp),
-                    automorph->facetPerm(modF.simp)[modF.facet]);
-            // autAdj will be the image of modAdj under this automorphism
-            NTetFace autAdj(automorph->simpImage(modAdj.simp),
-                    automorph->facetPerm(modAdj.simp)[modAdj.facet]);
-            NPerm4 autPerm = automorph->facetPerm(modF.simp);
-            NPerm4 autAdjPerm = automorph->facetPerm(modAdj.simp);
+            // Get image under current automorphism
+            NTetFace aut(automorph->simpImage(f.simp),
+                    automorph->facetPerm(f.simp)[f.facet]);
+            NPerm4 autPerm = automorph->facetPerm(f.simp);
+            NPerm4 autAdjPerm = automorph->facetPerm(adj.simp);
 
-            // And then translate aut and autAdj onto tri
-            // autT is aut translated onto tri
-            // autTadj is autAdj translated onto tri
-            NTetFace autT(newInv->simpImage(aut.simp),
-                    newInv->facetPerm(aut.simp)[aut.facet]);
-            NTetFace autTadj(newInv->simpImage(autAdj.simp),
-                    newInv->facetPerm(autAdj.simp)[autAdj.facet]);
             // Lastly, be careful that we translate permutations correctly
             // between these various settings.
-            NPerm4 autGluing = newIso->facetPerm(autTadj.simp) *
-                tri->getTetrahedron(autT.simp)->adjacentGluing(autT.facet) *
-                newInv->facetPerm(aut.simp);
-            NPerm4 gluing = isoInv->facetPerm(modAdj.simp).inverse() * autAdjPerm.inverse() *
+            NPerm4 autGluing = tri->getTetrahedron(aut.simp)->adjacentGluing(aut.facet);
+            NPerm4 gluing = adjPerm * autAdjPerm.inverse() *
                             autGluing *
-                            autPerm * isoInv->facetPerm(modF.simp);
+                            autPerm * perm.inverse();
             assert(gluing[myFacet] == myAdjFacet);
             permIndex(my) = gluingToIndex(my, gluing);
             permIndex(myAdj) = gluingToIndex(myAdj, gluing.inverse());
@@ -336,7 +310,7 @@ void CollapsedChainSearcher::extendTri(const NTriangulation *tri) {
             automorphsDone.insert(iso);
         }
     }
-    delete newInv;
+    delete tri;
     delete newIso;
 }
 
