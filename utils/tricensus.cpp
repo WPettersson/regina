@@ -671,19 +671,18 @@ int runCensus() {
             if ((xth != -1) && (modulo != -1)) {
                 if ( counter % modulo != xth)
                     continue;
-                else {
-                    size_t pos = outFile.find(marker);
-                    if (pos != std::string::npos) {
-                        sigStream.close();
-                        char buff[128];
-                        std::snprintf(buff, 128, outFile.c_str(), counter);
-                        sigStream.open(buff);
-                    }
-                }
             }
 
-
             if (pairingRep.length() > 0) {
+                size_t pos = outFile.find(marker);
+                if (pos != std::string::npos) {
+                    sigStream.close();
+                    char buff[128];
+                    std::snprintf(buff, 128, outFile.c_str(), counter);
+                    sigStream.open(buff);
+                } else {
+                    sigStream << "### " << pairingRep << std::endl;
+                }
                 typename CensusType::Pairing* pairing =
                     CensusType::Pairing::fromTextRep(pairingRep);
                 if (! pairing) {
@@ -701,11 +700,13 @@ int runCensus() {
                 } else {
                     std::cout << counter << "," << pairing->str() << ",";
                     // TODO: Explicitly generate automorphisms here.
+                    long long start = nSolns;
                     clock_t tics = clock();
                     foundFacePairing<CensusType>(pairing, 0, census);
                     double timeTaken = (clock()-tics);
                     timeTaken /= CLOCKS_PER_SEC;
-                    std::cout << timeTaken << std::endl;
+                    std::cout.setf(std::ios::fixed);
+                    std::cout << timeTaken << "," << (nSolns - start) << std::endl;
                     pairingList += pairing->str();
                     pairingList += '\n';
                 }
