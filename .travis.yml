@@ -26,6 +26,8 @@ addons:
             - zlib1g-dev
             - qtbase5-dev
             - libqt5svg5-dev
+            - libpopt0
+            - libpopt-dev
 
 
 before_script: cmake CMakeLists.txt
