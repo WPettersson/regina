@@ -10,6 +10,7 @@ addons:
             - ubuntu-toolchain-r-test
             - llvm-toolchain-precise
             - kalakris-cmake
+            - ubuntu-sdk-team
         packages:
             - gcc-4.9
             - g++-4.9
@@ -17,9 +18,14 @@ addons:
             - cmake
             - libtokyocabinet-dev
             - libboost-dev
+            - libboost-iostreams-dev
+            - libboost-python-dev
+            - libboost-regex-dev
             - libgmp-dev
             - libxml2-dev
             - zlib1g-dev
+            - qtbase5-dev
+            - libqt5svg5-dev
 
 
 before_script: cmake CMakeLists.txt
