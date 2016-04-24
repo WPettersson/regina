@@ -1,8 +1,8 @@
 language: c++
 
 compiler:
-  - clang
-  - gcc
+    - clang
+    - gcc
 
 addons:
     apt:
@@ -36,8 +36,10 @@ addons:
             - libopenmpi-dev
 
 
-before_script: cmake CMakeLists.txt
+before_script:
+    - cmake CMakeLists.txt
 
 script:
-  - $CXX --version
-  - make
+    - if [ "$CXX" = "g++" ] ; then export CXX="g++4.9"; fi
+    - if [ "$CXX" = "clang++" ] ; then export CXX="clang++-3.7"; fi
+    - make
