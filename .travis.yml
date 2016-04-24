@@ -1,27 +1,19 @@
 language: c++
 
+dist: trusty
+
 compiler:
     - clang
     - gcc
 
 addons:
     apt:
-        sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-            - kalakris-cmake
-            - ubuntu-sdk-team
-            - boost-latest
         packages:
-            - gcc-4.9
-            - g++-4.9
-            - clang-3.7
-            - cmake
             - libtokyocabinet-dev
-            - libboost1.55-dev
-            - libboost-iostreams1.55-dev
-            - libboost-python1.55-dev
-            - libboost-regex1.55-dev
+            - libboost-dev
+            - libboost-iostreams-dev
+            - libboost-python-dev
+            - libboost-regex-dev
             - libgmp-dev
             - libxml2-dev
             - zlib1g-dev
@@ -30,18 +22,14 @@ addons:
             - libpopt0
             - libpopt-dev
             - libcppunit-dev
-            - source-highlight
+            - libsource-highlight-dev
             - xsltproc
             - doxygen
             - libopenmpi-dev
 
 
 before_script:
-    - if [ "$CXX" = "g++" ] ; then export CXX="g++-4.9"; fi
-    - if [ "$CXX" = "clang++" ] ; then export CXX="clang++-3.7"; fi
     - cmake CMakeLists.txt
 
 script:
-    - if [ "$CXX" = "g++" ] ; then export CXX="g++-4.9"; fi
-    - if [ "$CXX" = "clang++" ] ; then export CXX="clang++-3.7"; fi
     - make
