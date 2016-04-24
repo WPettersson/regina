@@ -8,7 +8,7 @@ addons:
     apt:
         sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-3.7
+            - llvm-toolchain-precise-3.7
             - kalakris-cmake
             - ubuntu-sdk-team
             - boost-latest
