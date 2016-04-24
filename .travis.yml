@@ -11,6 +11,7 @@ addons:
             - llvm-toolchain-precise
             - kalakris-cmake
             - ubuntu-sdk-team
+            - boost-latest
         packages:
             - gcc-4.9
             - g++-4.9
