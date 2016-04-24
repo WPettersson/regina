@@ -18,10 +18,10 @@ addons:
             - clang-3.7
             - cmake
             - libtokyocabinet-dev
-            - libboost-dev
-            - libboost-iostreams-dev
-            - libboost-python-dev
-            - libboost-regex-dev
+            - libboost1.55-dev
+            - libboost1.55-iostreams-dev
+            - libboost1.55-python-dev
+            - libboost1.55-regex-dev
             - libgmp-dev
             - libxml2-dev
             - zlib1g-dev
@@ -29,6 +29,11 @@ addons:
             - libqt5svg5-dev
             - libpopt0
             - libpopt-dev
+            - cppunit
+            - source-highlight
+            - xsltproc
+            - doxygen
+            - libopenmpi1.3
 
 
 before_script: cmake CMakeLists.txt
