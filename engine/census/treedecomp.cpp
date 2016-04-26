@@ -1,4 +1,34 @@
 
+/**************************************************************************
+ *                                                                        *
+ *  Regina - A Normal Surface Theory Calculator                           *
+ *  Computational Engine                                                  *
+ *                                                                        *
+ *  Copyright (c) 1999-2016, Ben Burton                                   *
+ *  For further details contact Ben Burton (bab@debian.org).              *
+ *                                                                        *
+ *  This program is free software; you can redistribute it and/or         *
+ *  modify it under the terms of the GNU General Public License as        *
+ *  published by the Free Software Foundation; either version 2 of the    *
+ *  License, or (at your option) any later version.                       *
+ *                                                                        *
+ *  As an exception, when this program is distributed through (i) the     *
+ *  App Store by Apple Inc.; (ii) the Mac App Store by Apple Inc.; or     *
+ *  (iii) Google Play by Google Inc., then that store may impose any      *
+ *  digital rights management, device limits and/or redistribution        *
+ *  restrictions that are required by its terms of service.               *
+ *                                                                        *
+ *  This program is distributed in the hope that it will be useful, but   *
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of            *
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU     *
+ *  General Public License for more details.                              *
+ *                                                                        *
+ *  You should have received a copy of the GNU General Public             *
+ *  License along with this program; if not, write to the Free            *
+ *  Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,       *
+ *  MA 02110-1301, USA.                                                   *
+ *                                                                        *
+ **************************************************************************/
 
 
 namespace regina {
@@ -30,7 +60,7 @@ void TreeDecompSearcher::Bag::findConfigs() {
         }
         addArcs(config);
     }
-    configusFound = true;
+    configsFound = true;
 }
 
 void TreeDecompSearcher::Bag::findConfigs() {
@@ -51,12 +81,12 @@ void TreeDecompSearcher::Bag::getChildConfigs() {
         return;
     }
     int childCount = 0;
-    if (child[childCount].hasNoConfigs())
+    if (children[childCount].hasNoConfigs())
         return;
-    child[childCount].resetCount();
+    children[childCount].resetCount();
     Config c = new Config;
     while (true) {
-        if (!child[childCount].hasNextConfig()) {
+        if (!children[childCount].hasNextConfig()) {
             // Nothing more on this child. Go back one child if possible, else
             // we are done.
             if (childCount == 0) {
@@ -67,32 +97,32 @@ void TreeDecompSearcher::Bag::getChildConfigs() {
                 // relate to the last child joined on. By construction these
                 // "last parts" must only contain things related to a
                 // tetrahedron contained in this last child.
-                c.undoMerge(child[childCount].contents());
+                c.undoMerge(children[childCount].contents());
                 --childCount;
             }
         }
         // Get next config from child number childCount
-        c.mergeWith(child[childCount].getNextConfig());
+        c.mergeWith(children[childCount].getNextConfig());
         // If we are done, store + revert, else move to next child
         if (childCount == (numChildren-1)) {
             childConfigs.append(new Config(c));
-            c.undoMerge(child[childCount].contents());
+            c.undoMerge(children[childCount].contents());
         } else {
             ++childCount;
-            child[childCount].resetCount();
+            children[childCount].resetCount();
         }
     }
 }
 
 
-void TreeDecompSearcher::Bag::addArcs(Config c) {
+void TreeDecompSearcher::Bag::addArcs(Config& c) {
     int arcNo = 0;
     int gluings[numArcs] = {0};
     while (true) {
         if (arcNo == -1)
             return;
         if (arcNo == numArcs) {
-            storeThisConfig(new Config(c)); // Not with duplicates
+            storeConfig(new Config(c)); // Not with duplicates
         }
         if ((arcNo == numArcs) || (gluings[arcNo] == 6)) {
             --arcNo;
@@ -184,12 +214,12 @@ void TreeDecompSearcher::Bag::getChildTriangulations() {
         return;
     }
     int childCount = 0;
-    if (child[childCount].hasNoTriangulations())
+    if (children[childCount].hasNoTriangulations())
         return;
-    child[childCount].resetCount();
+    children[childCount].resetTriangulationCount();
     Triangulation t = new Triangulation;
     while (true) {
-        if (!child[childCount].hasNextConfig()) {
+        if (!children[childCount].hasNextTriangulation()) {
             // Nothing more on this child. Go back one child if possible, else
             // we are done.
             if (childCount == 0) {
@@ -200,12 +230,12 @@ void TreeDecompSearcher::Bag::getChildTriangulations() {
                 // relate to the last child joined on. By construction these
                 // "last parts" must only contain things related to a
                 // tetrahedron contained in this last child (or subtree below).
-                t.undoMerge(child[childCount].triangulationContains());
+                t.undoMerge(children[childCount].triangulationContains());
                 --childCount;
             }
         }
         // Get next config from child number childCount
-        t.mergeWith(child[childCount].getNextConfig());
+        t.mergeWith(children[childCount].getNextConfig());
 
         // TODO mergeWith() has to somehow maintain tetrahedron labels/indices
         // Possibly just use a Triangulation*[] array to access tetrahedron i.
@@ -213,24 +243,26 @@ void TreeDecompSearcher::Bag::getChildTriangulations() {
         // If we are done, store + revert, else move to next child
         if (childCount == (numChildren-1)) {
             childTriangulations.append(new Triangulation(t));
-            t.undoMerge(child[childCount].contents());
+            t.undoMerge(children[childCount].contents());
         } else {
             ++childCount;
-            child[childCount].resetCount();
+            child[childrenCount].resetCount();
         }
     }
 }
 
-void TreeDecompSearcher::Triangulation::mergeWith(Triangulation t) {
+void TreeDecompSearcher::Triangulation::mergeWith(Triangulation other) {
     // copy tetrahedra over to this
     // be careful with tetrahedra indexing!
+    // Maybe just glue based on other?
 }
 
 void TreeDecompSearcher::Triangulation::undoMerge(std::set<int> tets) {
     // delete any tetrahedra in tets
+    // Or just unglue any glued faces on the tets?
 }
 
-void TreeDecompSearcher::Bag::identifyFaces(Triangulation t) {
+void TreeDecompSearcher::Bag::identifyFaces(Triangulation& t) {
     int arcNo = 0;
     int gluings[numArcs] = {0};
     while (true) {
@@ -251,9 +283,10 @@ void TreeDecompSearcher::Bag::identifyFaces(Triangulation t) {
         // Find boundary
         int f1=0,f2=0;
         // If we make these arrays, we only need to calculate them once
-        while( ! c.onBoundary(t1,f1))
+        // can we take them from a config? probably not
+        while( ! t.onBoundary(t1,f1))
             ++f1;
-        while( ! c.onBoundary(t2,f2))
+        while( ! t.onBoundary(t2,f2))
             ++f2;
         auto f = std::bind(&hasValidConfig, this, _1);
         // Don't modify triangulation if this fails
@@ -266,8 +299,6 @@ void TreeDecompSearcher::Bag::identifyFaces(Triangulation t) {
     }
 }
 
-bool valid(Triangulation)
-
 bool TreeDecompSearcher::Triangulation::glue(int gluing, int t1, int f1, int
         t2, int f2, bool (valid*)(Triangulation) ) {
     // Glue t1,f1 to t2,f2 according to gluing
@@ -275,7 +306,7 @@ bool TreeDecompSearcher::Triangulation::glue(int gluing, int t1, int f1, int
     // checked again by hasValidBoundaryConfig
 }
 
-bool TreeDecompSearcher::Bag::hasValidBoundaryConfig(Triangulation t) {
+bool TreeDecompSearcher::Bag::hasValidBoundaryConfig(Triangulation& t) {
     Config c; // Will put configuration of t in here.
     // For each edge of triangulation
     for(auto edge: triangulation.edges()) {
@@ -319,24 +350,53 @@ bool TreeDecompSearcher::Bag::hasValidBoundaryConfig(Triangulation t) {
 
     for(auto vertex: triangulation.vertices()) {
         if (vertex->isBoundary()) {
-            for (auto ve: vertex->embeddings()) {
-                //NVertexEmbedding ve;
-                // add to equiv
+            int embeddings = vertex->countEmbeddings();
+            int * triToTet = new int[embeddings];
+            int * triToFace = new int[embeddings];
+            std::set<int> *equiv = new std::set<int>;
+            for (int tri = 0; tri < embeddings; ++tri) {
+                NVertexEmbedding& ve = vertex.embedding(tri);
+
+                int tet = ve.tetrahedron().index();
+                int face = ve.tetrahedron().triangle(ve.vertex());
+
+                equiv->insert(combine(tet, vertex->index()));
+                c.equivMap->insert(std::pair<int, std::set<int>*>(combine(tet,
+                                vertex->index(), equiv)));
+
+
+                // Store these for lookup when constructing link boundaries
+                triToTet[tri] = tet;
+                triToFace[tri] = face;
             }
             const Dim2Triangulation link = vertex->buildLink();
             for(auto b: link.getBoundaryComponents()) {
                 for(int i = 0; i < b->countEdges(); ++i) {
                     Dim2Edge *e = b->edge(i);
-                    // go through e->embedding(j=0 ...)
-                    // possibly just 1st? if on bdry
-                    // get Dim2Triangle and int edge from embedding
+                    // Since it's a boundary component, it can only have 1
+                    // embedding
+                    int triangle = e->embedding(0).triangle().index();
+                    int tet = triToTet[triangle];
+                    int face = triToFace[triangle];
+                    // TODO
+                    // get int edge from embedding
                     // convert triangle/edge/vertex to tetrahedron/vertex/edge
+                    // create TVE
+                    // create circular list node
+                    // insert
                 }
             }
+            delete[] triToTet;
+            delete[] triToFace;
         }
         // Add to c
     }
     return haveConfig(c);
+}
+
+void TreeDecompSearcher::Config::addTFEPair(TFE a, TFE b) {
+    pairs.insert(std::pair<TFE, TFE>>(a,b));
+    pairs.insert(std::pair<TFE, TFE>>(b,a));
 }
 
 }; // namespace

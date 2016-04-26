@@ -61,12 +61,82 @@ namespace regina {
 class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
 
 
-    class Bag {
-        int[] contents;
-        int[] toAdd;
-        Bag*[] children;
-        std::list<Config*> possibleConfigs;
+    class Config;
+    class Triangulation;
 
+    class Bag {
+        int[] contents_;
+        int[] toAdd_;
+        int[] arcs;
+        Bag*[] children;
+        std::list<Config*> possibleConfigs_;
+        int numChildren;
+        int numArcs;
+
+        bool configsFound;
+        bool trisFound;
+
+        std::list<Bag> children;
+        std::list<Config *> childConfigs;
+        std::list<Triangulation *> childTriangulations;
+
+
+        void getChildConfigs();
+        bool hasNoConfigs();
+        // When asked for next Config, start again at start
+        bool resetConfigCount();
+        // Does this bag have more Configs?
+        bool hasNextConfig();
+        // Get the next Config
+        Config getNextConfig();
+
+        bool addArcs(Config& c);
+
+        void storeConfig(Config& c);
+
+        void getChildTriangulations();
+        bool hasNoTriangulations();
+        bool resetTriangulationCount();
+        bool hasNextTriangulation();
+
+        bool hasValidBoundaryConfig(Triangulation t);
+    };
+
+    class TFE {
+        int tet;
+        int face;
+        int edge;
+    };
+
+    class Config {
+        std::map<int, std::set<int>*> equivMap;
+
+        Config();
+        Config(Config c);
+
+        void mergeWith(Config other);
+        void undoMerge(std::set<int> tets);
+        bool onBoundary(int t, int f);
+        bool glue(int gluing, int t1, int f1, int t2, int f2);
+
+        addPair(TFE a, TFE b);
+    };
+
+    class Triangulation {
+        NTriangulation t_;
+
+        Triangulation();
+        Triangulation(Triangulation t);
+
+        void mergeWith(Triangulation other);
+        void undoMerge(std::set<int> tets);
+        bool onBoundary(int t, int f);
+        bool glue(int gluing, int t1, int f1, int t2, int f2);
+    };
+
+
+
+    static inline int combine(int tet, int vert) { return 4*tet+vert; }
 };
 
 // Inline functions for TreeDecompSearcher
