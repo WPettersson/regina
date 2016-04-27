@@ -118,24 +118,21 @@ void TreeDecompSearcher::Bag::getChildConfigs() {
 void TreeDecompSearcher::Bag::addArcs(Config& c) {
     int arcNo = 0;
     int gluings[numArcs] = {0};
+    if (! arcFacesKnown)
+        findArcFaces(c);
     while (arcNo >= 0) {
         if (arcNo == numArcs) {
             storeConfig(new Config(c)); // Not with duplicates
         }
         if ((arcNo == numArcs) || (gluings[arcNo] == 6)) {
             --arcNo;
-            c.unGlue(gluings[arcNo]); // What do we need to store to do this
+            c.unGlue(arcs[arcNo].t1, arcs[arcNo].f1); // TODO Do we need more info passed in to undo?
             ++gluings[arcNo];
         }
         int t1 = arcs[arcNo].t1;
         int t2 = arcs[arcNo].t2;
-        // Find boundary
-        int f1=0,f2=0; // Possibly make these arrays?
-        while( ! c.onBoundary(t1,f1))
-            ++f1;
-        while( ! c.onBoundary(t2,f2))
-            ++f2;
-        // Don't modify config if this fails
+        int f1 = arcs[arcNo].f1;
+        int f2 = arcs[arcNo].f2;
         if (c.glue(gluings[arcNo], t1,f1, t2,f2)) {
             ++arcNo;
             gluings[arcNo] = 0;
@@ -143,6 +140,23 @@ void TreeDecompSearcher::Bag::addArcs(Config& c) {
             ++gluings[arcNo];
         }
     }
+}
+
+void TreeDecompSearcher::Bag::findArcFaces(Config& c) {
+    bool f[4*nTets_] = {false}; // 4 = num faces per tet
+    for(int arcNo = 0; arcNo < numArcs; ++arcNo) {
+        int t1 = arcs[arcNo].t1;
+        int t2 = arcs[arcNo].t2;
+        while ( ( !c.onBoundary(t1,f1)) || (used[4*t1+f1] == true))
+            ++f1;
+        f[4*t1+f1] = true;
+        while ( ( !c.onBoundary(t2,f2)) || (used[4*t2+f2] == true))
+            ++f2;
+        f[4*t2+f2] = true;
+        arcs[arcNo].f1 = f1;
+        arcs[arcNo].f2 = f2;
+    }
+    arcFacesKnown = true;
 }
 
 // Config has:
@@ -272,20 +286,14 @@ void TreeDecompSearcher::Bag::identifyFaces(Triangulation& t) {
         }
         if ((arcNo == numArcs) || (gluings[arcNo] == 6)) {
             --arcNo;
-            t.unGlue(gluings[arcNo]); // What do we need to store to do this
+            t.unGlue(arcs[arcNo].t1, arcs[arcNo].f1); // What do we need to store to do this
             // Maybe store t1,f1,t2,f2 as an array
             ++gluings[arcNo];
         }
         int t1 = arcs[arcNo].t1;
         int t2 = arcs[arcNo].t2;
-        // Find boundary
-        int f1=0,f2=0;
-        // If we make these arrays, we only need to calculate them once
-        // can we take them from a config? probably not
-        while( ! t.onBoundary(t1,f1))
-            ++f1;
-        while( ! t.onBoundary(t2,f2))
-            ++f2;
+        int f1 = arcs[arcNo].f1;
+        int f2 = arcs[arcNo].f2;
         auto f = std::bind(&hasValidConfig, this, _1);
         // Don't modify triangulation if this fails
         if (t.glue(gluings[arcNo], t1,f1, t2,f2, f)) {

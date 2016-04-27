@@ -105,9 +105,11 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
 
     typedef uint16 TFE;
     TFE inline TFE_(int t, int f, int e) { return (t*4 + f)*6 + e; } ;
+    // 4 faces per tet, 6 edges per tet. TODO work with edges per face?
 
     typedef uint16 TVE;
-    TVE inline TVE_(int t, int v, int e) { return (t*4 + v)*4 + e; } ;
+    TVE inline TVE_(int t, int v, int e) { return (t*4 + v)*6 + e; } ;
+    // 4 vertices per tet, 6 edges per tet. TODO work with edges per vertex?
 
     typedef uint16 TV;
     TV inline TV_(int t, int v) { return t*4 + v; } ;
@@ -122,6 +124,7 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
         void undoMerge(std::set<int> tets);
         bool onBoundary(int t, int f);
         bool glue(int gluing, int t1, int f1, int t2, int f2);
+        void unGlue(int t1, int f1);
 
         addPair(TFE a, TFE b);
     };
