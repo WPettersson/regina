@@ -100,7 +100,7 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
         bool resetTriangulationCount();
         bool hasNextTriangulation();
 
-        bool hasValidBoundaryConfig(Triangulation t);
+        bool hasValidConfig(Triangulation& t);
     };
 
     typedef uint16 TFE;

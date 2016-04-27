@@ -306,13 +306,20 @@ void TreeDecompSearcher::Bag::identifyFaces(Triangulation& t) {
 }
 
 bool TreeDecompSearcher::Triangulation::glue(int gluing, int t1, int f1, int
-        t2, int f2, bool (valid*)(Triangulation) ) {
+        t2, int f2, bool (valid*)(Triangulation&) ) {
     // Glue t1,f1 to t2,f2 according to gluing
     // Should we check for edges in reverse/bad edge links? These will be
     // checked again by hasValidBoundaryConfig
+
+    // Check for valid boundary configuration
+    if (! valid(this)) {
+        // Unglue
+        return false;
+    }
+    return true;
 }
 
-bool TreeDecompSearcher::Bag::hasValidBoundaryConfig(Triangulation& t) {
+bool TreeDecompSearcher::Bag::hasValidConfig(Triangulation& t) {
     Config c; // Will put configuration of t in here.
     // For each edge of triangulation
     for(auto edge: triangulation.edges()) {
