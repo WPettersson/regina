@@ -118,9 +118,7 @@ void TreeDecompSearcher::Bag::getChildConfigs() {
 void TreeDecompSearcher::Bag::addArcs(Config& c) {
     int arcNo = 0;
     int gluings[numArcs] = {0};
-    while (true) {
-        if (arcNo == -1)
-            return;
+    while (arcNo >= 0) {
         if (arcNo == numArcs) {
             storeConfig(new Config(c)); // Not with duplicates
         }
