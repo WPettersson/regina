@@ -60,6 +60,7 @@ namespace regina {
  */
 class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
 
+    static const int maxTetrahedra = 20;
 
     class Config;
     class Triangulation;
@@ -102,11 +103,14 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
         bool hasValidBoundaryConfig(Triangulation t);
     };
 
-    class TFE {
-        int tet;
-        int face;
-        int edge;
-    };
+    typedef uint16 TFE;
+    TFE inline TFE_(int t, int f, int e) { return (t*4 + f)*6 + e; } ;
+
+    typedef uint16 TVE;
+    TVE inline TVE_(int t, int v, int e) { return (t*4 + v)*4 + e; } ;
+
+    typedef uint16 TV;
+    TV inline TV_(int t, int v) { return t*4 + v; } ;
 
     class Config {
         std::map<int, std::set<int>*> equivMap;
