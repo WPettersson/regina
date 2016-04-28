@@ -35,6 +35,7 @@ namespace regina {
 
 
 TreeDecompSearcher::runSearch() {
+
     // get tree decomp
     // assign Bags to each bag
     for(auto tri: rootBag.triangulations()) {
@@ -53,8 +54,7 @@ TriIterator TreeDecompSearcher::Bag::triangulations() {
 }
 
 void TreeDecompSearcher::Bag::findConfigs() {
-    getChildConfigs();
-    for(auto config : childConfigs) {
+    for(auto config : childConfigs()) {
         for(auto tet: tetsAddedHere) {
             config.addTet(tet);
         }
@@ -63,9 +63,8 @@ void TreeDecompSearcher::Bag::findConfigs() {
     configsFound = true;
 }
 
-void TreeDecompSearcher::Bag::findConfigs() {
-    getChildTriangulations();
-    for(auto tri: childTriangulations) {
+void TreeDecompSearcher::Bag::findTriangulations() {
+    for(auto tri: childTriangulations()) {
         for(auto tet: tetsAddedHere) {
             tri.addTet(tet);
         }
