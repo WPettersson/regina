@@ -206,7 +206,23 @@ void TreeDecompSearcher::Bag::addArcs(Config& c) {
 bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
 
     // FacetSpec<3> a.one_, a.two_;
-    for(int i=0; i< 3; ++i) {
+    for(int i=0; i < 3; ++i) {
+        int vert = FACE_VERTICES[a.one.facet][i];
+        int edge = OPP_EDGE[a.one.facet][vert];
+        TVE a = TVE_(a.one.simp, vert, edge);
+
+        vert = FACE_VERTICES[a.two.facet][i];
+        edge = OPP_EDGE[a.two.facet][vert];
+        TVE b = TVE_(a.two.simp, vert, edge);
+        Pair *p = getTVEPair(a);
+        Pair *p2 = getTVEPair(b);
+
+        if (p == p2) {
+            // Same pair. Check orientation (and degree maybe?)
+            // If bad undo and return false?
+            continue;
+        }
+
         // Get entries from circular list for t1,f1,t2,f2 and gluing using
         // edge i of f1. For now, TVE[0] and TVE[1]
 

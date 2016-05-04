@@ -100,9 +100,7 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
     class Arc {
         public:
             Arc(FacetSpec<3> one, FacetSpec<3> two);
-
-        private:
-            FacetSpec<3> one_, two_;
+            FacetSpec<3> one, two;
     };
 
     // A pair of TVEs along with the orientation indicating how they are
@@ -180,7 +178,7 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             void addTVEPair(TVE a, TVE b, bool orientation);
 
             // Given a TVE, return the Pair object that contains it.
-            Pair getTVEPair(TVE a);
+            Pair* getTVEPair(TVE a);
     };
 
     // Represents a triangulation we are building. Note that we need a bit more
@@ -300,7 +298,7 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
 // Inline functions for TreeDecompSearcher
 
 // Inline functions for TreeDecompSearcher::Arc
-inline TreeDecompSearcher::Arc(FacetSpec<3> one, FacetSpec<3> two) one_(one), two_(two) { }
+inline TreeDecompSearcher::Arc(FacetSpec<3> one_, FacetSpec<3> two_) one(one_), two(two_) { }
 
 
 // Inline functions for TreeDecompSearcher::Bag
