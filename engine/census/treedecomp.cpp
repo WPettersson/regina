@@ -468,6 +468,27 @@ void TreeDecompSearcher::Config::addTVEPair(TVE a, TVE b, bool orientation) {
     pairs.insert(b, p);
 }
 
+TreeDecompSearcher::Pair* TreeDecompSearcher::Config::getPair(TVE a) {
+    // If it's not going to be found here, return NULL
+    if (! belowHere[a.tet()])
+        return NULL;
+
+    // Check if this bag knows about it.
+    auto it = pairs.find(a);
+    if (it != pairs.end())
+        return it.second;
+
+    // Not here, some child must know of it
+    for (auto child: children) {
+        Pair *p = child->getPair(a);
+        if (p != NULL) {
+            return p;
+        }
+    }
+    assert(false); // We should never get here.
+    return NULL;
+}
+
 TreeDecompSearcher::Pair::Pair(TVE a, TVE b, bool orientation) :
     a_(a), b_(b), orientation_(orientation) { }
 

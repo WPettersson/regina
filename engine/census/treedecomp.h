@@ -131,6 +131,14 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             Config(const Config& c);
 
         private:
+
+            // The child configs that created this Config. We use this to
+            // lookup details of the configuration, so we don't have to keep
+            // multiple copies of the same data.
+            Config* children;
+
+            int numChildren;
+
             // For each TV, we want to easily be able to find the set of equivalent
             // TVs. That is, which TVs are actually part of the same
             // triangulation-vertex.
