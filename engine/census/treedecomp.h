@@ -109,13 +109,13 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
     // identified.
     class Pair {
         public:
-            inline const TVE getA() { return a;}
-            inline const TVE getB() { return b;}
-            inline const bool o() { return orientation;}
-            inline const opp(TVE thing) { return (thing == a) ? b : a; }
+            inline const TVE getA() { return a_;}
+            inline const TVE getB() { return b_;}
+            inline const bool o() { return orientation_;}
+            inline const opp(TVE thing) { return (thing == a_) ? b_ : a_; }
         private:
-            TVE a,b;
-            bool orientation; // true means "lowest vertex on edge a meets
+            TVE a_,b_;
+            bool orientation_; // true means "lowest vertex on edge a meets
                     // lowest vertex on edge b"
     };
 

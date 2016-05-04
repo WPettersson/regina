@@ -462,9 +462,13 @@ bool TreeDecompSearcher::Bag::hasValidConfig(Triangulation& t) {
     return haveConfig(c);
 }
 
-void TreeDecompSearcher::Config::addTFEPair(TFE a, TFE b) {
-    pairs.insert(std::pair<TFE, TFE>>(a,b));
-    pairs.insert(std::pair<TFE, TFE>>(b,a));
+void TreeDecompSearcher::Config::addTVEPair(TVE a, TVE b, bool orientation) {
+    Pair *p = new Pair(a,b,orientation);
+    pairs.insert(a, p);
+    pairs.insert(b, p);
 }
+
+TreeDecompSearcher::Pair::Pair(TVE a, TVE b, bool orientation) :
+    a_(a), b_(b), orientation_(orientation) { }
 
 }; // namespace
