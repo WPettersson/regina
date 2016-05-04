@@ -125,8 +125,8 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
     // fact is the basis of the FPT algorithm for admissibility testing.
     class Config {
         public:
-            // Bare constructor
-            Config();
+            // Constructor
+            Config(int nChildren);
             // Copy constructor
             Config(const Config& c);
 
@@ -137,7 +137,7 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             // multiple copies of the same data.
             Config* children;
 
-            int numChildren;
+            int numChildren_;
 
             // For each TV, we want to easily be able to find the set of equivalent
             // TVs. That is, which TVs are actually part of the same
@@ -156,13 +156,12 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
 
         public:
             // Combine another configuration with this one. The two configurations
-            // must have distinct tetrahedra.
-            void mergeWith(const Config &other);
+            // must have distinct tetrahedra. Due to the data structures in
+            // use, we only need to add another child to merge configs.
+            void addChild(Config *other);
 
-            // Undo such a merge. Since the two configurations had distinct
-            // tetrahedra, we just need to delete any pieces of information
-            // relating to the "new" tetrahedra
-            void undoMerge(std::set<int> tets);
+            // Undo such a merge, which just involves removing a child
+            void removeChild(int child);
 
             // Is the given face on the given tetrahedra on the boundary?
             bool onBoundary(int t, int f);
@@ -313,7 +312,32 @@ inline void TreeDecompSearcher::Bag::addChild(Bag *c) {
 
 // Inline functions for TreeDecompSearcher::Config
 
-inline TreeDecompSearcher::Config() : useful(false) { }
+inline TreeDecompSearcher::Config::Config(int numChildren) : useful(false),
+    numChildren_(numChildren) {
+    children = new Config*[numChildren_];
+}
+
+inline TreeDecompSearcher::Config::Config(const Config& other) : useful(false),
+    numChildren_(other.coundChildren()) {
+    children = new Config*[numChildren_];
+    std::copy(other.children, children, numChildren_*sizeof(Config*));
+}
+
+inline TreeDecompSearcher::Config::~Config() {
+    delete[] children;
+}
+
+inline int TreeDecompSearcher::Config::countChildren() {
+    return numChildren_;
+}
+
+inline void TreeDecompSearcher::Config::addChild(Config *c, int pos) {
+    children[pos] = c;
+}
+
+inline void TreeDecompSearcher::Config::removeChild(int pos) {
+    // NOP. Will get replaced when needed, else it never gets used anyway.
+}
 
 } // namespace regina
 

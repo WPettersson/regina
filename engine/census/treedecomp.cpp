@@ -141,7 +141,7 @@ void TreeDecompSearcher::Bag::getChildConfigs() {
     if (children[childCount].hasNoConfigs())
         return;
     children[childCount].resetCount();
-    Config c = new Config;
+    Config c = new Config(numChildren);
     while (true) {
         if (!children[childCount].hasNextConfig()) {
             // Nothing more on this child. Go back one child if possible, else
@@ -150,21 +150,17 @@ void TreeDecompSearcher::Bag::getChildConfigs() {
                 return;
             } else {
                 // Undo the last merge of new data
-                // Only involves removing parts of the configuration which
-                // relate to the last child joined on. By construction these
-                // "last parts" must only contain things related to a
-                // tetrahedron contained in this last child.
-                c.undoMerge(children[childCount].contents());
+                // Actually, we just remove the last "child"
+                c.removeChild(childCount);
                 --childCount;
             }
         }
         // Get next config from child number childCount
-        c.mergeWith(children[childCount].getNextConfig());
+        c.addChild(children[childCount].getNextConfig(), childCount);
         // If we are done, store + revert, else move to next child
         if (childCount == (numChildren-1)) {
-            // TODO yield this somehow?
             childConfigs.append(new Config(c));
-            c.undoMerge(children[childCount].contents());
+            c.removeChild(childCount);
         } else {
             ++childCount;
             children[childCount].resetCount();
@@ -225,17 +221,6 @@ void TreeDecompSearcher::Bag::findArcFaces(Config& c) {
 // list of pairs of edges (TetFaceEdge) on each face, along with degree of
 // underlying edge and a bool tracking whether a tetrahedron has been repeated
 // the edge from TetFaceEdge is signed to store orientation.
-
-bool TreeDecompSearcher::Config::mergeWith(Config &c) {
-    // copy ownership of circular list, merge maps from TVE to circ. list
-    // merge maps from TetVertex to equivalent TetVertex
-    // merge list of pairs of edges
-}
-
-void TreeDecompSearcher::Config::undoMerge(std::set<int> tets) {
-    // delete any circular list nodes relating to tetrahedra in tets
-    // delete same from equiv. map, and list of pairs of edges
-}
 
 bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
 
