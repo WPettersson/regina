@@ -34,23 +34,78 @@
 namespace regina {
 
 
-TreeDecompSearcher::runSearch() {
 
+TreeDecompSearcher::TreeDecompSearcher(FacePairing pairing) :
+    pairing_(pairing) {
+
+    nTets = pairing_->size();
     // get tree decomp
-    // assign Bags to each bag
-    for(auto tri: rootBag.triangulations()) {
-        use_(tri);
+    NTreeDecomposition tree(pairing_, TD_UPPER_GREEDY_FILL_IN);
+    tree.makeNice();
+    NTreeBag *treeBag = tree.root();
+    root = new Bag(treeBag);
+    bool* seen = new bool[pairing_->size()] {false};
+    root->determineTetrahedra(seen, nTets);
+}
+
+void TreeDecompSearcher::Bag::determineTetrahedra(bool* seen, nTets) {
+    // Determine which tetrahedra are added to the triangulation at this bag.
+    // We do this by a top-down search. The first time we see any tetrahedron
+    // in a top-down search is also the last time we would've seen it in a
+    // bottom-up search, which ensures correctness.
+    toAdd_ = new int[nTets];
+    for (int i = 0; i < nTets; ++i)
+        toAdd_[i] = NO_TET; // Arbitrary marker for end of array
+    int added = 0;
+    for(auto element: contents_) {
+        if (! seen[element]) {
+            seen[element] = true;
+            toAdd_[added++] = element;
+            // Go through the 4 faces of "element" in pairing_
+            // If the the other face has not been seen, then it must appear
+            // only below this bag (maybe not obvious that it won't appear in
+            // some other "branch", but it's easy to show this).
+            for (int f = 0; f < 4 ; ++f) { // 4 = DIM+1
+                FacetSpec<3> dest = pairing_->dest(element, f);
+                if (seen[dest.simp])
+                    continue;
+                Arc *a = new Arc(FacetSpec<3>(element,f), dest);
+                arcs[numArcs++] = a;
+            }
+        }
+    }
+    for(auto child: children) {
+        child->determineTetrahedra(seen, nTets);
     }
 }
 
-TriIterator TreeDecompSearcher::Bag::triangulations() {
-    if (! configsFound) {
-        findConfigs();
+TreeDecompSearcher::Bag::Bag(NTreeBag *treeBag) {
+    // At most 4 arcs added per tetrahedron in this bag
+    arcs = new Arc*[treeBag->size() * 4];
+    contents_ = new int[treeBag->size()];
+    for(int i = 0 ; i < treeBag->size(); ++i) {
+        contents_[i] = treeBag->element(i);
     }
+
+    NTreeBag *child = treeBag->children();
+    while (child != NULL) {
+        Bag *c = new Bag(child);
+        this->addChild(c);
+        child = child->sibling();
+    }
+}
+
+void TreeDecompSearcher::runSearch() {
+    for(auto tri: rootBag.triangulation()) {
+        use_(tri, useArgs_);
+    }
+}
+
+const TriIterator TreeDecompSearcher::Bag::triangulations() {
     if (! trisFound) {
         findTriangulations();
     }
-    return storedTriIterator();
+    return triangulations_.const_iterator();
 }
 
 void TreeDecompSearcher::Bag::findConfigs() {
@@ -64,6 +119,9 @@ void TreeDecompSearcher::Bag::findConfigs() {
 }
 
 void TreeDecompSearcher::Bag::findTriangulations() {
+    if (! configsFound) {
+        findConfigs();
+    }
     for(auto tri: childTriangulations()) {
         for(auto tet: tetsAddedHere) {
             tri.addTet(tet);
@@ -104,6 +162,7 @@ void TreeDecompSearcher::Bag::getChildConfigs() {
         c.mergeWith(children[childCount].getNextConfig());
         // If we are done, store + revert, else move to next child
         if (childCount == (numChildren-1)) {
+            // TODO yield this somehow?
             childConfigs.append(new Config(c));
             c.undoMerge(children[childCount].contents());
         } else {
@@ -167,7 +226,7 @@ void TreeDecompSearcher::Bag::findArcFaces(Config& c) {
 // underlying edge and a bool tracking whether a tetrahedron has been repeated
 // the edge from TetFaceEdge is signed to store orientation.
 
-bool TreeDecompSearcher::Config::mergeWith(Config) {
+bool TreeDecompSearcher::Config::mergeWith(Config &c) {
     // copy ownership of circular list, merge maps from TVE to circ. list
     // merge maps from TetVertex to equivalent TetVertex
     // merge list of pairs of edges
@@ -178,8 +237,9 @@ void TreeDecompSearcher::Config::undoMerge(std::set<int> tets) {
     // delete same from equiv. map, and list of pairs of edges
 }
 
-bool TreeDecompSearcher::Config::glue(int gluing, int t1, int f1, int t2, int f2) {
+bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
 
+    // FacetSpec<3> a.one_, a.two_;
     for(int i=0; i< 3; ++i) {
         // Get entries from circular list for t1,f1,t2,f2 and gluing using
         // edge i of f1. For now, TVE[0] and TVE[1]
@@ -220,7 +280,7 @@ bool TreeDecompSearcher::Config::glue(int gluing, int t1, int f1, int t2, int f2
 }
 
 void TreeDecompSearcher::Bag::getChildTriangulations() {
-    if (numChildren == 0) {
+    if (children.size() == 0) {
         childTriangulations.append(new Triangulation);
         return;
     }
@@ -248,12 +308,10 @@ void TreeDecompSearcher::Bag::getChildTriangulations() {
         // Get next config from child number childCount
         t.mergeWith(children[childCount].getNextConfig());
 
-        // TODO mergeWith() has to somehow maintain tetrahedron labels/indices
-        // Possibly just use a Triangulation*[] array to access tetrahedron i.
-
         // If we are done, store + revert, else move to next child
         if (childCount == (numChildren-1)) {
-            childTriangulations.append(new Triangulation(t));
+            if (hasValidConfig(t))
+                childTriangulations.append(new Triangulation(t));
             t.undoMerge(children[childCount].contents());
         } else {
             ++childCount;
@@ -322,38 +380,36 @@ bool TreeDecompSearcher::Bag::hasValidConfig(Triangulation& t) {
     Config c; // Will put configuration of t in here.
     // For each edge of triangulation
     for(auto edge: triangulation.edges()) {
-        // TODO
-        // prefer if (! edge->isBoundary()) continue;
-        if (edge->isBoundary() {
-            NEdgeEmbedding ne = edge->embedding(0);
-            int teta = ne.tetrahedron();
-            int va1 = ne.vertices()[0];
-            int va2 = ne.vertices()[1];
-            int ea = NEdge::someTable[va1][va2];
-            // check orientation?
+        if (! edge->isBoundary())
+            continue;
+        NEdgeEmbedding ne = edge->embedding(0);
+        int teta = ne.tetrahedron();
+        int va1 = ne.vertices()[0];
+        int va2 = ne.vertices()[1];
+        int ea = NEdge::someTable[va1][va2];
+        // check orientation?
 
-            ne = edge->embedding(edge->countEmbeddings()-1);
-            int tetb = ne.tetrahedron();
-            int vb1 = ne.vertices()[0];
-            int vb2 = ne.vertices()[1];
-            int eb = NEdge::someTable[vb1][vb2];
-            // check orientation?
+        ne = edge->embedding(edge->countEmbeddings()-1);
+        int tetb = ne.tetrahedron();
+        int vb1 = ne.vertices()[0];
+        int vb2 = ne.vertices()[1];
+        int eb = NEdge::someTable[vb1][vb2];
+        // check orientation?
 
-            int fa, fb;
-            if ((teta == tetb) && (va1 == vb1) && (va2 == vb2)) {
-                fa = NFace::someTable[va1][va2][0];
+        int fa, fb;
+        if ((teta == tetb) && (va1 == vb1) && (va2 == vb2)) {
+            fa = NFace::someTable[va1][va2][0];
+            fb = NFace::someTable[vb1][vb2][1];
+        } else {
+            // Find correct face by checking the two faces the edge separates,
+            // and selecting the one that is on the boundary.
+            fa = NFace::someTable[va1][va2][0];
+            if ( ! (t.tetrahedron(teta)->face(fa)->isBoundary()))
+                fa = NFace::someTable[va1][va2][1];
+
+            fb = NFace::someTable[vb1][vb2][0];
+            if ( ! (t.tetrahedron(tetb)->face(fb)->isBoundary()))
                 fb = NFace::someTable[vb1][vb2][1];
-            } else {
-                // Find correct face by checking the two faces the edge separates,
-                // and selecting the one that is on the boundary.
-                fa = NFace::someTable[va1][va2][0];
-                if ( ! (t.tetrahedron(teta)->face(fa)->isBoundary()))
-                    fa = NFace::someTable[va1][va2][1];
-
-                fb = NFace::someTable[vb1][vb2][0];
-                if ( ! (t.tetrahedron(tetb)->face(fb)->isBoundary()))
-                    fb = NFace::someTable[vb1][vb2][1];
-            }
         }
         TFE tfeA(teta,fa,ea);
         TFE tfeB(tetb,fb,eb);
@@ -365,15 +421,15 @@ bool TreeDecompSearcher::Bag::hasValidConfig(Triangulation& t) {
             int embeddings = vertex->countEmbeddings();
             int * triToTet = new int[embeddings];
             int * triToFace = new int[embeddings];
-            std::set<int> *equiv = new std::set<int>;
+            std::set<TV> *equiv = new std::set<TV>;
             for (int tri = 0; tri < embeddings; ++tri) {
                 NVertexEmbedding& ve = vertex.embedding(tri);
 
                 int tet = ve.tetrahedron().index();
                 int face = ve.tetrahedron().triangle(ve.vertex());
 
-                equiv->insert(combine(tet, vertex->index()));
-                c.equivMap->insert(std::pair<int, std::set<int>*>(combine(tet,
+                equiv->insert(TV_(tet, vertex->index()));
+                c.equivMap->insert(std::pair<TV, std::set<TV>*>(TV_(tet,
                                 vertex->index(), equiv)));
 
 

@@ -62,8 +62,12 @@ namespace regina {
 
 // TODO Inheriting from NGluingPermSearcher so we can interface with regina
 // census code easily (both library based and tricensus) but we barely use any
-// of the NGluingPermSearcher-specific members.
+// of the NGluingPermSearcher-specific members. Should probably be changed to
+// NCensus (which needs to be implemented, see
+// github.com/WPettersson/regina/issues/8)
 class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
+
+    typedef const typename std::iterator<Triangulation*> TriIterator;
 
     // 2000 is extreme, but this comment exists as a warning that the TFE/TVE
     // objects will overrun at around 2730 tetrahedra.
@@ -93,9 +97,26 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
 
     // An arc in the face pairing graph represents a pair of "faces" being
     // identified. We actually store each "face" as a pair of face/tet ints.
-    struct Arc {
-        int t1,t2;
-        int f1,f2;
+    class Arc {
+        public:
+            Arc(FacetSpec<3> one, FacetSpec<3> two);
+
+        private:
+            FacetSpec<3> one_, two_;
+    };
+
+    // A pair of TVEs along with the orientation indicating how they are
+    // identified.
+    class Pair {
+        public:
+            inline const TVE getA() { return a;}
+            inline const TVE getB() { return b;}
+            inline const bool o() { return orientation;}
+            inline const opp(TVE thing) { return (thing == a) ? b : a; }
+        private:
+            TVE a,b;
+            bool orientation; // true means "lowest vertex on edge a meets
+                    // lowest vertex on edge b"
     };
 
     // The configuration of the boundary of a partial triangulation. This can
@@ -103,138 +124,188 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
     // building upon a configuration of a "smaller" configuration. This second
     // fact is the basis of the FPT algorithm for admissibility testing.
     class Config {
-        // Bare constructor
-        Config();
-        // Copy constructor
-        Config(const Config c);
+        public:
+            // Bare constructor
+            Config();
+            // Copy constructor
+            Config(const Config& c);
 
-        // For each TV, we want to easily be able to find the set of equivalent
-        // TVs. That is, which TVs are actually part of the same
-        // triangulation-vertex.
-        std::map<TV, std::set<TV>*> equivMap;
+        private:
+            // For each TV, we want to easily be able to find the set of equivalent
+            // TVs. That is, which TVs are actually part of the same
+            // triangulation-vertex.
+            std::map<TV, std::set<TV>*> equivMap;
+
+            // Maps two pairs of TVEs together, along with a boolean indicating
+            // whether the mapping preserves orientability (true) or not
+            // (false).
+            std::map<TVE, Pair> pairs;
+
+            // Is this config useful, aka does this config lead to some
+            // actually interesting triangulation.
+            bool useful;
 
 
-        // Combine another configuration with this one. The two configurations
-        // must have distinct tetrahedra.
-        void mergeWith(const Config &other);
+        public:
+            // Combine another configuration with this one. The two configurations
+            // must have distinct tetrahedra.
+            void mergeWith(const Config &other);
 
-        // Undo such a merge. Since the two configurations had distinct
-        // tetrahedra, we just need to delete any pieces of information
-        // relating to the "new" tetrahedra
-        void undoMerge(std::set<int> tets);
+            // Undo such a merge. Since the two configurations had distinct
+            // tetrahedra, we just need to delete any pieces of information
+            // relating to the "new" tetrahedra
+            void undoMerge(std::set<int> tets);
 
-        // Is the given face on the given tetrahedra on the boundary?
-        bool onBoundary(int t, int f);
+            // Is the given face on the given tetrahedra on the boundary?
+            bool onBoundary(int t, int f);
 
-        // Glue two faces together. The two faces are given by t1,f1 and t2,f2,
-        // and the exact gluing is given by gluing (an entry into
-        // NEdge::some_table TODO
-        bool glue(int gluing, int t1, int f1, int t2, int f2);
+            // Glue two faces together. The two faces are given by Arc a,
+            // and the exact gluing is given by gluing (an entry into
+            // NEdge::some_table TODO
+            bool glue(int gluing, Arc& a);
 
-        // Unglue two faces. TODO: Might need more info passed in
-        void unGlue(int t1, int f1);
+            // Unglue two faces. TODO: Might need more info passed in
+            void unGlue(int t1, int f1);
 
-        // Mark a and b as identified pairs. If orientation is true, then the
-        // pair are matched such that lowest vertex of a meets lowest vertex of
-        // b.
-        addTFEPair(TFE a, TFE b, bool orientation);
+            // Mark a and b as identified pairs. If orientation is true, then the
+            // pair are matched such that lowest vertex of a meets lowest vertex of
+            // b.
+            void addTVEPair(TVE a, TVE b, bool orientation);
+
+            // Given a TVE, return the Pair object that contains it.
+            Pair getTVEPair(TVE a);
     };
 
     // Represents a triangulation we are building. Note that we need a bit more
     // than an NTriangulation object. Still not set on NTriangulation member or
     // inherited?
-    class Triangulation {
-        // Maybe inherit from NTriangulation instead of having member?
-        // Means we don't need to "extract" the NTriangulation object out
-        NTriangulation t_;
+    class Triangulation : public NTriangulation {
+        public:
+            // Basic constructor
+            Triangulation();
+            // Copy constructor
+            Triangulation(const Triangulation t);
 
-        // Basic constructor
-        Triangulation();
-        // Copy constructor
-        Triangulation(const Triangulation t);
+            // Combine another triangulation with this one. The two triangulations
+            // must have distinct tetrahedra.
+            void mergeWith(const Triangulation other);
 
-        // Combine another triangulation with this one. The two triangulations
-        // must have distinct tetrahedra.
-        void mergeWith(const Triangulation other);
-
-        // Undo such a merge. Since the two triangulations had distinct
-        // tetrahedra, we just need to delete any pieces of information
-        // relating to the "new" tetrahedra
-        void undoMerge(std::set<int> tets);
+            // Undo such a merge. Since the two triangulations had distinct
+            // tetrahedra, we just need to delete any pieces of information
+            // relating to the "new" tetrahedra
+            void undoMerge(std::set<int> tets);
 
 
-        // Glue two faces together. The two faces are given by t1,f1 and t2,f2,
-        // and the exact gluing is given by gluing (an entry into
-        // NEdge::some_table TODO
-        bool glue(int gluing, int t1, int f1, int t2, int f2);
-
-        // Extract the NTriangulation object (if it's a member)
-        const NTriangulation * object() const;
+            // Glue two faces together. The two faces are given by a,
+            // and the exact gluing is given by gluing (an entry into
+            // NEdge::some_table TODO
+            bool glue(int gluing, Arc& a);
     };
 
     // Represents a bag of the tree decomposition
     class Bag {
-        // The integer contents of this particular bag
-        int[] contents_;
-        // Which tetrahedra are we adding in this bag
-        int[] toAdd_;
+        private:
+            // The integer contents of this particular bag
+            int* contents_;
+            // Which tetrahedra are we adding in this bag
+            int[] toAdd_;
 
-        // The list of arcs which will be "added" (where adding means
-        // identifying related faces) in this bag
-        Arc[] arcs;
-        // How many arcs will be added at this bag
-        int numArcs;
+            // The list of arcs which will be "added" (where adding means
+            // identifying related faces) in this bag
+            Arc*[] arcs;
+            // How many arcs will be added at this bag
+            int numArcs;
 
-        // How many children do we have
-        int numChildren;
-        // The children of this bag
-        Bag*[] children;
+            // The children of this bag
+            std::list<Bag*> children;
 
-        // The possible configurations achievable at this bag
-        std::list<Config*> possibleConfigs_;
-        // The possible triangulations achievable at this bag
-        std::list<Triangulation*> possibleTriangulations_;
+            // Parent bag
+            Bag * parent;
 
-        std::list<Triangulation *>::iterator triangulations();
+            // The possible configurations achievable at this bag
+            std::list<Config*> configs_;
+            // The possible triangulations achievable at this bag
+            std::list<Triangulation*> triangulations_;
+            // Have all viable configurations been found
+            bool configsFound;
+            // Have all viable triangulations been found
+            bool trisFound;
+        public:
+            // Constructor
+            Bag(NTreeBag *bag);
 
-        bool configsFound;
-        bool trisFound;
+            // iterator over triangulations found here.
+            std::list<Triangulation *>::iterator triangulations();
 
-        void findConfigs();
-        void findTriangulations();
+            // Find all configurations viable for this bag
+            void findConfigs();
+            // Find all triangulations viable for this bag
+            void findTriangulations();
 
 
-        Config::iterator childConfigs();
-        bool hasNoConfigs();
-        // When asked for next Config, start again at start
-        bool resetConfigCount();
-        // Does this bag have more Configs?
-        bool hasNextConfig();
-        // Get the next Config
-        Config getNextConfig();
+            // Each child has a possibly different number of triangulations.
+            // childTriangulations() returns every possible combination of taking
+            // one triangulation from each child.
+            Config::iterator childConfigs();
 
-        bool addArcs(Config& c);
+            // Does this bag have no configs?
+            bool hasNoConfigs();
+            // When asked for next Config, start again at start
+            bool resetConfigCount();
+            // Does this bag have more Configs?
+            bool hasNextConfig();
+            // Get the next Config
+            Config getNextConfig();
 
-        void storeConfig(Config& c);
+            // "Add" arcs to a config. This function "adds" all arcs, and arcs are
+            // added to a config by trying each possible gluing for each arc. Any
+            // Configs found after adding all arcs are stored at this bag.
+            bool addArcs(Config& c);
 
-        Triangulation::iterator childTriangulations();
-        bool hasNoTriangulations();
-        bool resetTriangulationCount();
-        bool hasNextTriangulation();
+            // Store a configuration
+            void storeConfig(Config& c);
 
-        bool hasValidConfig(Triangulation& t);
+            // Each child has a possibly different number of triangulations.
+            // childTriangulations() returns every possible combination of taking
+            // one triangulation from each child.
+            Triangulation::iterator childTriangulations();
 
-        void storeTri(Triangulation *t);
+            // Does this bag have no triangulations
+            bool hasNoTriangulations();
+            // When asked for the next Triangulation, start again at the start
+            bool resetTriangulationCount();
+            // Does this bag have more triangulations
+            bool hasNextTriangulation();
+
+            // Does the given triangulation have a valid boundary configuration
+            bool hasValidConfig(const Triangulation& t);
+
+            // Store a triangulation.
+            void storeTri(Triangulation *t);
     };
 
 
+    // The root bag for the tree decomposition
+    Bag *root;
 
-
-    static inline int combine(int tet, int vert) { return 4*tet+vert; }
 };
 
 // Inline functions for TreeDecompSearcher
 
+// Inline functions for TreeDecompSearcher::Arc
+inline TreeDecompSearcher::Arc(FacetSpec<3> one, FacetSpec<3> two) one_(one), two_(two) { }
+
+
+// Inline functions for TreeDecompSearcher::Bag
+
+inline void TreeDecompSearcher::Bag::addChild(Bag *c) {
+    children.push_back(c);
+    c->parent = this;
+}
+
+// Inline functions for TreeDecompSearcher::Config
+
+inline TreeDecompSearcher::Config() : useful(false) { }
 
 } // namespace regina
 
