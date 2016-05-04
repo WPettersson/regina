@@ -172,45 +172,26 @@ void TreeDecompSearcher::Bag::getChildConfigs() {
 void TreeDecompSearcher::Bag::addArcs(Config& c) {
     int arcNo = 0;
     int gluings[numArcs] = {0};
-    if (! arcFacesKnown)
-        findArcFaces(c);
     while (arcNo >= 0) {
         if (arcNo == numArcs) {
             storeConfig(new Config(c)); // Not with duplicates
         }
         if ((arcNo == numArcs) || (gluings[arcNo] == 6)) {
             --arcNo;
-            c.unGlue(arcs[arcNo].t1, arcs[arcNo].f1); // TODO Do we need more info passed in to undo?
+            c.unGlue(arcs[arcNo]); // TODO Do we need more info passed in to undo?
             ++gluings[arcNo];
         }
         int t1 = arcs[arcNo].t1;
         int t2 = arcs[arcNo].t2;
         int f1 = arcs[arcNo].f1;
         int f2 = arcs[arcNo].f2;
-        if (c.glue(gluings[arcNo], t1,f1, t2,f2)) {
+        if (c.glue(gluings[arcNo], arcs[arcNo])) {
             ++arcNo;
             gluings[arcNo] = 0;
         } else {
             ++gluings[arcNo];
         }
     }
-}
-
-void TreeDecompSearcher::Bag::findArcFaces(Config& c) {
-    bool f[4*nTets_] = {false}; // 4 = num faces per tet
-    for(int arcNo = 0; arcNo < numArcs; ++arcNo) {
-        int t1 = arcs[arcNo].t1;
-        int t2 = arcs[arcNo].t2;
-        while ( ( !c.onBoundary(t1,f1)) || (used[4*t1+f1] == true))
-            ++f1;
-        f[4*t1+f1] = true;
-        while ( ( !c.onBoundary(t2,f2)) || (used[4*t2+f2] == true))
-            ++f2;
-        f[4*t2+f2] = true;
-        arcs[arcNo].f1 = f1;
-        arcs[arcNo].f2 = f2;
-    }
-    arcFacesKnown = true;
 }
 
 // Config has:
