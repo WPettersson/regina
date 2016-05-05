@@ -111,10 +111,13 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             inline const TVE getB() { return b_;}
             inline const bool o() { return orientation_;}
             inline const opp(TVE thing) { return (thing == a_) ? b_ : a_; }
+            inline const bool degreeOk() { return degree_ >= 4; }
+            inline void addToDegree(int i) { degree_ += i; }
         private:
             TVE a_,b_;
             bool orientation_; // true means "lowest vertex on edge a meets
                     // lowest vertex on edge b"
+            int degree_;
     };
 
     // The configuration of the boundary of a partial triangulation. This can

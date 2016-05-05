@@ -480,7 +480,7 @@ TreeDecompSearcher::Pair* TreeDecompSearcher::Config::getPair(TVE a) {
     return NULL;
 }
 
-TreeDecompSearcher::Pair::Pair(TVE a, TVE b, bool orientation) :
-    a_(a), b_(b), orientation_(orientation) { }
+TreeDecompSearcher::Pair::Pair(TVE a, TVE b, bool orientation, int degree) :
+    a_(a), b_(b), orientation_(orientation), degree_(degree) { }
 
 }; // namespace
