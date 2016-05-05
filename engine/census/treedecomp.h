@@ -128,6 +128,29 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             // Copy constructor
             Config(const Config& c);
 
+            // The three faces about a face, such that FACE_EDGES[f] give the
+            // three edges about face "f"
+            static const int[4][3] FACE_EDGES;
+            // The three vertices about a face, as above.
+            static const int[4][3] FACE_VERTICES;
+            // The symmetries used in this gluing are numbered as follows.
+            // 0 = 012->012
+            // 1 = 012->021
+            // 2 = 012->102
+            // 3 = 012->120
+            // 4 = 012->201
+            // 5 = 012->210
+            // In the above, we are mapping vertices to vertex, where 0,1,2 represent the three vertices, in natural ordering (so triangle 230 is of type "120" since 0<2<3).
+            // Given face f, and symmetry s, the vertex v is glued to VERT_SYM_MAP[s][v]
+            static const int[4][3] VERT_SYM_MAP;
+
+            // Given face f, and symmetry s, the edge e is glued to EDGE_SYM_MAP[s][f], where this is a value in 0,1,2. To get an actual edge, use FACE_EDGES[ EDGE_SYM_MAP ...
+            static const int[4][3] EDGE_SYM_MAP;
+            // Given the above edge gluing, EDGE_ORIENT_MAP is +-1 based on whether the orientations will agree (+1) or disagree (-1)
+            static const int[4][3] EDGE_ORIENT_MAP;
+            // Given a face f, the edge opposite vertex v is OPP_EDGE[f][v]
+            static const int[4][4] OPP_EDGE;
+
         private:
 
             // The child configs that created this Config. We use this to

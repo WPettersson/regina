@@ -33,6 +33,15 @@
 
 namespace regina {
 
+// For details on these, see treedecompsearcher.h
+int[][] TreeDecompSearcher::FACE_VERTICES = {{1,2,3},{0,2,3},{0,1,3},{0,1,2}};
+int[][] TreeDecompSearcher::OPP_EDGE = {{-1,6,5,4},{6,-1,3,2},{5,3,-1,1},{4,2,1,-1}};
+int[][] TreeDecompSearcher::FACE_EDGES = {{4,5,6},{2,3,6},{1,3,5},{1,2,4}};
+int[][] TreeDecompSearcher::FACE_VERTICES = {{1,2,3},{0,2,3},{0,1,3},{0,1,2}};
+int[][] TreeDecompSearcher::VERT_SYM_MAP = {{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
+int[][] TreeDecompSearcher::EDGE_SYM_MAP = {{0,1,2},{1,0,2},{0,2,1},{2,0,1},{1,2,0},{2,1,0}};
+int[][] TreeDecompSearcher::EDGE_ORIENT_MAP = {{1,1,1},{1,1,-1},{-1,1,1},{1,-1,-1},{-1,-1,1},{-1,-1,-1}};
+
 
 
 TreeDecompSearcher::TreeDecompSearcher(FacePairing pairing) :
