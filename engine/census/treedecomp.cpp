@@ -214,8 +214,13 @@ void TreeDecompSearcher::Bag::addArcs(Config& c) {
 
 bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
 
+    Pair* newPair[3]; // We will store any new pairs here temporarily. At the
+                      // end of this function, if nothing has gone wrong, we
+                      // assign them to the Config.
+    int newPairCount = 0;
     // FacetSpec<3> a.one_, a.two_;
     for(int i=0; i < 3; ++i) {
+        int degreeIncrease = 0;
         int vert = FACE_VERTICES[a.one.facet][i];
         int edge = OPP_EDGE[a.one.facet][vert];
         TVE a = TVE_(a.one.simp, vert, edge);
@@ -227,9 +232,45 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
         Pair *p2 = getTVEPair(b);
 
         if (p == p2) {
-            // Same pair. Check orientation (and degree maybe?)
-            // If bad undo and return false?
-            continue;
+            bool badOrientation = p->o() ^ p2->o() ^
+                EDGE_SYM_MAP[a.one.facet][gluing];
+            if (badOrientation) {
+                for(int j=0; j < newPairCount]; ++j)
+                    delete newPair[j];
+                return false;
+            }
+            int degreeExtra = 0;
+            if (a.tet() == b.tet())
+                degreeExtra = 1; // Same tetrahedron
+
+            // Degree of 2 or less is bad. Also, if the degree is 3 and the
+            // edge is on 3 distinct tetrahedra we must also fail. To check for
+            // 3 distinct tetrahedra, we just add an extra 1 to the degree if
+            // we ever spot 2 tetrahedron-edges of the same tetrahedron in the
+            // triangulation-edge. Note that we can assume these are adjacent
+            // tetrahedron-edges in the triangulation-edge, as otherwise the
+            // triangulation-edge must have degree ≥ 4 anyway.
+            if ((p->degree() + degreeExtra) < 4) {
+                for(int j=0; j < newPairCount]; ++j)
+                    delete newPair[j];
+                return false;
+            }
+            // Else it's ok. This edge is closed, but we don't have to remember
+            // that it is closed.
+        } else {
+            // Two different edges. Create a new Pair object representing the
+            // two new open ends, with the right degree value
+            TVE newA = p->opp(a);
+            TVE newB = p2->opp(b);
+            bool orientation = p->o() ^ p2->o() ^
+                EDGE_SYM_MAP[a.one.facet][gluing];
+            if (newA.tet() == newB.tet()) {
+                int deg = p->degree() + p2->degree() + 1;
+                newPair[newPairCount++] = new Pair(newA, newB, orientation, deg);
+            } else {
+                int deg = p->degree() + p2->degree();
+                newPair[newPairCount++] = new Pair(newA, newB, orientation, deg);
+            }
         }
 
         // Get entries from circular list for t1,f1,t2,f2 and gluing using
@@ -247,22 +288,11 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
         //    If (different puncture || orientations don't match)
         //       fail.
 
-        // Get TFE from list of pairs of edges corresponding to
-        // t1,f1,t2,f2,gluing,i
-
-        // If TFE[0] matches with TFE[1] in a pair in the list
-        //    If orientations don't match || degree in pair < 3
-        //       fail.
-        //    If degree in pair == 3 && ! repeated_tetrahedron
-        //       fail.
-
     }
 
     for(int i=0; i < 3; ++i) {
         // Joining things now.
-        // For pairs, either close up (+delete?) pair or join two distinct
-        // pairs, increasing degree, tracking repeated_tetrahedron and watching
-        // orientability
+        // copy newPair[0 .. newPairCount] into this
 
         // For edges around vertex links, merge the two together but watch for
         // orientation of the two.
