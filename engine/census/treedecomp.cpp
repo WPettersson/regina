@@ -220,74 +220,84 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
     int newPairCount = 0;
     // FacetSpec<3> a.one_, a.two_;
     for(int i=0; i < 3; ++i) {
-        int degreeIncrease = 0;
-        int vert = FACE_VERTICES[a.one.facet][i];
-        int edge = OPP_EDGE[a.one.facet][vert];
-        TVE a = TVE_(a.one.simp, vert, edge);
+        // Using code blocks/braces to separate the edge and vertex configurations.
+        // This first block is for tracking the edge links (and degrees)
+        {
+            int degreeIncrease = 0;
+            int vert = FACE_VERTICES[a.one.facet][i];
+            int edge = OPP_EDGE[a.one.facet][vert];
+            TVE a = TVE_(a.one.simp, vert, edge);
 
-        vert = FACE_VERTICES[a.two.facet][i];
-        edge = OPP_EDGE[a.two.facet][vert];
-        TVE b = TVE_(a.two.simp, vert, edge);
-        Pair *p = getTVEPair(a);
-        Pair *p2 = getTVEPair(b);
+            vert = FACE_VERTICES[a.two.facet][i];
+            edge = OPP_EDGE[a.two.facet][vert];
+            TVE b = TVE_(a.two.simp, vert, edge);
+            Pair *p = getTVEPair(a);
+            Pair *p2 = getTVEPair(b);
 
-        if (p == p2) {
-            bool badOrientation = p->o() ^ p2->o() ^
-                EDGE_SYM_MAP[a.one.facet][gluing];
-            if (badOrientation) {
-                for(int j=0; j < newPairCount]; ++j)
-                    delete newPair[j];
-                return false;
-            }
-            int degreeExtra = 0;
-            if (a.tet() == b.tet())
-                degreeExtra = 1; // Same tetrahedron
+            if (p == p2) {
+                bool badOrientation = p->o() ^ p2->o() ^
+                    EDGE_SYM_MAP[a.one.facet][gluing];
+                if (badOrientation) {
+                    for(int j=0; j < newPairCount]; ++j)
+                        delete newPair[j];
+                    return false;
+                }
+                int degreeExtra = 0;
+                if (a.tet() == b.tet())
+                    degreeExtra = 1; // Same tetrahedron
 
-            // Degree of 2 or less is bad. Also, if the degree is 3 and the
-            // edge is on 3 distinct tetrahedra we must also fail. To check for
-            // 3 distinct tetrahedra, we just add an extra 1 to the degree if
-            // we ever spot 2 tetrahedron-edges of the same tetrahedron in the
-            // triangulation-edge. Note that we can assume these are adjacent
-            // tetrahedron-edges in the triangulation-edge, as otherwise the
-            // triangulation-edge must have degree ≥ 4 anyway.
-            if ((p->degree() + degreeExtra) < 4) {
-                for(int j=0; j < newPairCount]; ++j)
-                    delete newPair[j];
-                return false;
-            }
-            // Else it's ok. This edge is closed, but we don't have to remember
-            // that it is closed.
-        } else {
-            // Two different edges. Create a new Pair object representing the
-            // two new open ends, with the right degree value
-            TVE newA = p->opp(a);
-            TVE newB = p2->opp(b);
-            bool orientation = p->o() ^ p2->o() ^
-                EDGE_SYM_MAP[a.one.facet][gluing];
-            if (newA.tet() == newB.tet()) {
-                int deg = p->degree() + p2->degree() + 1;
-                newPair[newPairCount++] = new Pair(newA, newB, orientation, deg);
+                // Degree of 2 or less is bad. Also, if the degree is 3 and the
+                // edge is on 3 distinct tetrahedra we must also fail. To check for
+                // 3 distinct tetrahedra, we just add an extra 1 to the degree if
+                // we ever spot 2 tetrahedron-edges of the same tetrahedron in the
+                // triangulation-edge. Note that we can assume these are adjacent
+                // tetrahedron-edges in the triangulation-edge, as otherwise the
+                // triangulation-edge must have degree ≥ 4 anyway.
+                if ((p->degree() + degreeExtra) < 4) {
+                    for(int j=0; j < newPairCount]; ++j)
+                        delete newPair[j];
+                    return false;
+                }
+                // Else it's ok. This edge is closed, but we don't have to remember
+                // that it is closed.
             } else {
-                int deg = p->degree() + p2->degree();
-                newPair[newPairCount++] = new Pair(newA, newB, orientation, deg);
+                // Two different edges. Create a new Pair object representing the
+                // two new open ends, with the right degree value
+                TVE newA = p->opp(a);
+                TVE newB = p2->opp(b);
+                bool orientation = p->o() ^ p2->o() ^
+                    EDGE_SYM_MAP[a.one.facet][gluing];
+                if (newA.tet() == newB.tet()) {
+                    int deg = p->degree() + p2->degree() + 1;
+                    newPair[newPairCount++] = new Pair(newA, newB, orientation, deg);
+                } else {
+                    int deg = p->degree() + p2->degree();
+                    newPair[newPairCount++] = new Pair(newA, newB, orientation, deg);
+                }
             }
         }
+        // Now for the vertex link tracking
+        {
+            TFE a = TFE_(a.one.simp, a.one.facet, FACE_EDGES[a.one.facet][i]);
+            TFE b = TFE_(a.two.simp, a.two.facet, EDGE_ORIENT_MAP[gluing][i] *
+                    FACE_EDGES[a.two.facet][EDGE_SYM_MAP[gluing][i]]);
 
-        // Get entries from circular list for t1,f1,t2,f2 and gluing using
-        // edge i of f1. For now, TVE[0] and TVE[1]
+            LinkEdge edgeA = getLinkEdge(a);
+            LinkEdge edgeB = getLinkEdge(b);
+            // Work out if they are part of same puncture (walk through circular
+            // list)
 
-        // Work out if they are part of same puncture (walk through circular
-        // list)
 
-        // Find out if orientations match up.
 
-        // Check the map of equivalent TetVertex to see if TVE[0] and TVE[1]
-        // are part of the same link
+            // Find out if orientations match up.
 
-        // If same link
-        //    If (different puncture || orientations don't match)
-        //       fail.
+            // Check the map of equivalent TetVertex to see if TVE[0] and TVE[1]
+            // are part of the same link
 
+            // If same link
+            //    If (different puncture || orientations don't match)
+            //       fail.
+        }
     }
 
     for(int i=0; i < 3; ++i) {

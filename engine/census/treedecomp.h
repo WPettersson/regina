@@ -103,6 +103,28 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             FacetSpec<3> one, two;
     };
 
+
+    // For a given TFE, states which TFE (as a value) come "before" and "after"
+    // this TFE. For each of those, there's also an "orientation" boolean.
+    // If next() == b, and nextO() == false, then to continue around the link
+    // one would next look at b->prev() as orientation is not consistent
+    // between these two. However, if nextO() == true, then one should continue
+    // with b->next()
+
+    class LinkEdge {
+        public:
+            LinkEdge(TFE next, bool nextO, TFE prev, bool prevO);
+            inline TFE next() { return next_; }
+            inline TFE prev() { return prev_; }
+            inline bool nextO() { return nextO_; }
+            inline bool prevO() { return prevO_; }
+        private:
+            TFE next_;
+            TFE prev_;
+            bool nextO_;
+            bool prevO_;
+    };
+
     // A pair of TVEs along with the orientation indicating how they are
     // identified.
     class Pair {
@@ -362,6 +384,12 @@ inline void TreeDecompSearcher::Config::addChild(Config *c, int pos) {
 inline void TreeDecompSearcher::Config::removeChild(int pos) {
     // NOP. Will get replaced when needed, else it never gets used anyway.
 }
+
+// Inline functions for TreeDecompSearcher::LinkEdge
+
+inline TreeDecompSearcher::LinkEdge::LinkEdge(TFE next, bool nextO, TFE prev,
+        bool prevO) : { next_(next), nextO_(nextO), prev_(prev), prevO_(prevO)
+    { }
 
 } // namespace regina
 
