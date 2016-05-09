@@ -279,15 +279,42 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
         // Now for the vertex link tracking
         {
             TFE a = TFE_(a.one.simp, a.one.facet, FACE_EDGES[a.one.facet][i]);
-            TFE b = TFE_(a.two.simp, a.two.facet, EDGE_ORIENT_MAP[gluing][i] *
+            TFE b = TFE_(a.two.simp, a.two.facet,
                     FACE_EDGES[a.two.facet][EDGE_SYM_MAP[gluing][i]]);
+            bool reverseOrientation = (EDGE_ORIENT_MAP[gluing][i] == -1);
+            //  True if the two edges we are matching up will have their
+            //  orientations aligned. Note that this means that we will have to
+            //  "swap" the orientation of one puncture when we walk around it
+            //  (draw a picture to see this).
+
 
             LinkEdge edgeA = getLinkEdge(a);
             LinkEdge edgeB = getLinkEdge(b);
-            // Work out if they are part of same puncture (walk through circular
-            // list)
+            // Work out if they are part of same puncture (walk around edgeA,
+            // see if we see edgeB.
+            bool samePuncture = false;
+            bool useNext = edgeA.nextO();
+            TFE nextTFE = getLinkEdge(edgeA.next());
+            while (nextTFE != a) {
+                if (nextTFE  == b) {
+                    samePuncture = true;
+                    // Check orientations
+                    if (useNext == reverseOrientation) {
+                        // TODO clear memory && return false?
+                        // goto?
+                        // some sort of "keep going" variable?
+                    }
+                    break;
+                }
+                LinkEdge le = getLinkEdge(nextTFE);
+                nextTFE = le.next(useNext);
+                // Yeah, this looks weird. If le.nextO() is true, then we
+                // want to keep the current value of useNext, otherwise
+                // switch it.
+                useNext = (le.nextO(useNext) == useNext);
+            }
 
-
+            if (!samePuncture)
 
             // Find out if orientations match up.
 

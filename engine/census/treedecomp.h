@@ -114,10 +114,8 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
     class LinkEdge {
         public:
             LinkEdge(TFE next, bool nextO, TFE prev, bool prevO);
-            inline TFE next() { return next_; }
-            inline TFE prev() { return prev_; }
-            inline bool nextO() { return nextO_; }
-            inline bool prevO() { return prevO_; }
+            inline TFE next(bool o) { if (o) return next_; else return prev_; }
+            inline bool nextO(bool o) { if (o) return nextO_; else return prevO_; }
         private:
             TFE next_;
             TFE prev_;
