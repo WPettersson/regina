@@ -214,10 +214,13 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             // triangulation-vertex.
             std::map<TV, std::set<TV>*> equivMap;
 
-            // Maps two pairs of TVEs together, along with a boolean indicating
-            // whether the mapping preserves orientability (true) or not
-            // (false).
-            std::map<TVE, Pair> pairs;
+            // Given a TVE, has the Pair* which describes what other TVE it is
+            // paired with and the orientability of the pairing.
+            std::map<TVE, Pair*> pairs;
+
+            // Given a TFE, has the LinkEdge which describes what comes before
+            // and after TFE in the link of the vertex it is associated with.
+            std::map<TFE, LinkEdge*> linkEdges;
 
             // Is this config useful, aka does this config lead to some
             // actually interesting triangulation.

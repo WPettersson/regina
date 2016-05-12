@@ -476,7 +476,14 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
     for(int i=0; i < 3; ++i) {
         // Joining things now.
         // copy newPair[0 .. newPairCount] into this
-
+        for(int j = 0; j < newPairCount; ++j) {
+            pairs.insert(newTVE[2*j],newPair[j]);
+            pairs.insert(newTVE[2*j+1],newPair[j]);
+        }
+        for(int j = 0; j < newLinkCount; ++j) {
+            linkEdges.insert(newTFE[j],newLinks[j]);
+        }
+        // We don't have to do anything for TVs?
     }
 }
 
