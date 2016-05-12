@@ -115,7 +115,11 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
         public:
             LinkEdge(TFE next, bool nextO, TFE prev, bool prevO);
             inline TFE next(bool o) { if (o) return next_; else return prev_; }
+            inline TFE next() { return next_; }
+            inline TFE prev() { return prev_; }
             inline bool nextO(bool o) { if (o) return nextO_; else return prevO_; }
+            inline bool nextO() { return nextO_; }
+            inline bool prevO() { return prevO_; }
         private:
             TFE next_;
             TFE prev_;
@@ -138,6 +142,22 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             bool orientation_; // true means "lowest vertex on edge a meets
                     // lowest vertex on edge b"
             int degree_;
+    };
+
+    // Union-find structure for tracking equivalent vertices
+    class Equiv {
+        public:
+            Equiv(TV a);
+            inline root() {if (parent_ != NULL) return parent_->root(); return this;}
+            inline Equiv* parent() { return parent_; }
+            inline TV value() { return val_; }
+            inline void setParent(Equiv *a) {parent_ = a;}
+            inline int height() { return height_;}
+            inline void increaseHeight() { height_++; }
+        private:
+            Equiv* parent_;
+            int height_;
+            TV val_;
     };
 
     // The configuration of the boundary of a partial triangulation. This can
@@ -163,14 +183,20 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             // 3 = 012->120
             // 4 = 012->201
             // 5 = 012->210
-            // In the above, we are mapping vertices to vertex, where 0,1,2 represent the three vertices, in natural ordering (so triangle 230 is of type "120" since 0<2<3).
+            // In the above, we are mapping vertices to vertex, where 0,1,2
+            // represent the three vertices, in natural ordering (so triangle
+            // 230 is of type "120" since 0<2<3).
             // Given face f, and symmetry s, the vertex v is glued to VERT_SYM_MAP[s][v]
             static const int[4][3] VERT_SYM_MAP;
 
-            // Given face f, and symmetry s, the edge e is glued to EDGE_SYM_MAP[s][f], where this is a value in 0,1,2. To get an actual edge, use FACE_EDGES[ EDGE_SYM_MAP ...
+            // Given face f, and symmetry s, the edge e is glued to
+            // EDGE_SYM_MAP[s][f], where this is a value in 0,1,2. To get an
+            // actual edge, use FACE_EDGES[ EDGE_SYM_MAP ...
             static const int[4][3] EDGE_SYM_MAP;
-            // Given the above edge gluing, EDGE_ORIENT_MAP is +-1 based on whether the orientations will agree (+1) or disagree (-1)
-            static const int[4][3] EDGE_ORIENT_MAP;
+            // Given the above edge gluing, EDGE_ORIENT_MAP is true or false
+            // based on whether the orientations will agree (true) or disagree
+            // (false)
+            static const bool[4][3] EDGE_ORIENT_MAP;
             // Given a face f, the edge opposite vertex v is OPP_EDGE[f][v]
             static const int[4][4] OPP_EDGE;
 

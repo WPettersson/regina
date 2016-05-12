@@ -35,12 +35,11 @@ namespace regina {
 
 // For details on these, see treedecompsearcher.h
 int[][] TreeDecompSearcher::FACE_VERTICES = {{1,2,3},{0,2,3},{0,1,3},{0,1,2}};
+int[][] TreeDecompSearcher::FACE_EDGES = {{3,4,5},{1,2,5},{0,2,4},{0,1,3}};
 int[][] TreeDecompSearcher::OPP_EDGE = {{-1,6,5,4},{6,-1,3,2},{5,3,-1,1},{4,2,1,-1}};
-int[][] TreeDecompSearcher::FACE_EDGES = {{4,5,6},{2,3,6},{1,3,5},{1,2,4}};
-int[][] TreeDecompSearcher::FACE_VERTICES = {{1,2,3},{0,2,3},{0,1,3},{0,1,2}};
 int[][] TreeDecompSearcher::VERT_SYM_MAP = {{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
 int[][] TreeDecompSearcher::EDGE_SYM_MAP = {{0,1,2},{1,0,2},{0,2,1},{2,0,1},{1,2,0},{2,1,0}};
-int[][] TreeDecompSearcher::EDGE_ORIENT_MAP = {{1,1,1},{1,1,-1},{-1,1,1},{1,-1,-1},{-1,-1,1},{-1,-1,-1}};
+bool[][] TreeDecompSearcher::EDGE_ORIENT_MAP = {{true,true,true},{true,true,false},{false,true,true},{true,false,false},{false,false,true},{false,false,false}};
 
 
 
@@ -213,12 +212,19 @@ void TreeDecompSearcher::Bag::addArcs(Config& c) {
 // the edge from TetFaceEdge is signed to store orientation.
 
 bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
-
-    Pair* newPair[3]; // We will store any new pairs here temporarily. At the
-                      // end of this function, if nothing has gone wrong, we
-                      // assign them to the Config.
+    // We will store any new pairs here temporarily. At the end of this
+    // function, if nothing has gone wrong, we assign them to the Config.
+    Pair* newPair[3];
     int newPairCount = 0;
-    // FacetSpec<3> a.one_, a.two_;
+
+    // We temporarily store new link edges here, and if nothing has gone wrong
+    // by the end we assign them to the config. Note that for each of the 3
+    // pairs of link edges we merge, we need to update the prev & next of both
+    // in the pair, which means we need (up to) 4 new LinkEdges per merging.
+    LinkEdge* newLinks[12];
+    int newLinkCount = 0;
+    TFE newTFE[12]; //newTFE[i] is the TFE associated with newLinks[i]
+
     for(int i=0; i < 3; ++i) {
         // Using code blocks/braces to separate the edge and vertex configurations.
         // This first block is for tracking the edge links (and degrees)
@@ -236,10 +242,13 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
 
             if (p == p2) {
                 bool badOrientation = p->o() ^ p2->o() ^
-                    EDGE_SYM_MAP[a.one.facet][gluing];
+                    EDGE_ORIENT_MAP[a.one.facet][gluing];
                 if (badOrientation) {
-                    for(int j=0; j < newPairCount]; ++j)
+                    // TODO clear memory
+                    for(int j = 0; j < newPairCount; ++j)
                         delete newPair[j];
+                    for(int j = 0; j < newLinkCount; ++j)
+                        delete newLinks[j];
                     return false;
                 }
                 int degreeExtra = 0;
@@ -254,8 +263,11 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
                 // tetrahedron-edges in the triangulation-edge, as otherwise the
                 // triangulation-edge must have degree ≥ 4 anyway.
                 if ((p->degree() + degreeExtra) < 4) {
-                    for(int j=0; j < newPairCount]; ++j)
+                    // TODO clear memory
+                    for(int j = 0; j < newPairCount; ++j)
                         delete newPair[j];
+                    for(int j = 0; j < newLinkCount; ++j)
+                        delete newLinks[j];
                     return false;
                 }
                 // Else it's ok. This edge is closed, but we don't have to remember
@@ -281,7 +293,7 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
             TFE a = TFE_(a.one.simp, a.one.facet, FACE_EDGES[a.one.facet][i]);
             TFE b = TFE_(a.two.simp, a.two.facet,
                     FACE_EDGES[a.two.facet][EDGE_SYM_MAP[gluing][i]]);
-            bool reverseOrientation = (EDGE_ORIENT_MAP[gluing][i] == -1);
+            bool sameOrientation = EDGE_ORIENT_MAP[gluing][i];
             //  True if the two edges we are matching up will have their
             //  orientations aligned. Note that this means that we will have to
             //  "swap" the orientation of one puncture when we walk around it
@@ -293,16 +305,22 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
             // Work out if they are part of same puncture (walk around edgeA,
             // see if we see edgeB.
             bool samePuncture = false;
-            bool useNext = edgeA.nextO();
             TFE nextTFE = getLinkEdge(edgeA.next());
+            bool useNext = edgeA.nextO();
             while (nextTFE != a) {
                 if (nextTFE  == b) {
                     samePuncture = true;
                     // Check orientations
-                    if (useNext == reverseOrientation) {
-                        // TODO clear memory && return false?
-                        // goto?
-                        // some sort of "keep going" variable?
+                    // We either need to be traversing b backwards (useNext is
+                    // false) but have a+b with the same orientation, or
+                    // traverse b forwards (useNext is true) but have a+b with
+                    // different orientations.
+                    if (useNext != sameOrientation) {
+                        // TODO clear memory
+                        for(int j = 0; j < newPairCount; ++j)
+                            delete newPair[j];
+                        for(int j = 0; j < newLinkCount; ++j)
+                            delete newLinks[j];
                     }
                     break;
                 }
@@ -314,16 +332,159 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
                 useNext = (le.nextO(useNext) == useNext);
             }
 
-            if (!samePuncture)
+            if (!samePuncture) {
+                // Arc a.one.simp, a.two.simp
+                if (areEquiv(a,b)) {
+                    // TODO clear memory
+                    for(int j = 0; j < newPairCount; ++j)
+                        delete newPair[j];
+                    for(int j = 0; j < newLinkCount; ++j)
+                        delete newLinks[j];
+                    return false;
+                }
+            }
 
-            // Find out if orientations match up.
+            // Work out what matches with what.
+            // First, is either of the links a puncture of size one?
+            bool aSolo = (edgeA.next() == a);
+            bool bSolo = (edgeB.next() == b);
 
-            // Check the map of equivalent TetVertex to see if TVE[0] and TVE[1]
-            // are part of the same link
+            // If both have size one, we don't need to do anything.
+            if (aSolo && bSolo) {
+                // Do nothing
+            } else if (aSolo) {
+                // If only one has size one, then in the other link, just "skip"
+                // the edge being matched.
+                LinkEdge nextLEb = getLinkEdge(edgeB.next());
+                // Get the next of the next LE after b
+                TFE next2b = nextLEb.next(edgeB.nextO());
+                bool next2bo = nextLEb.nextO(edgeB.nextO());
+                newTFE[newLinkCount] = edgeB.next();
+                newLinks[newLinkCount++] = new LinkEdge(edgeB.prev(),
+                        edgeB.prevO(), next2b, next2bo);
 
-            // If same link
-            //    If (different puncture || orientations don't match)
-            //       fail.
+                LinkEdge prevLEb = getLinkEdge(edgeB.prev());
+                // Get prev of prev. Note that we negate nextO
+                TFE prev2b = prevLEb.next(! edgeB.prevO());
+                bool prev2bo = prevLEb.nextO(! edgeB.prevO());
+                newTFE[newLinkCount] = edgeB.prev();
+                newLinks[newLinkCount++] = new LinkEdge(prev2b, prev2bo,
+                        edgeB.next(), edgeB.nextO());
+            } else if (bSolo) {
+                LinkEdge nextLEa = getLinkEdge(edgeA.next());
+                // Get the next of the next LE after a
+                TFE next2a = nextLEa.next(edgeA.nextO());
+                bool next2ao = nextLEa.nextO(edgeA.nextO());
+                newTFE[newLinkCount] = edgeA.next();
+                newLinks[newLinkCount++] = new LinkEdge(edgeA.prev(),
+                        edgeA.prevO(), next2a, next2ao);
+
+                LinkEdge prevLEa = getLinkEdge(edgeA.prev());
+                // Get prev of prev. Note that we negate nextO
+                TFE prev2a = prevLEa.next(! edgeA.prevO());
+                bool prev2ao = prevLEa.nextO(! edgeA.prevO());
+                newTFE[newLinkCount] = edgeA.prev();
+                newLink[newLinkCount++] = new LinkEdge(prev2a, prev2ao,
+                        edgeA.next(), edgeA.nextO());
+            } else {
+            // Otherwise we need to update the neighbours of both link edges
+                if (sameOrientation) {
+                    LinkEdge prevLEa = getLinkEdge(edgeA.prev());
+                    // Get prev of prev. Note that we negate nextO
+                    TFE prev2a = prevLEa.next(! edgeA.prevO());
+                    bool prev2ao = prevLEa.nextO(! edgeA.prevO());
+                    TFE prevb = edgeB.prev();
+                    bool prevbo = edgeB.prevO();
+                    newTFE[newLinkCount] = edgeA.prev();
+                    newLink[newLinkCount++] = new LinkEdge(prev2a, prev2ao,
+                            prevb, ! prevbo);
+
+                    LinkEdge prevLEb = getLinkEdge(edgeB.prev());
+                    // Get prev of prev. Note that we negate nextO
+                    TFE prev2b = prevLEa.next(! edgeB.prevO());
+                    bool prev2bo = prevLEa.nextO(! edgeB.prevO());
+                    TFE preva = edgeA.prev();
+                    bool prevao = edgeA.prevO();
+                    newTFE[newLinkCount] = edgeB.prev();
+                    newLink[newLinkCount++] = new LinkEdge(prev2b, prev2bo,
+                            preva, ! prevao);
+
+                    LinkEdge nextLEa = getLinkEdge(edgeA.next());
+                    TFE next2a = nextLEa.next(edgeA.nextO());
+                    bool next2ao = nextLE.nextO(edgeA.nextO());
+                    TFE nextb = edgeB.next();
+                    bool nextbo = edgeB.nextO();
+                    newTFE[newLinkCount] = edgeA.next();
+                    newLink[newLinkCount++] = new LinkEdge(nextb, !nextbo,
+                            next2a, next2ao);
+
+                    LinkEdge nextLEb = getLinkEdge(edgeB.next());
+                    TFE next2b = nextLEb.next(edgeB.nextO());
+                    bool next2bo = next LEb.nextO(edgeB.nextO());
+                    TFE nexta = edgeA.next();
+                    bool nextao = edgeA.nextO();
+                    newTFE[newLinkCount] = edgeB.next();
+                    newLink[newLinkCount++] = new LinkEdge(nexta, !nextao,
+                            next2b, next2bo);
+                } else { // reverse orientation
+                    LinkEdge prevLEa = getLinkEdge(edgeA.prev());
+                    TFE prev2a = prevLEa.next(! edgeA.prevO());
+                    bool prev2ao = prevLEa.nextO(! edgeA.prevO());
+                    TFE nextb = edgeB.next();
+                    bool nextbo = edgeB.nextO();
+                    newTFE[newLinkCount] = edgeA.prev();
+                    newLink[newLinkCount++] = new LinkEdge(prev2a, prev2ao,
+                            nextb, nextbo);
+
+                    LinkEdge nextLEb = getLinkEdge(edgeB.next());
+                    TFE next2b = nextLEb.next(edgeB.nextO());
+                    bool next2bo = next LEb.nextO(edgeB.nextO());
+                    TFE preva = edgeA.prev();
+                    bool prevao = edgeA.prevO();
+                    newTFE[newLinkCount] = edgeB.next();
+                    newLink[newLinkCount++] = new LinkEdge(preva, prevao,
+                            next2b, next2bo);
+
+                    LinkEdge nextLEa = getLinkEdge(edgeA.next());
+                    TFE next2a = nextLEa.next(edgeA.nextO());
+                    bool next2ao = nextLE.nextO(edgeA.nextO());
+                    TFE prevb = edgeB.prev();
+                    bool prevbo = edgeB.prevO();
+                    newTFE[newLinkCount] = edgeA.next();
+                    newLink[newLinkCount++] = new LinkEdge(prevb, prevbo,
+                            next2a, next2ao);
+
+                    LinkEdge prevLEb = getLinkEdge(edgeB.prev());
+                    TFE prev2b = prevLEa.next(! edgeB.prevO());
+                    bool prev2bo = prevLEa.nextO(! edgeB.prevO());
+                    TFE nexta = edgeA.next();
+                    bool nextao = edgeA.nextO();
+                    newTFE[newLinkCount] = edgeB.next();
+                    newLink[newLinkCount++] = new LinkEdge(prev2b, prev2bo,
+                            nexta, nextao);
+                }
+            }
+
+            // Link edges done. Lastly, "merge" equivalent vertices.
+            // We have two tetrahedra and two faces in a.{one,two}.{simp,facet}
+            // and 0 \leq i \leq 2 which allows us to identify distinct
+            // vertices of tetrahedra.
+            {
+                TV a = TV_(arc.one.simp,FACE_VERTICES[arc.one.facet][i]);
+                TV b = TV_(arc.two.simp,
+                         FACE_VERTICES[arc.two.facet][VERT_SYM_MAP[gluing][i]]);
+                int nComponents = mergeTV(a,b);
+                if (nComponents == 0) {
+                    if (! rootConfig) {
+                        // TODO clear memory
+                        for(int j = 0; j < newPairCount; ++j)
+                            delete newPair[j];
+                        for(int j = 0; j < newLinkCount; ++j)
+                            delete newLinks[j];
+                        return false;
+                    }
+                }
+            }
         }
     }
 
@@ -331,9 +492,6 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
         // Joining things now.
         // copy newPair[0 .. newPairCount] into this
 
-        // For edges around vertex links, merge the two together but watch for
-        // orientation of the two.
-        // For equivalence map, merge sets and point them at the right place?
     }
 }
 
