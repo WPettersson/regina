@@ -387,78 +387,61 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
                 newLink[newLinkCount++] = new LinkEdge(prev2a, prev2ao,
                         edgeA.next(), edgeA.nextO());
             } else {
-            // Otherwise we need to update the neighbours of both link edges
+                // Otherwise we need to update the neighbours of both link edges
+                TFE preva = edgeA.prev();
+                bool prevao = edgeA.prevO();
+                LinkEdge prevLEa = getLinkEdge(preva);
+                // Get prev of prev. Note that we negate nextO
+                TFE prev2a = prevLEa.next(! prevao);
+                bool prev2ao = prevLEa.nextO(! prevao);
+
+                TFE nexta = edgeA.next();
+                bool nextao = edgeA.nextO();
+                LinkEdge nextLEa = getLinkEdge(nexta);
+                TFE next2a = nextLEa.next(nextao);
+                bool next2ao = nextLE.nextO(nextao);
+
+                TFE prevb = edgeB.prev();
+                bool prevbo = edgeB.prevO();
+                LinkEdge prevLEb = getLinkEdge(prevb);
+                // Get prev of prev. Note that we negate nextO
+                TFE prev2b = prevLEa.next(! prevbo);
+                bool prev2bo = prevLEa.nextO(! prevbo);
+
+                TFE nextb = edgeB.next();
+                bool nextbo = edgeB.nextO();
+                LinkEdge nextLEb = getLinkEdge(nextb);
+                TFE next2b = nextLEb.next(nextbo);
+                bool next2bo = next LEb.nextO(nextbo);
                 if (sameOrientation) {
-                    LinkEdge prevLEa = getLinkEdge(edgeA.prev());
-                    // Get prev of prev. Note that we negate nextO
-                    TFE prev2a = prevLEa.next(! edgeA.prevO());
-                    bool prev2ao = prevLEa.nextO(! edgeA.prevO());
-                    TFE prevb = edgeB.prev();
-                    bool prevbo = edgeB.prevO();
                     newTFE[newLinkCount] = edgeA.prev();
                     newLink[newLinkCount++] = new LinkEdge(prev2a, prev2ao,
                             prevb, ! prevbo);
 
-                    LinkEdge prevLEb = getLinkEdge(edgeB.prev());
-                    // Get prev of prev. Note that we negate nextO
-                    TFE prev2b = prevLEa.next(! edgeB.prevO());
-                    bool prev2bo = prevLEa.nextO(! edgeB.prevO());
-                    TFE preva = edgeA.prev();
-                    bool prevao = edgeA.prevO();
                     newTFE[newLinkCount] = edgeB.prev();
                     newLink[newLinkCount++] = new LinkEdge(prev2b, prev2bo,
                             preva, ! prevao);
 
-                    LinkEdge nextLEa = getLinkEdge(edgeA.next());
-                    TFE next2a = nextLEa.next(edgeA.nextO());
-                    bool next2ao = nextLE.nextO(edgeA.nextO());
-                    TFE nextb = edgeB.next();
-                    bool nextbo = edgeB.nextO();
                     newTFE[newLinkCount] = edgeA.next();
                     newLink[newLinkCount++] = new LinkEdge(nextb, !nextbo,
                             next2a, next2ao);
 
-                    LinkEdge nextLEb = getLinkEdge(edgeB.next());
-                    TFE next2b = nextLEb.next(edgeB.nextO());
-                    bool next2bo = next LEb.nextO(edgeB.nextO());
-                    TFE nexta = edgeA.next();
-                    bool nextao = edgeA.nextO();
                     newTFE[newLinkCount] = edgeB.next();
                     newLink[newLinkCount++] = new LinkEdge(nexta, !nextao,
                             next2b, next2bo);
                 } else { // reverse orientation
-                    LinkEdge prevLEa = getLinkEdge(edgeA.prev());
-                    TFE prev2a = prevLEa.next(! edgeA.prevO());
-                    bool prev2ao = prevLEa.nextO(! edgeA.prevO());
-                    TFE nextb = edgeB.next();
-                    bool nextbo = edgeB.nextO();
                     newTFE[newLinkCount] = edgeA.prev();
                     newLink[newLinkCount++] = new LinkEdge(prev2a, prev2ao,
                             nextb, nextbo);
 
-                    LinkEdge nextLEb = getLinkEdge(edgeB.next());
-                    TFE next2b = nextLEb.next(edgeB.nextO());
-                    bool next2bo = next LEb.nextO(edgeB.nextO());
-                    TFE preva = edgeA.prev();
-                    bool prevao = edgeA.prevO();
                     newTFE[newLinkCount] = edgeB.next();
                     newLink[newLinkCount++] = new LinkEdge(preva, prevao,
                             next2b, next2bo);
 
-                    LinkEdge nextLEa = getLinkEdge(edgeA.next());
-                    TFE next2a = nextLEa.next(edgeA.nextO());
-                    bool next2ao = nextLE.nextO(edgeA.nextO());
-                    TFE prevb = edgeB.prev();
-                    bool prevbo = edgeB.prevO();
                     newTFE[newLinkCount] = edgeA.next();
                     newLink[newLinkCount++] = new LinkEdge(prevb, prevbo,
                             next2a, next2ao);
 
-                    LinkEdge prevLEb = getLinkEdge(edgeB.prev());
-                    TFE prev2b = prevLEa.next(! edgeB.prevO());
-                    bool prev2bo = prevLEa.nextO(! edgeB.prevO());
-                    TFE nexta = edgeA.next();
-                    bool nextao = edgeA.nextO();
                     newTFE[newLinkCount] = edgeB.next();
                     newLink[newLinkCount++] = new LinkEdge(prev2b, prev2bo,
                             nexta, nextao);
