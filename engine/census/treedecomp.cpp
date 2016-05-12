@@ -215,14 +215,14 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
     // We will store any new pairs here temporarily. At the end of this
     // function, if nothing has gone wrong, we assign them to the Config.
     Pair* newPair[3];
-    int newPairCount = 0;
+    newPairCount = 0;
 
     // We temporarily store new link edges here, and if nothing has gone wrong
     // by the end we assign them to the config. Note that for each of the 3
     // pairs of link edges we merge, we need to update the prev & next of both
     // in the pair, which means we need (up to) 4 new LinkEdges per merging.
     LinkEdge* newLinks[12];
-    int newLinkCount = 0;
+    newLinkCount = 0;
     TFE newTFE[12]; //newTFE[i] is the TFE associated with newLinks[i]
 
     for(int i=0; i < 3; ++i) {
@@ -277,6 +277,8 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
                 // two new open ends, with the right degree value
                 TVE newA = p->opp(a);
                 TVE newB = p2->opp(b);
+                newTVE[2*newPairCount] = newA;
+                newTVE[2*newPairCount+1] = newB;
                 bool orientation = p->o() ^ p2->o() ^
                     EDGE_SYM_MAP[a.one.facet][gluing];
                 if (newA.tet() == newB.tet()) {

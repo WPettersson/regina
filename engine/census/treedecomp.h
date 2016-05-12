@@ -224,6 +224,32 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             bool useful;
 
 
+            // For the following, we will temporarily store new data structures
+            // here before adding them to the actual ... data structures.
+            // This makes it much easier to "undo" any partial gluings.
+            // Actually, it means we won't have to do anything to undo them.
+            // However, we will need to make these class variables, so that the
+            // various lookup functions can find them.
+
+            // TODO Instead of just arrays, we could make them associative
+            // immediately. Would make lookups faster, but inserts slower.
+
+            // We will store any new pairs here temporarily. At the end of
+            // glue(), if nothing has gone wrong, we assign them to the Config.
+            Pair* newPair[3];
+            TVE newTVE[6]; // newTVE[2*i] and newTVE[2*i+1] are the two TVEs in
+                           // pair[i]
+            int newPairCount;
+
+            // We temporarily store new link edges here, and if nothing has gone wrong
+            // by the end of glue() we assign them to the config. Note that for
+            // each of the 3 pairs of link edges we merge, we need to update
+            // the prev & next of both in the pair, which means we need (up to)
+            // 4 new LinkEdges per merging.
+            LinkEdge* newLinks[12];
+            TFE newTFE[12]; //newTFE[i] is the TFE associated with newLinks[i]
+            int newLinkCount;
+
         public:
             // Combine another configuration with this one. The two configurations
             // must have distinct tetrahedra. Due to the data structures in
