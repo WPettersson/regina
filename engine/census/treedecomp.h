@@ -216,42 +216,19 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
 
             // Given a TVE, has the Pair* which describes what other TVE it is
             // paired with and the orientability of the pairing.
-            std::map<TVE, Pair*> pairs;
+            std::map<TVE, std::shared_ptr<Pair>> pairs;
 
             // Given a TFE, has the LinkEdge which describes what comes before
             // and after TFE in the link of the vertex it is associated with.
-            std::map<TFE, LinkEdge*> linkEdges;
+            std::map<TFE, std::shared_ptr<LinkEdge>> linkEdges;
 
             // Is this config useful, aka does this config lead to some
             // actually interesting triangulation.
             bool useful;
 
+            bool isRoot;
+            int equivComponents;
 
-            // For the following, we will temporarily store new data structures
-            // here before adding them to the actual ... data structures.
-            // This makes it much easier to "undo" any partial gluings.
-            // Actually, it means we won't have to do anything to undo them.
-            // However, we will need to make these class variables, so that the
-            // various lookup functions can find them.
-
-            // TODO Instead of just arrays, we could make them associative
-            // immediately. Would make lookups faster, but inserts slower.
-
-            // We will store any new pairs here temporarily. At the end of
-            // glue(), if nothing has gone wrong, we assign them to the Config.
-            Pair* newPair[3];
-            TVE newTVE[6]; // newTVE[2*i] and newTVE[2*i+1] are the two TVEs in
-                           // pair[i]
-            int newPairCount;
-
-            // We temporarily store new link edges here, and if nothing has gone wrong
-            // by the end of glue() we assign them to the config. Note that for
-            // each of the 3 pairs of link edges we merge, we need to update
-            // the prev & next of both in the pair, which means we need (up to)
-            // 4 new LinkEdges per merging.
-            LinkEdge* newLinks[12];
-            TFE newTFE[12]; //newTFE[i] is the TFE associated with newLinks[i]
-            int newLinkCount;
 
         public:
             // Combine another configuration with this one. The two configurations
@@ -262,24 +239,26 @@ class REGINA_API TreeDecompSearcher : public NGluingPermSearcher {
             // Undo such a merge, which just involves removing a child
             void removeChild(int child);
 
-            // Is the given face on the given tetrahedra on the boundary?
-            bool onBoundary(int t, int f);
-
             // Glue two faces together. The two faces are given by Arc a,
             // and the exact gluing is given by gluing (an entry into
-            // NEdge::some_table TODO
+            // this::some_table TODO
             bool glue(int gluing, Arc& a);
 
             // Unglue two faces. TODO: Might need more info passed in
             void unGlue(int t1, int f1);
 
-            // Mark a and b as identified pairs. If orientation is true, then the
-            // pair are matched such that lowest vertex of a meets lowest vertex of
-            // b.
-            void addTVEPair(TVE a, TVE b, bool orientation);
-
             // Given a TVE, return the Pair object that contains it.
             Pair* getTVEPair(TVE a);
+
+            LinkEdge* getLinkEdge(TFE a);
+
+            mergeEquiv(TV a, TV b);
+
+            bool areEquiv(TV a, TV b);
+
+            int countEquivComponents();
+
+            bool rootConfig();
     };
 
     // Represents a triangulation we are building. Note that we need a bit more
@@ -437,6 +416,11 @@ inline void TreeDecompSearcher::Config::addChild(Config *c, int pos) {
 inline void TreeDecompSearcher::Config::removeChild(int pos) {
     // NOP. Will get replaced when needed, else it never gets used anyway.
 }
+
+inline bool TreeDecompSearcher::Config::areEquiv(TV a, TV b) {
+    return equivMap.get(a).root() == equivMap.get(b).root();
+}
+
 
 // Inline functions for TreeDecompSearcher::LinkEdge
 

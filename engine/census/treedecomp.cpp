@@ -211,48 +211,61 @@ void TreeDecompSearcher::Bag::addArcs(Config& c) {
 // underlying edge and a bool tracking whether a tetrahedron has been repeated
 // the edge from TetFaceEdge is signed to store orientation.
 
-bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
-    // We will store any new pairs here temporarily. At the end of this
-    // function, if nothing has gone wrong, we assign them to the Config.
-    Pair* newPair[3];
-    newPairCount = 0;
+bool TreeDecompSearcher::Config::glue(int gluing, Arc& arc) {
+    // We will store any TVEs associated with new pairs here. This lets us undo
+    // any changes
+    TVE newTVE[6]; // newTVE[2*i] and newTVE[2*i+1] are the two TVEs in pair[i]
+    int newPairCount = 0;
 
-    // We temporarily store new link edges here, and if nothing has gone wrong
-    // by the end we assign them to the config. Note that for each of the 3
-    // pairs of link edges we merge, we need to update the prev & next of both
-    // in the pair, which means we need (up to) 4 new LinkEdges per merging.
-    LinkEdge* newLinks[12];
-    newLinkCount = 0;
+    // We will store any TFEs associated with new link-edges here. This lets us
+    // undo any changes
     TFE newTFE[12]; //newTFE[i] is the TFE associated with newLinks[i]
+    int newLinkCount = 0;
+
+    // Same for TVs and equivMap
+    TV changedTV[3];
+    int newEquivCount = 0;
+
 
     for(int i=0; i < 3; ++i) {
+        // TV values are needed when tracking vertex links, and when combining
+        // equivalent vertices. To allow for this, we declare these variables
+        // outside the braces just below.
+        TV tv_a, tv_b;
+
         // Using code blocks/braces to separate the edge and vertex configurations.
         // This first block is for tracking the edge links (and degrees)
         {
             int degreeIncrease = 0;
-            int vert = FACE_VERTICES[a.one.facet][i];
-            int edge = OPP_EDGE[a.one.facet][vert];
-            TVE a = TVE_(a.one.simp, vert, edge);
+            int vert = FACE_VERTICES[arc.one.facet][i];
+            int edge = OPP_EDGE[arc.one.facet][vert];
+            TVE tve_a = TVE_(arc.one.simp, vert, edge);
 
-            vert = FACE_VERTICES[a.two.facet][i];
-            edge = OPP_EDGE[a.two.facet][vert];
-            TVE b = TVE_(a.two.simp, vert, edge);
-            Pair *p = getTVEPair(a);
-            Pair *p2 = getTVEPair(b);
+            vert = FACE_VERTICES[arc.two.facet][VERT_SYM_MAP[gluing][i]];
+            edge = OPP_EDGE[arc.two.facet][vert];
+            TVE tve_b = TVE_(arc.two.simp, vert, edge);
+            Pair *p = getTVEPair(tve_a);
+            Pair *p2 = getTVEPair(tve_b);
 
             if (p == p2) {
                 bool badOrientation = p->o() ^ p2->o() ^
                     EDGE_ORIENT_MAP[a.one.facet][gluing];
                 if (badOrientation) {
                     // TODO clear memory
-                    for(int j = 0; j < newPairCount; ++j)
-                        delete newPair[j];
-                    for(int j = 0; j < newLinkCount; ++j)
-                        delete newLinks[j];
+                    for(int j = 0; j < newPairCount; ++j) {
+                        pairs.erase(newTVE[2*j]);
+                        pairs.erase(newTVE[2*j+1]);
+                    }
+                    for(int j = 0; j < newLinkCount; j+=2) {
+                        linkEdges.erase(newTFE[2*j]);
+                        linkEdges.erase(newTFE[2*j+1]);
+                    }
+                    for(int j = 0; j < newEquivCount; ++j)
+                        equivMap.get(changedTV[j]).setParent(NULL);
                     return false;
                 }
                 int degreeExtra = 0;
-                if (a.tet() == b.tet())
+                if (arc.one.simp == arc.two.simp)
                     degreeExtra = 1; // Same tetrahedron
 
                 // Degree of 2 or less is bad. Also, if the degree is 3 and the
@@ -264,37 +277,39 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
                 // triangulation-edge must have degree ≥ 4 anyway.
                 if ((p->degree() + degreeExtra) < 4) {
                     // TODO clear memory
-                    for(int j = 0; j < newPairCount; ++j)
-                        delete newPair[j];
-                    for(int j = 0; j < newLinkCount; ++j)
-                        delete newLinks[j];
-                    return false;
+                    for(int j = 0; j < newPairCount; ++j) {
+                        pairs.erase(newTVE[2*j]);
+                        pairs.erase(newTVE[2*j+1]);
+                    }
+                    for(int j = 0; j < newLinkCount; j+=2) {
+                        linkEdges.erase(newTFE[2*j]);
+                        linkEdges.erase(newTFE[2*j+1]);
+                    }
+                    for(int j = 0; j < newEquivCount; ++j)
+                        equivMap.get(changedTV[j]).setParent(NULL);
                 }
                 // Else it's ok. This edge is closed, but we don't have to remember
                 // that it is closed.
             } else {
                 // Two different edges. Create a new Pair object representing the
                 // two new open ends, with the right degree value
-                TVE newA = p->opp(a);
-                TVE newB = p2->opp(b);
+                TVE newA = p->opp(tve_a);
+                TVE newB = p2->opp(tve_b);
                 newTVE[2*newPairCount] = newA;
                 newTVE[2*newPairCount+1] = newB;
                 bool orientation = p->o() ^ p2->o() ^
-                    EDGE_SYM_MAP[a.one.facet][gluing];
-                if (newA.tet() == newB.tet()) {
-                    int deg = p->degree() + p2->degree() + 1;
-                    newPair[newPairCount++] = new Pair(newA, newB, orientation, deg);
-                } else {
-                    int deg = p->degree() + p2->degree();
-                    newPair[newPairCount++] = new Pair(newA, newB, orientation, deg);
-                }
+                    EDGE_SYM_MAP[arc.one.facet][gluing];
+                int deg = p->degree() + p2->degree();
+                Pair *p = new Pair(newA, newB, orientation, deg);
+                pairs.insert(newA, p);
+                pairs.insert(newB, p);
             }
         }
         // Now for the vertex link tracking
         {
-            TFE a = TFE_(a.one.simp, a.one.facet, FACE_EDGES[a.one.facet][i]);
-            TFE b = TFE_(a.two.simp, a.two.facet,
-                    FACE_EDGES[a.two.facet][EDGE_SYM_MAP[gluing][i]]);
+            TFE a = TFE_(arc.one.simp, arc.one.facet, FACE_EDGES[arc.one.facet][i]);
+            TFE b = TFE_(arc.two.simp, arc.two.facet,
+                    FACE_EDGES[arc.two.facet][EDGE_SYM_MAP[gluing][i]]);
             bool sameOrientation = EDGE_ORIENT_MAP[gluing][i];
             //  True if the two edges we are matching up will have their
             //  orientations aligned. Note that this means that we will have to
@@ -302,12 +317,12 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
             //  (draw a picture to see this).
 
 
-            LinkEdge edgeA = getLinkEdge(a);
-            LinkEdge edgeB = getLinkEdge(b);
+            LinkEdge* edgeA = getLinkEdge(a);
+            LinkEdge* edgeB = getLinkEdge(b);
             // Work out if they are part of same puncture (walk around edgeA,
             // see if we see edgeB.
             bool samePuncture = false;
-            TFE nextTFE = getLinkEdge(edgeA.next());
+            TFE nextTFE = edgeA.next();
             bool useNext = edgeA.nextO();
             while (nextTFE != a) {
                 if (nextTFE  == b) {
@@ -319,14 +334,20 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
                     // different orientations.
                     if (useNext != sameOrientation) {
                         // TODO clear memory
-                        for(int j = 0; j < newPairCount; ++j)
-                            delete newPair[j];
-                        for(int j = 0; j < newLinkCount; ++j)
-                            delete newLinks[j];
+                        for(int j = 0; j < newPairCount; ++j) {
+                            pairs.erase(newTVE[2*j]);
+                            pairs.erase(newTVE[2*j+1]);
+                        }
+                        for(int j = 0; j < newLinkCount; j+=2) {
+                            linkEdges.erase(newTFE[2*j]);
+                            linkEdges.erase(newTFE[2*j+1]);
+                        }
+                        for(int j = 0; j < newEquivCount; ++j)
+                            equivMap.get(changedTV[j]).setParent(NULL);
                     }
                     break;
                 }
-                LinkEdge le = getLinkEdge(nextTFE);
+                LinkEdge* le = getLinkEdge(nextTFE);
                 nextTFE = le.next(useNext);
                 // Yeah, this looks weird. If le.nextO() is true, then we
                 // want to keep the current value of useNext, otherwise
@@ -334,15 +355,23 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
                 useNext = (le.nextO(useNext) == useNext);
             }
 
+            // At this point we need these, so calculate them.
+            tv_a = TV_(arc.one.simp,FACE_VERTICES[arc.one.facet][i]);
+            tv_b = TV_(arc.two.simp,
+                        FACE_VERTICES[arc.two.facet][VERT_SYM_MAP[gluing][i]]);
             if (!samePuncture) {
-                // Arc a.one.simp, a.two.simp
-                if (areEquiv(a,b)) {
+                if (areEquiv(tv_a,tv_b)) {
                     // TODO clear memory
-                    for(int j = 0; j < newPairCount; ++j)
-                        delete newPair[j];
-                    for(int j = 0; j < newLinkCount; ++j)
-                        delete newLinks[j];
-                    return false;
+                    for(int j = 0; j < newPairCount; ++j) {
+                        pairs.erase(newTVE[2*j]);
+                        pairs.erase(newTVE[2*j+1]);
+                    }
+                    for(int j = 0; j < newLinkCount; j+=2) {
+                        linkEdges.erase(newTFE[2*j]);
+                        linkEdges.erase(newTFE[2*j+1]);
+                    }
+                    for(int j = 0; j < newEquivCount; ++j)
+                        equivMap.get(changedTV[j]).setParent(NULL);
                 }
             }
 
@@ -455,35 +484,27 @@ bool TreeDecompSearcher::Config::glue(int gluing, Arc& a) {
             // and 0 \leq i \leq 2 which allows us to identify distinct
             // vertices of tetrahedra.
             {
-                TV a = TV_(arc.one.simp,FACE_VERTICES[arc.one.facet][i]);
-                TV b = TV_(arc.two.simp,
-                         FACE_VERTICES[arc.two.facet][VERT_SYM_MAP[gluing][i]]);
-                int nComponents = mergeTV(a,b);
+                // Note that tv_a and tv_b are calculated when we are looking
+                // at vertex links
+                changedTV[newEquivCount++] = mergeEquiv(tv_a,tv_b);
+                int nComponents = countEquivComponents();
                 if (nComponents == 0) {
-                    if (! rootConfig) {
+                    if (! rootConfig()) {
                         // TODO clear memory
-                        for(int j = 0; j < newPairCount; ++j)
-                            delete newPair[j];
-                        for(int j = 0; j < newLinkCount; ++j)
-                            delete newLinks[j];
-                        return false;
+                        for(int j = 0; j < newPairCount; ++j) {
+                            pairs.erase(newTVE[2*j]);
+                            pairs.erase(newTVE[2*j+1]);
+                        }
+                        for(int j = 0; j < newLinkCount; j+=2) {
+                            linkEdges.erase(newTFE[2*j]);
+                            linkEdges.erase(newTFE[2*j+1]);
+                        }
+                        for(int j = 0; j < newEquivCount; ++j)
+                            equivMap.get(changedTV[j]).setParent(NULL);
                     }
                 }
             }
         }
-    }
-
-    for(int i=0; i < 3; ++i) {
-        // Joining things now.
-        // copy newPair[0 .. newPairCount] into this
-        for(int j = 0; j < newPairCount; ++j) {
-            pairs.insert(newTVE[2*j],newPair[j]);
-            pairs.insert(newTVE[2*j+1],newPair[j]);
-        }
-        for(int j = 0; j < newLinkCount; ++j) {
-            linkEdges.insert(newTFE[j],newLinks[j]);
-        }
-        // We don't have to do anything for TVs?
     }
 }
 
@@ -676,10 +697,11 @@ void TreeDecompSearcher::Config::addTVEPair(TVE a, TVE b, bool orientation) {
     pairs.insert(b, p);
 }
 
-TreeDecompSearcher::Pair* TreeDecompSearcher::Config::getPair(TVE a) {
+TreeDecompSearcher::Pair* TreeDecompSearcher::Config::getTVEPair(TVE a) {
     // If it's not going to be found here, return NULL
-    if (! belowHere[a.tet()])
-        return NULL;
+    // TODO do we want this?
+    //if (! belowHere[a.tet()])
+    //    return NULL;
 
     // Check if this bag knows about it.
     auto it = pairs.find(a);
@@ -688,9 +710,31 @@ TreeDecompSearcher::Pair* TreeDecompSearcher::Config::getPair(TVE a) {
 
     // Not here, some child must know of it
     for (auto child: children) {
-        Pair *p = child->getPair(a);
+        Pair *p = child->getTVEPair(a);
         if (p != NULL) {
             return p;
+        }
+    }
+    assert(false); // We should never get here.
+    return NULL;
+}
+
+TreeDecompSearcher::LinkEdge* TreeDecompSearcher::Config::getLinkEdge(TFE a) {
+    // If it's not going to be found here, return NULL
+    // TODO do we want this?
+    //if (! belowHere[a.tet()])
+    //    return NULL;
+
+    // Check if this bag knows about it.
+    auto it = linkEdges.find(a);
+    if (it != linkEdges.end())
+        return it.second;
+
+    // Not here, some child must know of it
+    for (auto child: children) {
+        LinkEdge *e = child->getLinkEdge(a);
+        if (e != NULL) {
+            return e;
         }
     }
     assert(false); // We should never get here.
