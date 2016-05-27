@@ -34,6 +34,11 @@ IF(NOT CMAKE_BUILD_TYPE)
   FORCE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
+# Enable compiler warnings if build type is Debug.
+IF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+    set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pedantic -lprofiler")
+ENDIF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+
 # Every year I swear I will drop windows support, and this year is no different.
 # The windows build (as of November 2015) crashes in the test suite with -O3.
 # It looks as though this might be a compiler problem: the ipa-cp-clone
