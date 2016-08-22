@@ -95,7 +95,7 @@ namespace {
 
         for (std::list<regina::Dim2Isomorphism*>::iterator it =
                  isos.begin(); it != isos.end(); it++) {
-            std::auto_ptr<regina::Dim2Isomorphism> iso(*it);
+            std::unique_ptr<regina::Dim2Isomorphism> iso(*it);
             ans.append(iso);
         }
         return ans;
@@ -110,7 +110,7 @@ namespace {
 
         for (std::list<regina::Dim2Isomorphism*>::iterator it =
                  isos.begin(); it != isos.end(); it++) {
-            std::auto_ptr<regina::Dim2Isomorphism> iso(*it);
+            std::unique_ptr<regina::Dim2Isomorphism> iso(*it);
             ans.append(iso);
         }
         return ans;

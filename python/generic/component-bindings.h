@@ -54,7 +54,7 @@ namespace {
 
 template <int dim>
 void addComponent(const char* name) {
-    class_<Component<dim>, std::auto_ptr<Component<dim>>, boost::noncopyable>
+    class_<Component<dim>, std::unique_ptr<Component<dim>>, boost::noncopyable>
             (name, no_init)
         .def("index", &Component<dim>::index)
         .def("size", &Component<dim>::size)

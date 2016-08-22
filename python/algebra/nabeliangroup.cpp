@@ -94,7 +94,7 @@ namespace {
 }
 
 void addNAbelianGroup() {
-    class_<NAbelianGroup, std::auto_ptr<NAbelianGroup>, boost::noncopyable>
+    class_<NAbelianGroup, std::unique_ptr<NAbelianGroup>, boost::noncopyable>
             ("NAbelianGroup")
         .def(init<const NAbelianGroup&>())
         .def(init<const NMatrixInt&, const NMatrixInt&>())

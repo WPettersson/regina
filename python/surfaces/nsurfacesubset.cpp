@@ -48,7 +48,7 @@ namespace {
 }
 
 void addNSurfaceSubset() {
-    scope s = class_<NSurfaceSubset, std::auto_ptr<NSurfaceSubset>,
+    scope s = class_<NSurfaceSubset, std::unique_ptr<NSurfaceSubset>,
             boost::noncopyable>("NSurfaceSubset",
             init<const regina::NNormalSurfaceList&,
                 const regina::NSurfaceFilter&>())

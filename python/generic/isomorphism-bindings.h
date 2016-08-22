@@ -53,7 +53,7 @@ namespace {
 
 template <int dim>
 void addIsomorphism(const char* name) {
-    class_<Isomorphism<dim>, std::auto_ptr<Isomorphism<dim>>,
+    class_<Isomorphism<dim>, std::unique_ptr<Isomorphism<dim>>,
             boost::noncopyable>(name, init<const Isomorphism<dim>&>())
         .def("size", &Isomorphism<dim>::size)
         .def("getSourceSimplices", &Isomorphism<dim>::size)

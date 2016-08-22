@@ -85,7 +85,7 @@ namespace {
             t.findAllIsomorphisms(other, back_inserter(isos));
 
             for (auto it = isos.begin(); it != isos.end(); it++) {
-                std::auto_ptr<regina::Isomorphism<dim>> iso(*it);
+                std::unique_ptr<regina::Isomorphism<dim>> iso(*it);
                 ans.append(iso);
             }
             return ans;
@@ -99,7 +99,7 @@ namespace {
             t.findAllSubcomplexesIn(other, back_inserter(isos));
 
             for (auto it = isos.begin(); it != isos.end(); it++) {
-                std::auto_ptr<regina::Isomorphism<dim>> iso(*it);
+                std::unique_ptr<regina::Isomorphism<dim>> iso(*it);
                 ans.append(iso);
             }
             return ans;

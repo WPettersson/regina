@@ -136,7 +136,7 @@ namespace {
 }
 
 void addNMarkedAbelianGroup() {
-    class_<NMarkedAbelianGroup, std::auto_ptr<NMarkedAbelianGroup>,
+    class_<NMarkedAbelianGroup, std::unique_ptr<NMarkedAbelianGroup>,
             boost::noncopyable> ( "NMarkedAbelianGroup",
             init<const NMatrixInt&, const NMatrixInt&>())
         .def(init<const NMarkedAbelianGroup&>())
@@ -229,7 +229,7 @@ void addNMarkedAbelianGroup() {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<NHomMarkedAbelianGroup, std::auto_ptr<NHomMarkedAbelianGroup>,
+    class_<NHomMarkedAbelianGroup, std::unique_ptr<NHomMarkedAbelianGroup>,
             boost::noncopyable>( "NHomMarkedAbelianGroup",
             init<const NMarkedAbelianGroup&, const NMarkedAbelianGroup&,
                 const NMatrixInt&>())

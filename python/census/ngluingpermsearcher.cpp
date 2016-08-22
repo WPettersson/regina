@@ -41,7 +41,7 @@ using regina::NGluingPermSearcher;
 void addNGluingPermSearcher() {
     {
         scope s = class_<NGluingPermSearcher,
-                std::auto_ptr<NGluingPermSearcher>,
+                std::unique_ptr<NGluingPermSearcher>,
                 boost::noncopyable>("NGluingPermSearcher", no_init)
             .def(regina::python::add_eq_operators())
         ;

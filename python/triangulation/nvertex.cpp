@@ -102,7 +102,7 @@ void addNVertex() {
     ;
 
     {
-        scope s = class_<Face<3, 0>, std::auto_ptr<Face<3, 0>>,
+        scope s = class_<Face<3, 0>, std::unique_ptr<Face<3, 0>>,
                 boost::noncopyable>("Face3_0", no_init)
             .def("index", &NVertex::index)
             .def("embeddings", vertex_embeddings_list)

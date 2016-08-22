@@ -64,7 +64,7 @@ void addNDisc() {
     def("numberDiscsAwayFromVertex", regina::numberDiscsAwayFromVertex);
     def("discOrientationFollowsEdge", regina::discOrientationFollowsEdge);
 
-    class_<NDiscSetTet, std::auto_ptr<NDiscSetTet>,
+    class_<NDiscSetTet, std::unique_ptr<NDiscSetTet>,
             boost::noncopyable>("NDiscSetTet",
             init<const regina::NNormalSurface&, unsigned long>())
         .def("nDiscs", &NDiscSetTet::nDiscs)
@@ -73,7 +73,7 @@ void addNDisc() {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<NDiscSetSurface, std::auto_ptr<NDiscSetSurface>,
+    class_<NDiscSetSurface, std::unique_ptr<NDiscSetSurface>,
             boost::noncopyable>("NDiscSetSurface",
             init<const regina::NNormalSurface&>())
         .def("nTets", &NDiscSetSurface::nTets)

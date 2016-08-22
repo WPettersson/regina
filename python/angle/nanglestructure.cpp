@@ -42,7 +42,7 @@ using regina::NAngleStructure;
 using regina::NTriangulation;
 
 void addNAngleStructure() {
-    class_<NAngleStructure, std::auto_ptr<NAngleStructure>, boost::noncopyable>
+    class_<NAngleStructure, std::unique_ptr<NAngleStructure>, boost::noncopyable>
             ("NAngleStructure", no_init)
         .def("clone", &NAngleStructure::clone,
             return_value_policy<manage_new_object>())

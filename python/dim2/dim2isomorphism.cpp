@@ -50,7 +50,7 @@ namespace {
 }
 
 void addDim2Isomorphism() {
-    class_<Isomorphism<2>, std::auto_ptr<Isomorphism<2>>, boost::noncopyable>
+    class_<Isomorphism<2>, std::unique_ptr<Isomorphism<2>>, boost::noncopyable>
             ("Isomorphism2", init<const Dim2Isomorphism&>())
         .def("size", &Dim2Isomorphism::size)
         .def("getSourceSimplices", &Dim2Isomorphism::size)

@@ -129,7 +129,7 @@ namespace {
 }
 
 void addNNormalSurface() {
-    class_<NNormalSurface, std::auto_ptr<NNormalSurface>, boost::noncopyable>
+    class_<NNormalSurface, std::unique_ptr<NNormalSurface>, boost::noncopyable>
             ("NNormalSurface", no_init)
         .def("__init__", make_constructor(fromCoordinates))
         .def("clone", &NNormalSurface::clone,

@@ -140,7 +140,7 @@ void addNTreeDecomposition() {
     global.attr("NICE_FORGET") = regina::NICE_FORGET;
     global.attr("NICE_JOIN") = regina::NICE_JOIN;
 
-    class_<NTreeBag, std::auto_ptr<NTreeBag>,
+    class_<NTreeBag, std::unique_ptr<NTreeBag>,
             boost::noncopyable>("NTreeBag", no_init)
         .def("size", &NTreeBag::size)
         .def("element", &NTreeBag::element)
@@ -164,7 +164,7 @@ void addNTreeDecomposition() {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<NTreeDecomposition, std::auto_ptr<NTreeDecomposition>,
+    class_<NTreeDecomposition, std::unique_ptr<NTreeDecomposition>,
             boost::noncopyable>("NTreeDecomposition", no_init)
         .def(init<const regina::NTriangulation&>())
         .def(init<const regina::NTriangulation&,

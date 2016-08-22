@@ -83,7 +83,7 @@ void addNTriangle() {
     ;
 
     {
-        scope s = class_<Face<3, 2>, std::auto_ptr<Face<3, 2>>,
+        scope s = class_<Face<3, 2>, std::unique_ptr<Face<3, 2>>,
                 boost::noncopyable>("Face3_2", no_init)
             .def("index", &NTriangle::index)
             .def("embeddings", NTriangle_embeddings_list)

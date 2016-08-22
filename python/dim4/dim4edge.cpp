@@ -109,7 +109,7 @@ void addDim4Edge() {
     ;
 
     {
-        scope s = class_<Face<4, 1>, std::auto_ptr<Face<4, 1>>,
+        scope s = class_<Face<4, 1>, std::unique_ptr<Face<4, 1>>,
                 boost::noncopyable>("Face4_1", no_init)
             .def("index", &Dim4Edge::index)
             .def("embeddings", Dim4Edge_embeddings_list)

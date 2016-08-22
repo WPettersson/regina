@@ -90,7 +90,7 @@ void addDim4Triangle() {
     ;
 
     {
-        scope s = class_<Face<4, 2>, std::auto_ptr<Face<4, 2>>,
+        scope s = class_<Face<4, 2>, std::unique_ptr<Face<4, 2>>,
                 boost::noncopyable>("Face4_2", no_init)
             .def("index", &Dim4Triangle::index)
             .def("embeddings", Dim4Triangle_embeddings_list)

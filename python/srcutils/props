@@ -11,8 +11,8 @@
 # Roughly analyses various properties of the current python bindings.
 #
 # For each C++ source file containing python bindings for Regina, a line
-# will be output specifying whether boost::noncopyable or std::auto_ptr
-# is used anywhere within this file.
+# will be output specifying whether boost::noncopyable, std::auto_ptr or
+# std::unique_ptr is used anywhere within this file.
 #
 # This script is dependent upon the specific structure of the Regina
 # python bindings and is only intended for use by the developers of
@@ -67,6 +67,12 @@ for i in $sources; do
     export apsym="        ";
   fi
 
-  echo "$ncsym - $apsym - $name"
+  if grep std::unique_ptr "$i" > /dev/null; then
+    export upsym="unique_ptr"
+  else
+    export upsym="          ";
+  fi
+
+  echo "$ncsym - $apsym - $upsym - $name"
 done
 

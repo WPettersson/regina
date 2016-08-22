@@ -51,8 +51,8 @@ namespace {
 
     boost::python::tuple divisionAlg(const NPolynomial<NRational>& p,
             const NPolynomial<NRational>& divisor) {
-        std::auto_ptr<NPolynomial<NRational> > q(new NPolynomial<NRational>);
-        std::auto_ptr<NPolynomial<NRational> > r(new NPolynomial<NRational>);
+        std::unique_ptr<NPolynomial<NRational> > q(new NPolynomial<NRational>);
+        std::unique_ptr<NPolynomial<NRational> > r(new NPolynomial<NRational>);
 
         p.divisionAlg(divisor, *q, *r);
         return boost::python::make_tuple(q, r);
@@ -113,7 +113,7 @@ namespace {
 
 void addNPolynomial() {
     scope s = class_<NPolynomial<NRational>,
-            std::auto_ptr<NPolynomial<NRational> >,
+            std::unique_ptr<NPolynomial<NRational> >,
             boost::noncopyable>("NPolynomial")
         .def(init<size_t>())
         .def(init<const NPolynomial<NRational>&>())

@@ -72,7 +72,7 @@ namespace {
 }
 
 void addNSnapPeaTriangulation() {
-    class_<NCusp, std::auto_ptr<NCusp>, boost::noncopyable>("NCusp", no_init)
+    class_<NCusp, std::unique_ptr<NCusp>, boost::noncopyable>("NCusp", no_init)
         .def("vertex", &NCusp::vertex,
             return_value_policy<reference_existing_object>())
         .def("complete", &NCusp::complete)

@@ -49,7 +49,7 @@ namespace {
 }
 
 void addDim4Isomorphism() {
-    class_<Isomorphism<4>, std::auto_ptr<Isomorphism<4>>, boost::noncopyable>
+    class_<Isomorphism<4>, std::unique_ptr<Isomorphism<4>>, boost::noncopyable>
             ("Isomorphism4", init<const Dim4Isomorphism&>())
         .def("size", &Dim4Isomorphism::size)
         .def("getSourceSimplices", &Dim4Isomorphism::size)

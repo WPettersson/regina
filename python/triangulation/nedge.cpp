@@ -86,7 +86,7 @@ void addNEdge() {
     ;
 
     {
-        scope s = class_<Face<3, 1>, std::auto_ptr<Face<3, 1>>,
+        scope s = class_<Face<3, 1>, std::unique_ptr<Face<3, 1>>,
                 boost::noncopyable>("Face3_1", no_init)
             .def("index", &NEdge::index)
             .def("embeddings", edge_embeddings_list)

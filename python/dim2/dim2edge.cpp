@@ -82,7 +82,7 @@ void addDim2Edge() {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<Face<2, 1>, std::auto_ptr<Face<2, 1>>, boost::noncopyable>
+    class_<Face<2, 1>, std::unique_ptr<Face<2, 1>>, boost::noncopyable>
             ("Face2_1", no_init)
         .def("index", &Dim2Edge::index)
         .def("isValid", &Dim2Edge::isValid)

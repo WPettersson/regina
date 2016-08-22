@@ -38,7 +38,7 @@ using namespace boost::python;
 using regina::NFileInfo;
 
 void addNFileInfo() {
-    scope s = class_<NFileInfo, std::auto_ptr<NFileInfo>, boost::noncopyable>
+    scope s = class_<NFileInfo, std::unique_ptr<NFileInfo>, boost::noncopyable>
             ("NFileInfo", no_init)
         .def("pathname", &NFileInfo::pathname,
             return_value_policy<return_by_value>())

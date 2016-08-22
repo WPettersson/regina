@@ -150,7 +150,7 @@ namespace {
 
         for (std::list<regina::NIsomorphism*>::iterator it =
                  isos.begin(); it != isos.end(); it++) {
-            std::auto_ptr<regina::NIsomorphism> iso(*it);
+            std::unique_ptr<regina::NIsomorphism> iso(*it);
             ans.append(iso);
         }
         return ans;
@@ -165,7 +165,7 @@ namespace {
 
         for (std::list<regina::NIsomorphism*>::iterator it =
                  isos.begin(); it != isos.end(); it++) {
-            std::auto_ptr<regina::NIsomorphism> iso(*it);
+            std::unique_ptr<regina::NIsomorphism> iso(*it);
             ans.append(iso);
         }
         return ans;

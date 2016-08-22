@@ -50,7 +50,7 @@ namespace {
 }
 
 void addDim2Census() {
-    scope s = class_<Dim2Census, std::auto_ptr<Dim2Census>,
+    scope s = class_<Dim2Census, std::unique_ptr<Dim2Census>,
             boost::noncopyable>("Dim2Census", no_init)
         .def("formCensus", formCensus)
         .def("formPartialCensus", formPartialCensus)

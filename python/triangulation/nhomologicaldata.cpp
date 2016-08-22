@@ -39,7 +39,7 @@ using regina::NHomologicalData;
 using regina::NTriangulation;
 
 void addNHomologicalData() {
-    class_<NHomologicalData, std::auto_ptr<NHomologicalData>,
+    class_<NHomologicalData, std::unique_ptr<NHomologicalData>,
             boost::noncopyable>
             ("NHomologicalData", init<const NTriangulation&>())
         .def(init<const NHomologicalData&>())
