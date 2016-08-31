@@ -82,7 +82,7 @@ namespace regina { namespace detail {
         {  2, 4, 5,-1 }
     };
 
-    const int FaceNumberingImpl<3, 1, true>::edgeVertex[6][2] = {
+    const unsigned int FaceNumberingImpl<3, 1, true>::edgeVertex[6][2] = {
         { 0, 1 },
         { 0, 2 },
         { 0, 3 },
@@ -118,7 +118,7 @@ namespace regina { namespace detail {
         { 2, 5, 7, -1, 9 },
         { 3, 6, 8, 9, -1 }};
 
-    const int FaceNumberingImpl<4, 1, true>::edgeVertex[10][2] = {
+    const unsigned int FaceNumberingImpl<4, 1, true>::edgeVertex[10][2] = {
         { 0, 1 },
         { 0, 2 },
         { 0, 3 },
@@ -174,7 +174,7 @@ namespace regina { namespace detail {
           {  4, 1, 0,-1,-1 },
           { -1,-1,-1,-1,-1 } } };
 
-    const int FaceNumberingImpl<4, 2, false>::triangleVertex[10][3] = {
+    const unsigned int FaceNumberingImpl<4, 2, false>::triangleVertex[10][3] = {
         { 2, 3, 4 },
         { 1, 3, 4 },
         { 1, 2, 4 },
