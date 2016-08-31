@@ -30,10 +30,11 @@
  *                                                                        *
  **************************************************************************/
 
+#include "../safeheldtype.h"
+
 #include "algebra/ngrouppresentation.h"
 #include "dim2/dim2isomorphism.h"
 #include "dim2/dim2triangulation.h"
-#include "../safeheldtype.h"
 #include "../generic/facehelper.h"
 
 // Held type must be declared before boost/python.hpp

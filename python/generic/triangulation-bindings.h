@@ -30,11 +30,12 @@
  *                                                                        *
  **************************************************************************/
 
+#include "../safeheldtype.h"
+
 #include <list>
 #include "generic/isomorphism.h"
 #include "generic/triangulation.h"
 #include "maths/nperm5.h" // Specialisation needed for 4-D case.
-#include "../safeheldtype.h"
 #include "../helpers.h"
 #include "../generic/facehelper.h"
 

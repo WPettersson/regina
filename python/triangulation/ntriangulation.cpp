@@ -30,12 +30,13 @@
  *                                                                        *
  **************************************************************************/
 
+#include "../safeheldtype.h"
+
 #include "algebra/ngrouppresentation.h"
 #include "angle/nanglestructure.h"
 #include "surfaces/nnormalsurface.h"
 #include "triangulation/nisomorphism.h"
 #include "triangulation/ntriangulation.h"
-#include "../safeheldtype.h"
 #include "../generic/facehelper.h"
 
 // Held type must be declared before boost/python.hpp

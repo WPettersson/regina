@@ -30,8 +30,9 @@
  *                                                                        *
  **************************************************************************/
 
-#include "packet/ncontainer.h"
 #include "../safeheldtype.h"
+
+#include "packet/ncontainer.h"
 
 // Held type must be declared before boost/python.hpp
 #include <boost/python.hpp>

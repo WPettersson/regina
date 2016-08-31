@@ -30,8 +30,9 @@
  *                                                                        *
  **************************************************************************/
 
-#include "surfaces/sfcombination.h"
 #include "../safeheldtype.h"
+
+#include "surfaces/sfcombination.h"
 
 // Held type must be declared before boost/python.hpp
 #include <boost/python.hpp>

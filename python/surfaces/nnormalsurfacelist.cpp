@@ -30,11 +30,11 @@
  *                                                                        *
  **************************************************************************/
 
+#include "../safeheldtype.h"
 #include "maths/nmatrixint.h"
 #include "progress/nprogresstracker.h"
 #include "surfaces/nnormalsurfacelist.h"
 #include "triangulation/ntriangulation.h"
-#include "../safeheldtype.h"
 
 // Held type must be declared before boost/python.hpp
 #include <boost/python.hpp>

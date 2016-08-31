@@ -30,11 +30,12 @@
  *                                                                        *
  **************************************************************************/
 
+#include "../safeheldtype.h"
+
 #include <boost/python.hpp>
 #include "angle/nanglestructure.h"
 #include "triangulation/ntriangulation.h"
 #include "../helpers.h"
-#include "../safeheldtype.h"
 
 using namespace boost::python;
 using namespace regina::python;

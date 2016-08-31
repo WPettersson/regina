@@ -30,8 +30,9 @@
  *                                                                        *
  **************************************************************************/
 
-#include "packet/npdf.h"
 #include "../safeheldtype.h"
+
+#include "packet/npdf.h"
 
 // Held type must be declared before boost/python.hpp
 #include <boost/python.hpp>

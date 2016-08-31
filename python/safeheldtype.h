@@ -39,8 +39,8 @@
 #define __SAFEHELDTYPE_H
 #endif
 
-#include "utilities/safeptr.h"
 #include "Python.h"
+#include "utilities/safeptr.h"
 
 #include <typeinfo>
 #include <type_traits>
