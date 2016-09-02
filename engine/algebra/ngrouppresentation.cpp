@@ -1779,7 +1779,7 @@ NGroupPresentation::identifyExtensionOverZ()
                 I->second -= minLift; // adjust the lifts to have min lift 0
         }
         // cyclically permute lifts so that the max-weight rep appears first
-        while (lifts[l].front().second != cellWidth[l]) {
+        while (lifts[l].front().second != static_cast<long>(cellWidth[l])) {
             std::pair< NGroupExpressionTerm, signed long > temp(lifts[l].front());
             lifts[l].pop_front();
             lifts[l].push_back( temp );

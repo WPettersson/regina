@@ -523,12 +523,12 @@ void NNormalSurface::writeXMLData(std::ostream& out) const {
 NLargeInteger NNormalSurfaceVector::orientedTriangles(
         size_t, int, const NTriangulation*, bool) const {
     return NLargeInteger::zero;
-};
+}
 
 NLargeInteger NNormalSurfaceVector::orientedQuads(
         size_t, int, const NTriangulation*, bool) const {
     return NLargeInteger::zero;
-};
+}
 
 } // namespace regina
 

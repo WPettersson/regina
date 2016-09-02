@@ -87,8 +87,7 @@ bool NTriangulation::insertRehydration(const std::string& dehydration) {
     bool* newTetGluings = new bool[2 * nTet];
 
     unsigned val;
-    int i, j;
-    for (i = 0; i < lenNewTet; i++) {
+    for (unsigned i = 0; i < lenNewTet; i++) {
         val = VAL(proper[i + 1]);
         if (val > 15) {
             delete[] newTetGluings;
@@ -97,11 +96,11 @@ bool NTriangulation::insertRehydration(const std::string& dehydration) {
 
         if (i % 2 == 0) {
             // This letter stores values 4i+4 -> 4i+7.
-            for (j = 0; (j < 4) && (4*i + 4 + j < 2 * nTet); j++)
+            for (unsigned j = 0; (j < 4) && (4*i + 4 + j < 2 * nTet); j++)
                 newTetGluings[4*i + 4 + j] = ((val & (1 << j)) != 0);
         } else {
             // This letter stores values 4i-4 -> 4i-1.
-            for (j = 0; (j < 4) && (4*i - 4 + j < 2 * nTet); j++)
+            for (unsigned j = 0; (j < 4) && (4*i - 4 + j < 2 * nTet); j++)
                 newTetGluings[4*i - 4 + j] = ((val & (1 << j)) != 0);
         }
     }
@@ -110,7 +109,7 @@ bool NTriangulation::insertRehydration(const std::string& dehydration) {
     ChangeEventSpan span(this);
 
     NTetrahedron** tet = new NTetrahedron*[nTet];
-    for (i = 0; i < nTet; i++)
+    for (unsigned i = 0; i < nTet; i++)
         tet[i] = newTetrahedron();
 
     unsigned currTet = 0;       // Tetrahedron of the next face to glue.
@@ -195,7 +194,7 @@ bool NTriangulation::insertRehydration(const std::string& dehydration) {
         // Delete tetrahedra in the reverse order so tetrahedra are
         // always removed from the end of the internal array, and the
         // combined operation is therefore O(nTet) not O(nTet^2).
-        for (i = nTet - 1; i >= 0; --i)
+        for (unsigned i = nTet - 1; i >= 0; --i)
             removeTetrahedron(tet[i]);
     }
 

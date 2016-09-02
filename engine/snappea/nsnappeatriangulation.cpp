@@ -503,7 +503,7 @@ NMatrixInt* NSnapPeaTriangulation::gluingEquationsRect() const {
     if (! data_)
         return 0;
 
-    unsigned n = size();
+    int n = size();
 
     NMatrixInt* matrix = new NMatrixInt(
         countEdges() + data_->num_cusps + countCompleteCusps(),
@@ -511,14 +511,14 @@ NMatrixInt* NSnapPeaTriangulation::gluingEquationsRect() const {
     // Note: all entries are automatically initialised to zero.
 
     int numRows, numCols;
-    int row, j;
+    int row;
     int parity;
 
     int** edgeEqns = regina::snappea::get_gluing_equations(data_,
         &numRows, &numCols);
     for (row = 0; row < numRows; ++row) {
         parity = 0;
-        for (j = 0; j < n; ++j) {
+        for (int j = 0; j < n; ++j) {
             matrix->entry(row, j) += edgeEqns[row][3 * j];
             matrix->entry(row, j + n) -= edgeEqns[row][3 * j + 1];
             matrix->entry(row, j) -= edgeEqns[row][3 * j + 2];
@@ -537,7 +537,7 @@ NMatrixInt* NSnapPeaTriangulation::gluingEquationsRect() const {
             cuspEqn = regina::snappea::get_cusp_equation(
                 data_, c, 1, 0, &numCols);
             parity = 0;
-            for (j = 0; j < n; ++j) {
+            for (int j = 0; j < n; ++j) {
                 matrix->entry(row, j) += cuspEqn[3 * j];
                 matrix->entry(row, j + n) -= cuspEqn[3 * j + 1];
                 matrix->entry(row, j) -= cuspEqn[3 * j + 2];
@@ -552,7 +552,7 @@ NMatrixInt* NSnapPeaTriangulation::gluingEquationsRect() const {
             cuspEqn = regina::snappea::get_cusp_equation(
                 data_, c, 0, 1, &numCols);
             parity = 0;
-            for (j = 0; j < n; ++j) {
+            for (int j = 0; j < n; ++j) {
                 matrix->entry(row, j) += cuspEqn[3 * j];
                 matrix->entry(row, j + n) -= cuspEqn[3 * j + 1];
                 matrix->entry(row, j) -= cuspEqn[3 * j + 2];
@@ -567,7 +567,7 @@ NMatrixInt* NSnapPeaTriangulation::gluingEquationsRect() const {
             cuspEqn = regina::snappea::get_cusp_equation(
                 data_, c, cusp_[c].m_, cusp_[c].l_, &numCols);
             parity = 0;
-            for (j = 0; j < n; ++j) {
+            for (int j = 0; j < n; ++j) {
                 matrix->entry(row, j) += cuspEqn[3 * j];
                 matrix->entry(row, j + n) -= cuspEqn[3 * j + 1];
                 matrix->entry(row, j) -= cuspEqn[3 * j + 2];
@@ -639,21 +639,20 @@ bool NSnapPeaTriangulation::verifyTriangulation(const NTriangulation& tri)
     regina::snappea::TriangulationData *tData;
     regina::snappea::triangulation_to_data(data_, &tData);
 
-    int tet, face, i;
-    if (tData->num_tetrahedra != tri.size()) {
+    if (tData->num_tetrahedra != static_cast<int>(tri.size())) {
         free_triangulation_data(tData);
         return false;
     }
 
     NTriangulation::TetrahedronIterator it = tri.tetrahedra().begin();
-    for (tet = 0; tet < tData->num_tetrahedra; tet++) {
-        for (face = 0; face < 4; face++) {
+    for (int tet = 0; tet < tData->num_tetrahedra; tet++) {
+        for (unsigned face = 0; face < 4; face++) {
             if (tData->tetrahedron_data[tet].neighbor_index[face] !=
-                    (*it)->adjacentTetrahedron(face)->index()) {
+                    static_cast<int>((*it)->adjacentTetrahedron(face)->index())) {
                 free_triangulation_data(tData);
                 return false;
             }
-            for (i = 0; i < 4; i++)
+            for (unsigned i = 0; i < 4; i++)
                 if (tData->tetrahedron_data[tet].gluing[face][i] !=
                         (*it)->adjacentGluing(face)[i]) {
                     free_triangulation_data(tData);
@@ -810,11 +809,9 @@ void NSnapPeaTriangulation::sync() {
                 regina::snappea::do_Dehn_filling(data_);
             }
 
-            unsigned i, j;
-
             cusp_ = new NCusp[data_->num_cusps];
             regina::snappea::Cusp* c = data_->cusp_list_begin.next;
-            for (i = 0; i < data_->num_cusps; ++i) {
+            for (int i = 0; i < data_->num_cusps; ++i) {
                 cusp_[c->index].vertex_ = 0;
                 if (c->is_complete) {
                     cusp_[c->index].m_ = cusp_[c->index].l_ = 0;
@@ -841,8 +838,8 @@ void NSnapPeaTriangulation::sync() {
                 c = c->next;
             }
             regina::snappea::Tetrahedron* stet = data_->tet_list_begin.next;
-            for (i = 0; i < size(); ++i) {
-                for (j = 0; j < 4; ++j) {
+            for (unsigned i = 0; i < size(); ++i) {
+                for (unsigned j = 0; j < 4; ++j) {
                     c = stet->cusp[j];
                     if (cusp_[c->index].vertex_ == 0)
                         cusp_[c->index].vertex_ = tetrahedron(i)->vertex(j);

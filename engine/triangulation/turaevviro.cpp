@@ -631,15 +631,14 @@ namespace {
         // of the search tree and the low-degree edges towards the leaves.
 
         // We first sort the edges by degree.
-        unsigned long i;
         unsigned long* sortedEdges = new unsigned long[nEdges];
         unsigned long* edgePos = new unsigned long[nEdges];
 
-        for (i = 0; i < nEdges; ++i)
+        for (unsigned long i = 0; i < nEdges; ++i)
             sortedEdges[i] = i;
         std::sort(sortedEdges, sortedEdges + nEdges,
             DegreeGreaterThan<3, 1>(tri));
-        for (i = 0; i < nEdges; ++i)
+        for (unsigned long i = 0; i < nEdges; ++i)
             edgePos[sortedEdges[i]] = i;
 
         // Run through all admissible colourings.
@@ -667,7 +666,7 @@ namespace {
 #endif
                 // Increment ans appropriately.
                 valColour = 1;
-                for (i = 0; i < tri.size(); i++) {
+                for (unsigned long i = 0; i < tri.size(); i++) {
                     tet = tri.tetrahedron(i);
                     init.tetContrib(tet,
                         colour[tet->edge(0)->index()],
@@ -709,7 +708,8 @@ namespace {
                 index2 = emb.tetrahedron()->edge(
                     NEdge::edgeNumber[emb.vertices()[1]]
                     [emb.vertices()[2]])->index();
-                if (edgePos[index1] <= curr && edgePos[index2] <= curr) {
+                if (static_cast<long>(edgePos[index1]) <= curr &&
+                        static_cast<long>(edgePos[index2]) <= curr) {
                     // We've decided upon colours for all three edges of
                     // this triangle containing the current edge.
                     if (! init.isAdmissible(colour[index1], colour[index2],
@@ -734,7 +734,7 @@ namespace {
 
         // Compute the vertex contributions separately, since these are
         // constant.
-        for (i = 0; i < tri.countVertices(); i++)
+        for (unsigned long  i = 0; i < tri.countVertices(); i++)
             ans *= init.vertexContrib;
 
         return ans;
@@ -786,7 +786,8 @@ namespace {
                 for (i = 0; i < 6; ++i) {
                     edge = tet->edge(i);
                     ++seenDegree[index][edge->index()];
-                    if (seenDegree[index][edge->index()] == edge->degree())
+                    if (seenDegree[index][edge->index()] ==
+                            static_cast<int>(edge->degree()))
                         seenDegree[index][edge->index()] = -1;
                 }
             } else {
@@ -796,7 +797,8 @@ namespace {
                 for (i = 0; i < nEdges; ++i) {
                     seenDegree[index][i] = seenDegree[child->index()][i] +
                         seenDegree[sibling->index()][i];
-                    if (seenDegree[index][i] == tri.edge(i)->degree())
+                    if (seenDegree[index][i] ==
+                            static_cast<int>(tri.edge(i)->degree()))
                         seenDegree[index][i] = -1;
                 }
             }
@@ -1086,7 +1088,7 @@ namespace {
         // The final bag contains no tetrahedra, and so there should be
         // only one colouring stored (in which all edge colours are aggregated).
         TVType ans = partial[nBags - 1]->begin()->second;
-        for (i = 0; i < tri.countVertices(); i++)
+        for (unsigned i = 0; i < tri.countVertices(); i++)
             ans *= init.vertexContrib;
 
         for (it = partial[nBags - 1]->begin(); it != partial[nBags - 1]->end();

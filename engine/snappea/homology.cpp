@@ -51,8 +51,8 @@ const NAbelianGroup* NSnapPeaTriangulation::homologyFilled() const {
     // Pass the relations to Regina.
     NMatrixInt rRelns(sRelns.num_rows, sRelns.num_columns);
     unsigned i, j;
-    for (i = 0; i < sRelns.num_rows; ++i)
-        for (j = 0; j < sRelns.num_columns; ++j)
+    for (i = 0; static_cast<int>(i) < sRelns.num_rows; ++i)
+        for (j = 0; static_cast<int>(j) < sRelns.num_columns; ++j)
             rRelns.entry(i, j) = sRelns.relations[i][j];
 
     regina::snappea::free_relations(&sRelns);

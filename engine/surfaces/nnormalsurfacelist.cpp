@@ -44,7 +44,7 @@ namespace {
         "Legacy standard almost normal (pruned tri-quad-oct)";
 }
 
-const NormalCoords NNormalSurfaceList::STANDARD = NS_STANDARD;;
+const NormalCoords NNormalSurfaceList::STANDARD = NS_STANDARD;
 const NormalCoords NNormalSurfaceList::QUAD = NS_QUAD;
 const NormalCoords NNormalSurfaceList::AN_LEGACY = NS_AN_LEGACY;
 const NormalCoords NNormalSurfaceList::AN_QUAD_OCT = NS_AN_QUAD_OCT;

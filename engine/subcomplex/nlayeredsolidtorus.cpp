@@ -275,9 +275,10 @@ NLayeredSolidTorus* NLayeredSolidTorus::formsLayeredSolidTorusBase(
         // Massage the indices in topEdge to match topFace.
         for (i = 0; i < 3; i++) {
             // Make sure ans->topEdge[i][0] is in face ans->topFace[0].
-            if (ans->topFace_[0] == NEdge::edgeVertex[ans->topEdge_[i][0]][0] ||
+            if (ans->topFace_[0] ==
+                    static_cast<int>(NEdge::edgeVertex[ans->topEdge_[i][0]][0]) ||
                     ans->topFace_[0] ==
-                    NEdge::edgeVertex[ans->topEdge_[i][0]][1]) {
+                    static_cast<int>(NEdge::edgeVertex[ans->topEdge_[i][0]][1])) {
                 j = ans->topEdge_[i][0];
                 ans->topEdge_[i][0] = ans->topEdge_[i][1];
                 ans->topEdge_[i][1] = j;
