@@ -130,7 +130,7 @@ bool NSpiralSolidTorus::isCanonical(const NTriangulation* tri) const {
 
     long baseIndex = tet[0]->index();
     for (size_t i = 1; i < nTet; i++)
-        if (tet[i]->index() < baseIndex)
+        if (static_cast<int>(tet[i]->index()) < baseIndex)
             return false;
 
     return true;

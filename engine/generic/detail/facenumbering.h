@@ -358,7 +358,7 @@ class FaceNumberingImpl : public FaceNumberingAPI<dim, subdim> {
 
             unsigned val = 0;
             for (i=0; i<=subdim; i++) {
-              if (dim - v[subdim-i] >= i+1) {
+              if (dim - v[subdim-i] >= static_cast<int>(i+1)) {
                 val += binomSmall_[dim-v[subdim-i]][i+1];
               }
             }
@@ -466,9 +466,9 @@ class FaceNumberingImpl<dim, 0, true> : public FaceNumberingAPI<dim, 0> {
             p[0] = face;
 
             int i;
-            for (i = 0; i < face; ++i)
+            for (i = 0; i < static_cast<int>(face); ++i)
                 p[dim - i] = i;
-            for (i = face + 1; i <= dim; ++i)
+            for (i = face + 1; i <= static_cast<int>(dim); ++i)
                 p[dim - i + 1] = i;
 
             return NPerm<dim + 1>(p);

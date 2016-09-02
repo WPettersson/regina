@@ -91,9 +91,8 @@ NTreeDecomposition::NTreeDecomposition(unsigned order, T const** graph,
         width_(0), root_(0) {
     Graph g(order);
 
-    int i, j;
-    for (i = 0; i < order; ++i)
-        for (j = 0; j < order; ++j)
+    for (unsigned i = 0; i < order; ++i)
+        for (unsigned j = 0; j < order; ++j)
             g.adj_[i][j] = graph[i][j] || graph[j][i];
 
     construct(g, alg);
