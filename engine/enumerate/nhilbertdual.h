@@ -485,7 +485,7 @@ inline void NHilbertDual::VecSpec<BitmaskType>::initNextHyp(
     nextHyp_ = NLargeInteger::zero;
 
     NLargeInteger tmp;
-    for (int i = 0; i < subspace.columns(); ++i)
+    for (unsigned i = 0; i < subspace.columns(); ++i)
         if (subspace.entry(row, i) != 0 && (*this)[i] != 0) {
             tmp = subspace.entry(row, i);
             tmp *= (*this)[i];

@@ -230,17 +230,23 @@ void NHilbertDual::reduceBasis(std::list<VecSpec<BitmaskType>*>& reduce,
         return;
 
     typename std::list<VecSpec<BitmaskType>*>::iterator i, next, red;
+#ifdef __REGINA_HILBERT_DUAL_OPT_DARWIN
     bool processed;
+#endif
 
     i = reduce.begin();
     next = i;
     ++next;
 
     while (i != reduce.end()) {
+#ifdef __REGINA_HILBERT_DUAL_OPT_DARWIN
         processed = true;
+#endif
         for (red = against.begin(); red != against.end(); ++red) {
             if (red == i) {
+#ifdef __REGINA_HILBERT_DUAL_OPT_DARWIN
                 processed = false;
+#endif
                 continue;
             }
 
