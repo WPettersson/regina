@@ -337,8 +337,8 @@ void Dim4GluingPermSearcher::runSearch(long maxDepth) {
 
     // ---------- Selecting the individual gluing permutations ----------
 
-    int minOrder = orderElt_;
-    int maxOrder = orderElt_ + maxDepth;
+    unsigned int minOrder = orderElt_;
+    unsigned int maxOrder = orderElt_ + maxDepth;
 
     Dim4PentFacet facet, adj;
 
@@ -586,10 +586,9 @@ void Dim4GluingPermSearcher::dumpData(std::ostream& out) const {
     out << (started_ ? 's' : '.');
     out << std::endl;
 
-    int nPent = size();
-    int i;
+    unsigned int nPent = size();
 
-    for (i = 0; i < nPent; ++i) {
+    for (unsigned i = 0; i < nPent; ++i) {
         if (i)
             out << ' ';
         out << orientation_[i];
@@ -597,7 +596,7 @@ void Dim4GluingPermSearcher::dumpData(std::ostream& out) const {
     out << std::endl;
 
     out << orderElt_ << ' ' << orderSize_ << std::endl;
-    for (i = 0; i < orderSize_; ++i) {
+    for (unsigned i = 0; i < orderSize_; ++i) {
         if (i)
             out << ' ';
         out << order_[i].simp << ' ' << order_[i].facet;
@@ -607,11 +606,11 @@ void Dim4GluingPermSearcher::dumpData(std::ostream& out) const {
     // ---------- Tracking of edge / triangle equivalence classes ----------
 
     out << nEdgeClasses_ << std::endl;
-    for (i = 0; i < 10 * nPent; ++i) {
+    for (unsigned i = 0; i < 10 * nPent; ++i) {
         edgeState_[i].dumpData(out);
         out << std::endl;
     }
-    for (i = 0; i < 25 * nPent; ++i) {
+    for (unsigned i = 0; i < 25 * nPent; ++i) {
         if (i)
             out << ' ';
         out << edgeStateChanged_[i];
@@ -619,11 +618,11 @@ void Dim4GluingPermSearcher::dumpData(std::ostream& out) const {
     out << std::endl;
 
     out << nTriangleClasses_ << std::endl;
-    for (i = 0; i < 10 * nPent; ++i) {
+    for (unsigned i = 0; i < 10 * nPent; ++i) {
         triState_[i].dumpData(out);
         out << std::endl;
     }
-    for (i = 0; i < 25 * nPent / 2; ++i) {
+    for (unsigned i = 0; i < 25 * nPent / 2; ++i) {
         if (i)
             out << ' ';
         out << triStateChanged_[i];
@@ -678,18 +677,17 @@ Dim4GluingPermSearcher::Dim4GluingPermSearcher(std::istream& in,
         inputError_ = true; return;
     }
 
-    int nPent = pairing_->size();
-    int p;
+    unsigned int nPent = pairing_->size();
 
     orientation_ = new int[nPent];
-    for (p = 0; p < nPent; ++p)
+    for (unsigned p = 0; p < nPent; ++p)
         in >> orientation_[p];
 
     order_ = new Dim4PentFacet[(nPent * 5) / 2];
     in >> orderElt_ >> orderSize_;
-    for (p = 0; p < orderSize_; ++p) {
+    for (unsigned p = 0; p < orderSize_; ++p) {
         in >> order_[p].simp >> order_[p].facet;
-        if (order_[p].simp >= nPent || order_[p].simp < 0 ||
+        if (order_[p].simp >= static_cast<int>(nPent) || order_[p].simp < 0 ||
                 order_[p].facet >= 5 || order_[p].facet < 0) {
             inputError_ = true; return;
         }
@@ -702,21 +700,19 @@ Dim4GluingPermSearcher::Dim4GluingPermSearcher(std::istream& in,
 
     // ---------- Tracking of edge / triangle equivalence classes ----------
 
-    unsigned i;
-
     in >> nEdgeClasses_;
     if (nEdgeClasses_ > 10 * nPent) {
         inputError_ = true; return;
     }
 
     edgeState_ = new PentEdgeState[10 * nPent];
-    for (i = 0; i < 10 * nPent; ++i)
+    for (unsigned i = 0; i < 10 * nPent; ++i)
         if (! edgeState_[i].readData(in, 10 * nPent)) {
             inputError_ = true; return;
         }
 
     edgeStateChanged_ = new int[25 * nPent];
-    for (i = 0; i < 25 * nPent; ++i) {
+    for (unsigned i = 0; i < 25 * nPent; ++i) {
         in >> edgeStateChanged_[i];
         if (edgeStateChanged_[i] < -1 ||
                  edgeStateChanged_[i] >= 10 * static_cast<int>(nPent)) {
@@ -730,13 +726,13 @@ Dim4GluingPermSearcher::Dim4GluingPermSearcher(std::istream& in,
     }
 
     triState_ = new PentTriangleState[10 * nPent];
-    for (i = 0; i < 10 * nPent; ++i)
+    for (unsigned i = 0; i < 10 * nPent; ++i)
         if (! triState_[i].readData(in, 10 * nPent)) {
             inputError_ = true; return;
         }
 
     triStateChanged_ = new int[25 * nPent / 2];
-    for (i = 0; i < 25 * nPent / 2; ++i) {
+    for (unsigned i = 0; i < 25 * nPent / 2; ++i) {
         in >> triStateChanged_[i];
         if (triStateChanged_[i] < -1 ||
                  triStateChanged_[i] >= 10 * static_cast<int>(nPent)) {
