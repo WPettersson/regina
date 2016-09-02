@@ -53,7 +53,7 @@ namespace {
 }
 
 void addDim2Component() {
-    class_<Component<2>, std::unique_ptr<Component<2>>, boost::noncopyable>
+    class_<Component<2>, std::auto_ptr<Component<2>>, boost::noncopyable>
             ("Component2", no_init)
         .def("index", &Dim2Component::index)
         .def("size", &Dim2Component::size)

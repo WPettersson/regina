@@ -49,7 +49,7 @@ namespace {
 }
 
 void addNIsomorphism() {
-    class_<Isomorphism<3>, std::unique_ptr<Isomorphism<3>>, boost::noncopyable>
+    class_<Isomorphism<3>, std::auto_ptr<Isomorphism<3>>, boost::noncopyable>
             ("Isomorphism3", init<const NIsomorphism&>())
         .def("size", &NIsomorphism::size)
         .def("getSourceSimplices", &NIsomorphism::size)

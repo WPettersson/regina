@@ -49,7 +49,7 @@ namespace {
 }
 
 void addNSignature() {
-    class_<NSignature, std::unique_ptr<NSignature>,
+    class_<NSignature, std::auto_ptr<NSignature>,
         boost::noncopyable>("NSignature", init<const NSignature&>())
         .def("order", &NSignature::order)
         .def("getOrder", &NSignature::order)

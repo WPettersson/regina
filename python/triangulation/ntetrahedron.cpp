@@ -47,7 +47,7 @@ using namespace regina::python;
 using regina::NTetrahedron;
 
 void addNTetrahedron() {
-    class_<regina::Simplex<3>, std::unique_ptr<regina::Simplex<3>>,
+    class_<regina::Simplex<3>, std::auto_ptr<regina::Simplex<3>>,
             boost::noncopyable>("Simplex3", no_init)
         .def("description", &NTetrahedron::description,
             return_value_policy<return_by_value>())

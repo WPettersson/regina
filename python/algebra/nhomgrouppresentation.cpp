@@ -54,7 +54,7 @@ namespace {
 }
 
 void addNHomGroupPresentation() {
-    class_<NHomGroupPresentation, std::unique_ptr<NHomGroupPresentation>,
+    class_<NHomGroupPresentation, std::auto_ptr<NHomGroupPresentation>,
             boost::noncopyable>
             ("NHomGroupPresentation", init<const NHomGroupPresentation&>())
         .def(init<const NGroupPresentation&>())

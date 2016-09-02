@@ -93,7 +93,7 @@ namespace {
 
 template <int dim>
 void addFacetPairing(const char* name) {
-    class_<regina::FacetPairing<dim>, std::unique_ptr<regina::FacetPairing<dim>>,
+    class_<regina::FacetPairing<dim>, std::auto_ptr<regina::FacetPairing<dim>>,
             boost::noncopyable>(name, init<const FacetPairing<dim>&>())
         .def(init<const Triangulation<dim>&>())
         .def("size", &FacetPairing<dim>::size)

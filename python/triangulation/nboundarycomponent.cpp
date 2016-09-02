@@ -42,7 +42,7 @@ using namespace boost::python;
 using regina::NBoundaryComponent;
 
 void addNBoundaryComponent() {
-    class_<NBoundaryComponent, std::unique_ptr<NBoundaryComponent>,
+    class_<NBoundaryComponent, std::auto_ptr<NBoundaryComponent>,
             boost::noncopyable> ("NBoundaryComponent", no_init)
         .def("index", &NBoundaryComponent::index)
         .def("countFaces", &regina::python::countFaces<NBoundaryComponent, 3>)

@@ -46,7 +46,7 @@ using namespace regina::python;
 using regina::Dim4BoundaryComponent;
 
 void addDim4BoundaryComponent() {
-    class_<Dim4BoundaryComponent, std::unique_ptr<Dim4BoundaryComponent>,
+    class_<Dim4BoundaryComponent, std::auto_ptr<Dim4BoundaryComponent>,
             boost::noncopyable>("Dim4BoundaryComponent", no_init)
         .def("index", &Dim4BoundaryComponent::index)
         .def("countFaces",

@@ -73,7 +73,7 @@ void addNCensus() {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<NCensusHit, std::unique_ptr<NCensusHit>,
+    class_<NCensusHit, std::auto_ptr<NCensusHit>,
             boost::noncopyable>("NCensusHit", no_init)
         .def("name", &NCensusHit::name,
             return_value_policy<copy_const_reference>())
@@ -84,7 +84,7 @@ void addNCensus() {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<NCensusHits, std::unique_ptr<NCensusHits>,
+    class_<NCensusHits, std::auto_ptr<NCensusHits>,
             boost::noncopyable>("NCensusHits", init<>())
         .def("first", &NCensusHits::first,
             return_internal_reference<>())
@@ -93,7 +93,7 @@ void addNCensus() {
         .def(regina::python::add_eq_operators())
     ;
 
-    scope s = class_<NCensus, std::unique_ptr<NCensus>,
+    scope s = class_<NCensus, std::auto_ptr<NCensus>,
             boost::noncopyable>("NCensus", no_init)
         .def("lookup", lookup_tri,
             return_value_policy<manage_new_object>())

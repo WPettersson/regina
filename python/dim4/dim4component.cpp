@@ -56,7 +56,7 @@ namespace {
 }
 
 void addDim4Component() {
-    class_<Component<4>, std::unique_ptr<Component<4>>, boost::noncopyable>
+    class_<Component<4>, std::auto_ptr<Component<4>>, boost::noncopyable>
             ("Component4", no_init)
         .def("index", &Dim4Component::index)
         .def("size", &Dim4Component::size)

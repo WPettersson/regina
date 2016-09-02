@@ -78,7 +78,7 @@ void addDim2Vertex() {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<Face<2, 0>, std::unique_ptr<Face<2, 0>>, boost::noncopyable>
+    class_<Face<2, 0>, std::auto_ptr<Face<2, 0>>, boost::noncopyable>
             ("Face2_0", no_init)
         .def("index", &Dim2Vertex::index)
         .def("isValid", &Dim2Vertex::isValid)

@@ -94,7 +94,7 @@ namespace {
 }
 
 void addNNormalHypersurface() {
-    class_<NNormalHypersurface, std::unique_ptr<NNormalHypersurface>,
+    class_<NNormalHypersurface, std::auto_ptr<NNormalHypersurface>,
             boost::noncopyable>("NNormalHypersurface", no_init)
         .def("__init__", make_constructor(fromCoordinates))
         .def("clone", &NNormalHypersurface::clone,

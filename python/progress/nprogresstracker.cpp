@@ -38,7 +38,7 @@ using namespace boost::python;
 using regina::NProgressTracker;
 
 void addNProgressTracker() {
-    class_<NProgressTracker, std::unique_ptr<NProgressTracker>,
+    class_<NProgressTracker, std::auto_ptr<NProgressTracker>,
             boost::noncopyable>("NProgressTracker", init<>())
         .def("isFinished", &NProgressTracker::isFinished)
         .def("percentChanged", &NProgressTracker::percentChanged)

@@ -55,7 +55,7 @@ namespace {
 }
 
 void addNComponent() {
-    class_<Component<3>, std::unique_ptr<Component<3>>, boost::noncopyable>
+    class_<Component<3>, std::auto_ptr<Component<3>>, boost::noncopyable>
             ("Component3", no_init)
         .def("index", &NComponent::index)
         .def("size", &NComponent::size)

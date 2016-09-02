@@ -141,7 +141,7 @@ namespace {
 
 template <int dim>
 void addSimplex(const char* name) {
-    class_<regina::Simplex<dim>, std::unique_ptr<regina::Simplex<dim>>,
+    class_<regina::Simplex<dim>, std::auto_ptr<regina::Simplex<dim>>,
             boost::noncopyable>(name, no_init)
         .def("description", &Simplex<dim>::description,
             return_value_policy<return_by_value>())

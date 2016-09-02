@@ -101,7 +101,7 @@ void addDim4Vertex() {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<Face<4, 0>, std::unique_ptr<Face<4, 0>>, boost::noncopyable>
+    class_<Face<4, 0>, std::auto_ptr<Face<4, 0>>, boost::noncopyable>
             ("Face4_0", no_init)
         .def("index", &Dim4Vertex::index)
         .def("embeddings", Dim4Vertex_embeddings_list)

@@ -93,7 +93,7 @@ namespace {
 }
 
 void addNFacePairing() {
-    class_<NFacePairing, std::unique_ptr<NFacePairing>, boost::noncopyable>
+    class_<NFacePairing, std::auto_ptr<NFacePairing>, boost::noncopyable>
             ("NFacePairing", init<const NFacePairing&>())
         .def(init<const NTriangulation&>())
         .def("size", &NFacePairing::size)

@@ -268,7 +268,7 @@ void addFace(const char* name, const char* embName) {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<regina::Face<dim, subdim>, std::unique_ptr<regina::Face<dim, subdim>>,
+    class_<regina::Face<dim, subdim>, std::auto_ptr<regina::Face<dim, subdim>>,
             boost::noncopyable>(name, no_init)
         .def("isValid", &Face<dim, subdim>::isValid)
         .def(face_validity_types<dim, subdim, dim - subdim>())

@@ -162,7 +162,7 @@ void addNGroupPresentation() {
     ;
 
     class_<NGroupPresentation,
-            std::unique_ptr<NGroupPresentation>, boost::noncopyable>
+            std::auto_ptr<NGroupPresentation>, boost::noncopyable>
             ("NGroupPresentation")
         .def(init<const NGroupPresentation&>())
         .def("addGenerator", &NGroupPresentation::addGenerator,

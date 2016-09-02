@@ -84,7 +84,7 @@ void addDim4Tetrahedron() {
         .def(regina::python::add_eq_operators())
     ;
 
-    class_<Face<4, 3>, std::unique_ptr<Face<4, 3>>,
+    class_<Face<4, 3>, std::auto_ptr<Face<4, 3>>,
             boost::noncopyable>("Face4_3", no_init)
         .def("index", &Dim4Tetrahedron::index)
         .def("degree", &Dim4Tetrahedron::degree)

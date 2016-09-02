@@ -104,7 +104,7 @@ namespace {
 
 void addNMatrixInt() {
     scope s = class_<NMatrixInt,
-            std::unique_ptr<NMatrixInt>, boost::noncopyable>("NMatrixInt",
+            std::auto_ptr<NMatrixInt>, boost::noncopyable>("NMatrixInt",
             init<unsigned long, unsigned long>())
         .def(init<const NMatrixInt&>())
         .def("initialise", &NMatrixInt::initialise)

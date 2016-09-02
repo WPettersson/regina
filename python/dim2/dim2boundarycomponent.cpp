@@ -41,7 +41,7 @@ using namespace boost::python;
 using regina::Dim2BoundaryComponent;
 
 void addDim2BoundaryComponent() {
-    class_<Dim2BoundaryComponent, std::unique_ptr<Dim2BoundaryComponent>,
+    class_<Dim2BoundaryComponent, std::auto_ptr<Dim2BoundaryComponent>,
             boost::noncopyable> ("Dim2BoundaryComponent", no_init)
         .def("index", &Dim2BoundaryComponent::index)
         .def("countFaces",
