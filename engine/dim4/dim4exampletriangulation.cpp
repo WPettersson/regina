@@ -428,7 +428,7 @@ Dim4Triangulation* Dim4ExampleTriangulation::iBundle(
 
     // Glue adjacent prisms together.
     unsigned long adjIndex;
-    unsigned face;
+    int face;
     const NTetrahedron *tet, *adj;
     for (i = 0; i < n; ++i) {
         tet = base.tetrahedron(i);
