@@ -181,21 +181,21 @@ class NTreeTraversal : public BanConstraint {
                  or NS_AN_STANDARD if we are allowing octagons in
                  almost normal surfaces, or NS_ANGLE if we are searching
                  for taut angle structures. */
-        const int nTets_;
+        const unsigned nTets_;
             /**< The number of tetrahedra in the underlying triangulation. */
-        const int nTypes_;
+        const unsigned nTypes_;
             /**< The total length of a type vector. */
-        const int nTableaux_;
+        const unsigned nTableaux_;
             /**< The maximum number of tableaux that we need to keep in memory
                  at any given time during the backtracking search. */
 
         // Details of the current state of the backtracking search:
-        char* type_;
+        unsigned char* type_;
             /**< The current working type vector.  As the search runs,
                  we modify this type vector in-place.  Any types beyond
                  the current level in the search tree will always be set
                  to zero. */
-        int* typeOrder_;
+        unsigned* typeOrder_;
             /**< A permutation of 0,...,\a nTypes_-1 that indicates in
                  which order we select types: the first type we select
                  (at the root of the tree) is type_[typeOrder_[0]], and the
@@ -204,7 +204,7 @@ class NTreeTraversal : public BanConstraint {
                  allowed to change as the algorithm runs (though of
                  course you can only change sections of the permutation
                  that correspond to types not yet selected). */
-        int level_;
+        unsigned level_;
             /**< The current level in the search tree.
                  As the search runs, this holds the index into
                  typeOrder_ corresponding to the last type that we chose. */
@@ -562,7 +562,7 @@ class NTreeTraversal : public BanConstraint {
          * triangle type from \a startFrom onwards, or -1 if there are no
          * more remaining.
          */
-        int nextUnmarkedTriangleType(int startFrom);
+        int nextUnmarkedTriangleType(unsigned startFrom);
 
         /**
          * Determines how many different values we could assign to the given
@@ -1319,7 +1319,7 @@ class NTreeSingleSoln :
         using NTreeTraversal<LPConstraint, BanConstraint, Integer>::setNext;
 
     private:
-        int nextZeroLevel_;
+        unsigned nextZeroLevel_;
             /**< The next level in the search tree at which we will force some
                  triangle coordinate to zero.  We use this to avoid vertex
                  links by dynamically reorganising the search tree as we run
@@ -1477,7 +1477,7 @@ inline void NTreeTraversal<LPConstraint, BanConstraint, Integer>::dumpTypes(
 
 template <class LPConstraint, typename BanConstraint, typename Integer>
 inline int NTreeTraversal<LPConstraint, BanConstraint, Integer>::
-        nextUnmarkedTriangleType(int startFrom) {
+        nextUnmarkedTriangleType(unsigned startFrom) {
     while (startFrom < nTypes_ &&
             BanConstraint::marked_[2 * nTets_ + startFrom])
         ++startFrom;

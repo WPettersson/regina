@@ -133,7 +133,7 @@ class NTypeTrie {
          * @param entry the type vector to insert.
          * @param len the number of elements in the given type vector.
          */
-        void insert(const char* entry, unsigned len);
+        void insert(const unsigned char* entry, unsigned len);
 
         /**
          * Determines whether the given type vector dominates any vector
@@ -148,7 +148,7 @@ class NTypeTrie {
          * @return \c true if and only if \a vec dominates some type
          * vector stored in this trie.
          */
-        bool dominates(const char* vec, unsigned len) const;
+        bool dominates(const unsigned char* vec, unsigned len) const;
 };
 
 /*@}*/
@@ -179,15 +179,15 @@ inline void NTypeTrie<nTypes>::clear() {
 }
 
 template <int nTypes>
-void NTypeTrie<nTypes>::insert(const char* entry, unsigned len) {
+void NTypeTrie<nTypes>::insert(const unsigned char* entry, unsigned len) {
     // Strip off trailing zeroes.
     while (len > 0 && ! entry[len - 1])
         --len;
 
     // Insert this type vector, creating new nodes only when required.
     NTypeTrie<nTypes>* node = this;
-    const char* next = entry;
-    for (int pos = 0; pos < len; ++pos, ++next) {
+    const unsigned char* next = entry;
+    for (unsigned pos = 0; pos < len; ++pos, ++next) {
         if (! node->child_[*next])
             node->child_[*next] = new NTypeTrie<nTypes>();
         node = node->child_[*next];
@@ -196,7 +196,7 @@ void NTypeTrie<nTypes>::insert(const char* entry, unsigned len) {
 }
 
 template <int nTypes>
-bool NTypeTrie<nTypes>::dominates(const char* vec, unsigned len) const {
+bool NTypeTrie<nTypes>::dominates(const unsigned char* vec, unsigned len) const {
     // Strip off trailing zeroes.
     while (len > 0 && ! vec[len - 1])
         --len;
@@ -214,7 +214,7 @@ bool NTypeTrie<nTypes>::dominates(const char* vec, unsigned len) const {
     int level = 0;
     node[0] = this;
     while (level >= 0) {
-        if ((! node[level]) || level > len) {
+        if ((! node[level]) || level > static_cast<int>(len)) {
             // If node[level] is 0, then we ran out of siblings
             // at this level.
             // If level > len, then any vector in this subtree

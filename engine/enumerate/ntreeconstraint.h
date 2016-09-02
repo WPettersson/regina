@@ -273,7 +273,7 @@ class LPConstraintBase {
          * replaced with the zero functions instead).
          */
         static bool addRows(LPCol<LPConstraintBase>* col,
-            const int* columnPerm, const NTriangulation* tri);
+            const unsigned* columnPerm, const NTriangulation* tri);
 
         /**
          * Explicitly constraints each of these linear functions to an
@@ -410,7 +410,7 @@ class LPConstraintNone : public LPConstraintSubspace {
         };
 
         static bool addRows(LPCol<regina::LPConstraintNone>*,
-            const int*, const NTriangulation*);
+            const unsigned*, const NTriangulation*);
         template<typename Integer>
         static void constrain(
             LPData<regina::LPConstraintNone, Integer>&, unsigned);
@@ -475,7 +475,7 @@ class LPConstraintEuler : public LPConstraintBase {
 
         static bool addRows(
             LPCol<regina::LPConstraintEuler>* col,
-            const int* columnPerm, const NTriangulation* tri);
+            const unsigned* columnPerm, const NTriangulation* tri);
         template<typename Integer>
         static void constrain(
             LPData<regina::LPConstraintEuler, Integer>& lp,
@@ -548,7 +548,7 @@ class LPConstraintNonSpun : public LPConstraintSubspace {
 
         static bool addRows(
             LPCol<regina::LPConstraintNonSpun>* col,
-            const int* columnPerm, const NTriangulation* tri);
+            const unsigned* columnPerm, const NTriangulation* tri);
         template <typename Integer>
         static void constrain(
             LPData<regina::LPConstraintNonSpun, Integer>& lp,
@@ -681,7 +681,7 @@ class BanConstraintBase {
          * permutation must be the same permutation returned by
          * LPInitialTableaux::columnPerm().
          */
-        void init(const int* columnPerm);
+        void init(const unsigned* columnPerm);
 
         /**
          * Indicates whether the given coordinate system is supported by
@@ -733,7 +733,7 @@ class BanNone : public BanConstraintBase {
          */
         BanNone(const NTriangulation* tri, int coords);
 
-        void init(const int*);
+        void init(const unsigned*);
         static bool supported(NormalCoords coords);
 };
 
@@ -778,7 +778,7 @@ class BanBoundary : public BanConstraintBase {
          */
         BanBoundary(const NTriangulation* tri, int coords);
 
-        void init(const int* columnPerm);
+        void init(const unsigned* columnPerm);
         static bool supported(NormalCoords coords);
 };
 
@@ -830,7 +830,7 @@ class BanTorusBoundary : public BanConstraintBase {
          */
         BanTorusBoundary(const NTriangulation* tri, int coords);
 
-        void init(const int* columnPerm);
+        void init(const unsigned* columnPerm);
         static bool supported(NormalCoords coords);
 };
 
@@ -864,7 +864,7 @@ inline Integer LPConstraintNone::Coefficients::innerProductOct(
 
 inline bool LPConstraintNone::addRows(
         LPCol<regina::LPConstraintNone>*,
-        const int*, const NTriangulation*) {
+        const unsigned*, const NTriangulation*) {
     return true;
 }
 
@@ -1007,7 +1007,7 @@ inline BanNone::BanNone(const NTriangulation* tri, int coords) :
         BanConstraintBase(tri, coords) {
 }
 
-inline void BanNone::init(const int*) {
+inline void BanNone::init(const unsigned*) {
 }
 
 inline bool BanNone::supported(NormalCoords) {

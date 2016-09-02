@@ -147,7 +147,7 @@ LPInitialTableaux<LPConstraint>::LPInitialTableaux(
 
     // Reorder the columns using a good heuristic.
     cols_ = eqns_->columns() + LPConstraint::nConstraints;
-    columnPerm_ = new int[cols_];
+    columnPerm_ = new unsigned [cols_];
     reorder(enumeration);
 
     // Create and fill the sparse columns.
@@ -166,18 +166,17 @@ LPInitialTableaux<LPConstraint>::LPInitialTableaux(
 template <class LPConstraint>
 void LPInitialTableaux<LPConstraint>::reorder(bool) {
     // This is a "do-nothing" version of reorder().
-    int i, j;
     if (coords_ == NS_QUAD || coords_ == NS_ANGLE) {
         // Leave the columns exactly as they were.
-        for (i = 0; i < cols_; ++i)
+        for (unsigned i = 0; i < cols_; ++i)
             columnPerm_[i] = i;
         return;
     } else {
         // Keep the tetrahedra in the same order, but move
         // quadrilaterals to the front and triangles to the back
         // as required by columnPerm().
-        int n = tri_->size();
-        for (i = 0; i < n; ++i) {
+        unsigned n = tri_->size();
+        for (unsigned i = 0; i < n; ++i) {
             columnPerm_[3 * i] = 7 * i + 4;
             columnPerm_[3 * i + 1] = 7 * i + 5;
             columnPerm_[3 * i + 2] = 7 * i + 6;
@@ -195,9 +194,9 @@ void LPInitialTableaux<LPConstraint>::reorder(bool) {
     //
     // From here on we copy code directly from the "real" reorder()
     // below.
-    int* tmp = new int[eqns_->columns()];
+    unsigned* tmp = new unsigned[eqns_->columns()];
     std::copy(columnPerm_, columnPerm_ + eqns_->columns(), tmp);
-    for (i = 0; i < eqns_->columns(); ++i) {
+    for (unsigned i = 0; i < eqns_->columns(); ++i) {
         // Column tmp[i] of the matrix should be moved to
         // column i.
         if (tmp[i] == i)
@@ -206,6 +205,7 @@ void LPInitialTableaux<LPConstraint>::reorder(bool) {
         eqns_->swapColumns(i, tmp[i]);
 
         // Adjust links to the old column i, which is now column tmp[i].
+        unsigned j;
         for (j = i + 1; j < eqns_->columns(); ++j)
             if (tmp[j] == i)
                 break; // This is the link we need to change.
@@ -223,14 +223,13 @@ void LPInitialTableaux<LPConstraint>::reorder(bool) {
     // If we have extra variables for additional constraints or
     // objectives, append the corresponding entries to the end of
     // the permutation for completeness.
-    for (i = 0; i < LPConstraint::nConstraints; ++i)
+    for (unsigned i = 0; i < LPConstraint::nConstraints; ++i)
         columnPerm_[cols_ - i - 1] = cols_ - i - 1;
 }
 #else
 template <class LPConstraint>
 void LPInitialTableaux<LPConstraint>::reorder(bool enumeration) {
-    int n = tri_->size();
-    int i, j, k;
+    unsigned n = tri_->size();
 
     // Fill the columnPerm_ array according to what kind of
     // problem we're trying to solve.
@@ -241,8 +240,8 @@ void LPInitialTableaux<LPConstraint>::reorder(bool enumeration) {
         // use in quadrilateral coordinates, and then just fill
         // in the triangles at the end.
         LPInitialTableaux quad(tri_, NS_QUAD, true /* enumeration */);
-        for (i = 0; i < n; ++i) {
-            k = quad.columnPerm()[3 * i] / 3;
+        for (unsigned i = 0; i < n; ++i) {
+            unsigned k = quad.columnPerm()[3 * i] / 3;
             columnPerm_[3 * i] = 7 * k + 4;
             columnPerm_[3 * i + 1] = 7 * k + 5;
             columnPerm_[3 * i + 2] = 7 * k + 6;
@@ -254,7 +253,7 @@ void LPInitialTableaux<LPConstraint>::reorder(bool enumeration) {
     } else if (coords_ == NS_ANGLE) {
         // TODO: Find a good heuristic to use for angle structure coordinates.
         // For now, we'll leave the columns exactly as they were.
-        for (i = 0; i < cols_; ++i)
+        for (unsigned i = 0; i < cols_; ++i)
             columnPerm_[i] = i;
         return;
     } else {
@@ -279,18 +278,18 @@ void LPInitialTableaux<LPConstraint>::reorder(bool enumeration) {
 
         // Off we go, one row at a time.
         int bestRow, best, curr;
-        for (i = 0; i < rank_; ++i) {
+        for (unsigned i = 0; i < rank_; ++i) {
             // Seek out the ith row to process.
             // Because the first rank_ rows of the matrix are full rank,
             // we are guaranteed that this row will be non-zero.
 
             best = n + 1; // No row touches more than n tetrahedra.
 
-            for (j = 0; j < rank_; ++j) {
+            for (unsigned j = 0; j < rank_; ++j) {
                 if (used[j])
                     continue;
                 curr = 0;
-                for (k = 0; k < n; ++k) {
+                for (unsigned k = 0; k < n; ++k) {
                     if (touched[k])
                         continue;
                     if (coords_ == NS_QUAD) {
@@ -321,7 +320,7 @@ void LPInitialTableaux<LPConstraint>::reorder(bool enumeration) {
             // haven't already used yet, and place the corresponding
             // columns at the end of the matrix.
             used[bestRow] = true;
-            for (k = 0; k < n; ++k) {
+            for (unsigned k = 0; k < n; ++k) {
                 if (touched[k])
                     continue;
                 if (coords_ == NS_QUAD) {
@@ -367,7 +366,7 @@ void LPInitialTableaux<LPConstraint>::reorder(bool enumeration) {
         // We have now processed all rows.  However, there may be some
         // tetrahedra that appear in no rows at all.
         // Make sure we catch these tetrahedra as well.
-        for (k = 0; k < n; ++k) {
+        for (unsigned k = 0; k < n; ++k) {
             if (touched[k])
                 continue;
             touched[k] = true;
@@ -398,9 +397,9 @@ void LPInitialTableaux<LPConstraint>::reorder(bool enumeration) {
     // from LPConstraint, which we will deal with later).
     //
     // Now go ahead and actually move the columns around accordingly.
-    int* tmp = new int[eqns_->columns()];
+    unsigned* tmp = new unsigned[eqns_->columns()];
     std::copy(columnPerm_, columnPerm_ + eqns_->columns(), tmp);
-    for (i = 0; i < eqns_->columns(); ++i) {
+    for (unsigned i = 0; i < eqns_->columns(); ++i) {
         // Column tmp[i] of the matrix should be moved to
         // column i.
         if (tmp[i] == i)
@@ -409,6 +408,7 @@ void LPInitialTableaux<LPConstraint>::reorder(bool enumeration) {
         eqns_->swapColumns(i, tmp[i]);
 
         // Adjust links to the old column i, which is now column tmp[i].
+        unsigned j;
         for (j = i + 1; j < eqns_->columns(); ++j)
             if (tmp[j] == i)
                 break; // This is the link we need to change.
@@ -426,7 +426,7 @@ void LPInitialTableaux<LPConstraint>::reorder(bool enumeration) {
     // If we have extra variables for additional constraints or
     // objectives, append the corresponding entries to the end of
     // the permutation for completeness.
-    for (i = 0; i < LPConstraint::nConstraints; ++i)
+    for (unsigned i = 0; i < LPConstraint::nConstraints; ++i)
         columnPerm_[cols_ - i - 1] = cols_ - i - 1;
 }
 #endif
@@ -516,7 +516,7 @@ void LPData<LPConstraint, Integer>::constrainZero(unsigned pos) {
                 // "Delete" the row by moving it to index rank_, which
                 // is now outside our scope of interest (since we are
                 // now only interested in rows 0,...,rank_-1).
-                if (r != rank_) {
+                if (r != static_cast<int>(rank_)) {
                     std::swap(rhs_[r], rhs_[rank_]);
                     rowOps_.swapRows(r, rank_);
                     basis_[r] = basis_[rank_];
@@ -613,7 +613,7 @@ void LPData<LPConstraint, Integer>::constrainPositive(unsigned pos) {
         // This variable is not in the basis.
         // We know nothing about the column, so just do a full
         // element-by-element column subtraction.
-        for (r = 0; r < rank_; ++r) {
+        for (r = 0; r < static_cast<int>(rank_); ++r) {
             entry(r, pos, tmp);
             rhs_[r] -= tmp;
         }
@@ -745,7 +745,7 @@ void LPData<LPConstraint, Integer>::constrainOct(
             }
 
             Integer coeff, gcdRow;
-            for (int r = 0; r < rank_; ++r) {
+            for (int r = 0; r < static_cast<int>(rank_); ++r) {
                 if (r == row1)
                     continue;
 
@@ -814,7 +814,7 @@ void LPData<LPConstraint, Integer>::constrainOct(
                     // Move the empty row out of the active area
                     // of the matrix.
                     --rank_;
-                    if (row1 != rank_) {
+                    if (row1 != static_cast<int>(rank_)) {
                         std::swap(rhs_[row1], rhs_[rank_]);
                         rowOps_.swapRows(row1, rank_);
                         basis_[row1] = basis_[rank_];
@@ -850,9 +850,9 @@ void LPData<LPConstraint, Integer>::dump(std::ostream& out) const {
 
 template <class LPConstraint, typename Integer>
 void LPData<LPConstraint, Integer>::extractSolution(
-        NRay& v, const char* type) const {
+        NRay& v, const unsigned char* type) const {
     // Fetch details on how to undo the column permutation.
-    const int* columnPerm = origTableaux_->columnPerm();
+    const unsigned* columnPerm = origTableaux_->columnPerm();
 
     // We will multiply the solution vector by
     // lcm(basis coefficients in the tableaux), which will
@@ -861,9 +861,8 @@ void LPData<LPConstraint, Integer>::extractSolution(
     // vector down again at the end of this routine.
     //
     // First compute this lcm.
-    unsigned i;
     NLargeInteger lcm(1);
-    for (i = 0; i < rank_; ++i)
+    for (unsigned i = 0; i < rank_; ++i)
         lcm = lcm.lcm(NLargeInteger(entry(i, basis_[i])));
 
     // Now compute (lcm * the solution vector).  We do not yet
@@ -881,8 +880,8 @@ void LPData<LPConstraint, Integer>::extractSolution(
     // divisions in the following code are all perfectly safe
     // (and give precise integer results).
     NLargeInteger coord;
-    for (i = 0; i < rank_; ++i) {
-        if (basis_[i] >= v.size())
+    for (unsigned i = 0; i < rank_; ++i) {
+        if (basis_[i] >= static_cast<int>(v.size()))
             continue;
         coord = lcm;
         coord *= NLargeInteger(rhs_[i]);
@@ -918,13 +917,13 @@ void LPData<LPConstraint, Integer>::extractSolution(
             origTableaux_->tri()->size();
 
         // First take into account the quadrilateral types...
-        for (i = 0; i < nTets; ++i)
+        for (unsigned i = 0; i < nTets; ++i)
             if (type[i] && type[i] < 4) {
                 pos = columnPerm[3 * i + type[i] - 1];
                 v.setElement(pos, v[pos] + lcm);
             }
         // ... and then the triangle types.
-        for (i = 3 * nTets; i < v.size(); ++i)
+        for (unsigned i = 3 * nTets; i < v.size(); ++i)
             if (type[i - 2 * nTets]) {
                 pos = columnPerm[i];
                 v.setElement(pos, v[pos] + lcm);
@@ -1102,7 +1101,7 @@ void LPData<LPConstraint, Integer>::makeFeasible() {
     // before the first repeated basis).
     unsigned nCols = origTableaux_->columns();
     NBitmask currBasis(nCols);
-    for (r = 0; r < rank_; ++r)
+    for (r = 0; r < static_cast<int>(rank_); ++r)
         currBasis.set(basis_[r], true);
     NBitmask oldBasis(currBasis);
     unsigned long pow2 = 1;
@@ -1113,7 +1112,7 @@ void LPData<LPConstraint, Integer>::makeFeasible() {
         // If there are many, choose the variable with largest 
         // magnitude negative value.
         outCol = -1;
-        for (r = 0; r < rank_; ++r)
+        for (r = 0; r < static_cast<int>(rank_); ++r)
             if (rhs_[r] < 0) {
                 if (outCol < 0) {
                     // First candidate we've seen.
@@ -1187,7 +1186,7 @@ void LPData<LPConstraint, Integer>::makeFeasibleAntiCycling() {
         // Locate a variable in the basis with negative value.
         // If there are many, choose the one with largest index.
         outCol = -1;
-        for (r = 0; r < rank_; ++r)
+        for (r = 0; r < static_cast<int>(rank_); ++r)
             if (rhs_[r] < 0) {
                 if (basis_[r] > outCol)
                     outCol = basis_[r];

@@ -238,8 +238,8 @@ NTreeTraversal<LPConstraint, BanConstraint, Integer>::NTreeTraversal(
             (branchesPerQuad - 1) * nTets_ + 1 :
             (branchesPerQuad - 1) * nTets_ +
                 (branchesPerTri - 1) * nTets_ * 4 + 1),
-        type_(new char[nTypes_ + 1]),
-        typeOrder_(new int[nTypes_]),
+        type_(new unsigned char[nTypes_ + 1]),
+        typeOrder_(new unsigned[nTypes_]),
         level_(0),
         octLevel_(coords == NS_AN_STANDARD || coords == NS_AN_QUAD_OCT ?
             -1 : nTypes_),
@@ -251,12 +251,11 @@ NTreeTraversal<LPConstraint, BanConstraint, Integer>::NTreeTraversal(
     std::fill(type_, type_ + nTypes_ + 1, 0);
 
     // Set a default type order.
-    unsigned i;
-    for (i = 0; i < nTypes_; ++i)
+    for (unsigned i = 0; i < nTypes_; ++i)
         typeOrder_[i] = i;
 
     // Reserve space for all the tableaux that we will ever need.
-    for (i = 0; i < nTableaux_; ++i)
+    for (unsigned i = 0; i < nTableaux_; ++i)
         lp_[i].reserve(&origTableaux_);
 
     // Mark the location of the initial tableaux at the root node.
@@ -288,14 +287,14 @@ NTreeTraversal<LPConstraint, BanConstraint, Integer>::~NTreeTraversal() {
 template <class LPConstraint, typename BanConstraint, typename Integer>
 void NTreeTraversal<LPConstraint, BanConstraint, Integer>::setNext(
         int nextType) {
-    int* pos = std::find(typeOrder_ + level_ + 1,
+    unsigned* pos = std::find(typeOrder_ + level_ + 1,
         typeOrder_ + nTypes_, nextType);
     if (pos != typeOrder_ + level_ + 1) {
         // Use memmove(), which is safe when the source and
         // destination ranges overlap.
         memmove(typeOrder_ + level_ + 2 /* dest */,
             typeOrder_ + level_ + 1 /* src */,
-            (pos - (typeOrder_ + level_ + 1)) * sizeof(int));
+            (pos - (typeOrder_ + level_ + 1)) * sizeof(unsigned));
         typeOrder_[level_ + 1] = nextType;
     }
 }
@@ -394,11 +393,12 @@ double NTreeTraversal<LPConstraint, BanConstraint, Integer>::percent() const {
             percent += (range * type_[typeOrder_[i]]);
         } else {
             // Quadrilateral or octagon coordinate.
-            if (octLevel_ == nTypes_ || octLevel_ < i) {
+            if (octLevel_ == static_cast<int>(nTypes_) ||
+                    octLevel_ < static_cast<int>(i)) {
                 // Octagons have already been used, or were never available.
                 range /= 4.0;
                 percent += (range * type_[typeOrder_[i]]);
-            } else if (octLevel_ == i) {
+            } else if (octLevel_ == static_cast<int>(i)) {
                 // This coordinate is an octagon coordinate.
                 den = 3 * quadsRemaining + 4;
                 range /= den;
@@ -1263,7 +1263,7 @@ bool NTreeSingleSoln<LPConstraint, BanConstraint, Integer>::find() {
                     int bestQuad = -1;
                     int minBranches = 5; // Greater than any soln.
                     int tmp;
-                    for (int i = level_ + 1; i < nTypes_; ++i) {
+                    for (unsigned i = level_ + 1; i < nTypes_; ++i) {
                         if (typeOrder_[i] < nTets_) {
                             // It's an available quad type.
 #ifdef REGINA_NOOPT_MIN_FEASIBLE
@@ -1298,7 +1298,7 @@ bool NTreeSingleSoln<LPConstraint, BanConstraint, Integer>::find() {
                 // constrainPositive() to enact the change of
                 // variable so that we can reconstruct the
                 // surface correctly.
-                for (int i = 0; i < nTets_; ++i) {
+                for (unsigned i = 0; i < nTets_; ++i) {
                     if (type_[i] == 1) {
                         tmpLP_[0].initClone(*lpSlot_[level_ + 1]);
                         tmpLP_[0].constrainZero(3 * i);
