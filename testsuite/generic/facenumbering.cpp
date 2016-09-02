@@ -110,7 +110,7 @@ class FaceNumberingTest : public CppUnit::TestFixture {
             for (int f = 0; f < FaceNumbering<dim, subdim>::nFaces; ++f) {
                 NPerm p = FaceNumbering<dim, subdim>::ordering(f);
 
-                if (FaceNumbering<dim, subdim>::faceNumber(p) != f) {
+                if (static_cast<int>(FaceNumbering<dim, subdim>::faceNumber(p)) != f) {
                     std::ostringstream msg;
                     msg << "Face<" << dim << ", " << subdim
                         << "> does not have faceNumber(ordering(" << f

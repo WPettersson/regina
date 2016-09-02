@@ -401,7 +401,7 @@ inline FacetSpec<dim> IsomorphismBase<dim>::operator [] (
 template <int dim>
 bool IsomorphismBase<dim>::isIdentity() const {
     for (unsigned p = 0; p < nSimplices_; ++p) {
-        if (simpImage_[p] != p)
+        if (simpImage_[p] != static_cast<int>(p))
             return false;
         if (! facetPerm_[p].isIdentity())
             return false;
