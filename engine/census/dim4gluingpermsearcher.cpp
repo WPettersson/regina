@@ -894,14 +894,15 @@ bool Dim4GluingPermSearcher::mergeEdgeClasses() {
             // three vertices of the opposite pentachoron triangle in
             // ascending numerical order.
             tmpInvariant = 0;
+
             if (p[Dim4Triangle::triangleVertex[e][0]] ==
-                    Dim4Triangle::triangleVertex[f][0])
+                    static_cast<int>(Dim4Triangle::triangleVertex[f][0]))
                 ++tmpInvariant;
             if (p[Dim4Triangle::triangleVertex[e][1]] ==
-                    Dim4Triangle::triangleVertex[f][1])
+                    static_cast<int>(Dim4Triangle::triangleVertex[f][1]))
                 ++tmpInvariant;
             if (p[Dim4Triangle::triangleVertex[e][2]] ==
-                    Dim4Triangle::triangleVertex[f][2])
+                    static_cast<int>(Dim4Triangle::triangleVertex[f][2]))
                 ++tmpInvariant;
             hasTwistTriangle = (tmpInvariant == 1 ? 0 : 1);
 
@@ -1290,22 +1291,22 @@ bool Dim4GluingPermSearcher::mergeTriangleClasses() {
         // Vertices of a triangle are labelled in order from smallest to
         // largest.
         if (p[Dim4Triangle::triangleVertex[e][0]] ==
-                Dim4Triangle::triangleVertex[f][0]) {
+                static_cast<int>(Dim4Triangle::triangleVertex[f][0])) {
             if (p[Dim4Triangle::triangleVertex[e][1]] ==
-                    Dim4Triangle::triangleVertex[f][1])
+                    static_cast<int>(Dim4Triangle::triangleVertex[f][1]))
                 directTwist.setPermCode(NPerm3::code012);
             else
                 directTwist.setPermCode(NPerm3::code021);
         } else if (p[Dim4Triangle::triangleVertex[e][0]] ==
-                Dim4Triangle::triangleVertex[f][1]) {
+                static_cast<int>(Dim4Triangle::triangleVertex[f][1])) {
             if (p[Dim4Triangle::triangleVertex[e][1]] ==
-                    Dim4Triangle::triangleVertex[f][0])
+                    static_cast<int>(Dim4Triangle::triangleVertex[f][0]))
                 directTwist.setPermCode(NPerm3::code102);
             else
                 directTwist.setPermCode(NPerm3::code120);
         } else {
             if (p[Dim4Triangle::triangleVertex[e][1]] ==
-                    Dim4Triangle::triangleVertex[f][0])
+                    static_cast<int>(Dim4Triangle::triangleVertex[f][0]))
                 directTwist.setPermCode(NPerm3::code201);
             else
                 directTwist.setPermCode(NPerm3::code210);
