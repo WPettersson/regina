@@ -178,7 +178,7 @@ Dim4Triangulation* Dim4ExampleTriangulation::doubleCone(
     Dim4Pentachoron** pent = new Dim4Pentachoron*[2 * n];
 
     unsigned long i;
-    int face;
+    unsigned face;
     unsigned long adjIndex;
     const NTetrahedron *tet, *adjTet;
     NPerm4 map;
@@ -200,7 +200,7 @@ Dim4Triangulation* Dim4ExampleTriangulation::doubleCone(
                 continue;
 
             map = tet->adjacentGluing(face);
-            if (adjIndex == i && map[face] > face)
+            if (adjIndex == i && map[face] > static_cast<int>(face))
                 continue;
 
             pent[i]->join(face, pent[adjIndex], NPerm5::extend(map));
