@@ -156,10 +156,10 @@ class NBitmaskTest : public CppUnit::TestFixture {
         }
 
         template <typename BitmaskType>
-        void testBits(const char* typeDesc, int length) {
+        void testBits(const char* typeDesc, unsigned length) {
             {
                 BitmaskType b(length);
-                for (int i = 0; i <= length; ++i) {
+                for (unsigned i = 0; i <= length; ++i) {
                     if (b.bits() != i) {
                         std::ostringstream out;
                         out << "Bitmask using type " << typeDesc
@@ -175,7 +175,7 @@ class NBitmaskTest : public CppUnit::TestFixture {
 
             {
                 BitmaskType b(length);
-                for (int i = 0; i <= length; ++i) {
+                for (unsigned i = 0; i <= length; ++i) {
                     if (b.bits() != i) {
                         std::ostringstream out;
                         out << "Bitmask using type " << typeDesc
@@ -227,7 +227,8 @@ class NBitmaskTest : public CppUnit::TestFixture {
                 BitmaskType b(length);
                 b.flip();
                 b.truncate(i);
-                if (b.firstBit() != 0 || b.lastBit() != i-1 || b.bits() != i) {
+                if (b.firstBit() != 0 || b.lastBit() != i-1 ||
+                        static_cast<int>(b.bits()) != i) {
                     std::ostringstream out;
                     out << "Bitmask using type " << typeDesc
                         << ", len=" << length << " truncated to " << i

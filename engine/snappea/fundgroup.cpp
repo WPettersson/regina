@@ -65,7 +65,7 @@ const NGroupPresentation* NSnapPeaTriangulation::fundamentalGroupFilled(
     int *sReln, *sPos;
     int gen, currGen, currExp;
     NGroupExpression* rReln;
-    for (i = 0; i < regina::snappea::fg_get_num_relations(pres); ++i) {
+    for (i = 0; static_cast<int>(i) < regina::snappea::fg_get_num_relations(pres); ++i) {
         sReln = regina::snappea::fg_get_relation(pres, i);
         rReln = new NGroupExpression();
         currGen = currExp = 0;

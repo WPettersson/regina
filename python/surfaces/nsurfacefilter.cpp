@@ -30,9 +30,10 @@
  *                                                                        *
  **************************************************************************/
 
+#include "../safeheldtype.h"
+
 #include "surfaces/nnormalsurface.h"
 #include "surfaces/nsurfacefilter.h"
-#include "../safeheldtype.h"
 
 // Held type must be declared before boost/python.hpp
 #include <boost/python.hpp>

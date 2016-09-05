@@ -60,7 +60,6 @@ std::vector<BitmaskType>* NMaxAdmissible::enumerate(
 
     size_t dim = (*beginExtremalRays)->size();
     BitmaskType b(dim);
-    int i;
 
     // Rewrite the constraints as bitmasks.
     std::vector<BitmaskType> constMasks;
@@ -79,7 +78,7 @@ std::vector<BitmaskType>* NMaxAdmissible::enumerate(
     // the cone, i.e., the set of admissible extremal rays.
     std::vector<BitmaskType> rays;
     for (RayIterator rit = beginExtremalRays; rit != endExtremalRays; ++rit) {
-        for (i = 0; i < dim; ++i)
+        for (unsigned i = 0; i < dim; ++i)
             b.set(i, (**rit)[i] != 0);
         rays.push_back(b);
     }

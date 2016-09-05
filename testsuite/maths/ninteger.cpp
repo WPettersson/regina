@@ -1442,7 +1442,7 @@ class NIntegerTest : public CppUnit::TestFixture {
             testIncDec(d.hugePos);
             testIncDec(d.hugeNeg);
 
-            for (int a = 0; a < d.nCases; a++)
+            for (unsigned a = 0; a < d.nCases; a++)
                 testIncDec(d.cases[a]);
 
             // Tests for infinity are hard-coded to NLargeInteger.
@@ -2346,7 +2346,7 @@ class NIntegerTest : public CppUnit::TestFixture {
             testNegate(d.hugePos);
             testNegate(d.hugeNeg);
 
-            for (int a = 0; a < d.nCases; a++)
+            for (unsigned a = 0; a < d.nCases; a++)
                 testNegate(d.cases[a]);
 
             // Tests for infinity are hard-coded to NLargeInteger.
@@ -2400,7 +2400,7 @@ class NIntegerTest : public CppUnit::TestFixture {
             testAbs(d.hugePos);
             testAbs(d.hugeNeg);
 
-            for (int a = 0; a < d.nCases; a++)
+            for (unsigned a = 0; a < d.nCases; a++)
                 testAbs(d.cases[a]);
 
             // Tests for infinity are hard-coded to NLargeInteger.
@@ -2429,9 +2429,8 @@ class NIntegerTest : public CppUnit::TestFixture {
 
             // The list of cases includes cases at the overflow points.
             // Just run through all n,d pairs.
-            int a, b;
-            for (a = 0; a < d.nCases; ++a)
-                for (b = a + 1; b < d.nCases; ++b)
+            for (unsigned a = 0; a < d.nCases; ++a)
+                for (unsigned b = a + 1; b < d.nCases; ++b)
                     testDivisionAlg(d.cases[a], d.cases[b]);
         }
 
@@ -2503,9 +2502,8 @@ class NIntegerTest : public CppUnit::TestFixture {
 
             // The list of cases includes cases at the overflow points.
             // Just run through all pairs.
-            int a, b;
-            for (a = 0; a < d.nCases; ++a)
-                for (b = a + 1; b < d.nCases; ++b)
+            for (unsigned a = 0; a < d.nCases; ++a)
+                for (unsigned b = a + 1; b < d.nCases; ++b)
                     testGcdLcm(d.cases[a], d.cases[b]);
         }
 
@@ -2513,9 +2511,8 @@ class NIntegerTest : public CppUnit::TestFixture {
         void raiseToPower() {
             const Data<IntType>& d(data<IntType>());
 
-            int a;
             unsigned exp;
-            for (a = 0; a < d.nCases; ++a) {
+            for (unsigned a = 0; a < d.nCases; ++a) {
                 IntType ans(1);
                 IntType base(d.cases[a]);
                 for (exp = 0; exp < 32; ++exp) {
@@ -2540,7 +2537,7 @@ class NIntegerTest : public CppUnit::TestFixture {
         void tryReduce() {
             const Data<IntType>& d(data<IntType>());
 
-            for (int a = 0; a < d.nCases; ++a) {
+            for (unsigned a = 0; a < d.nCases; ++a) {
                 IntType x(d.cases[a]);
                 x.tryReduce();
                 shouldBeEqual(x, d.cases[a]);
@@ -2575,7 +2572,7 @@ class NIntegerTest : public CppUnit::TestFixture {
         void makeLarge() {
             const Data<IntType>& d(data<IntType>());
 
-            for (int a = 0; a < d.nCases; ++a) {
+            for (unsigned a = 0; a < d.nCases; ++a) {
                 IntType x(d.cases[a]);
                 x.makeLarge();
                 shouldBeEqual(x, d.cases[a]);

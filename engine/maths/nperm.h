@@ -677,7 +677,7 @@ inline int NPerm<n>::operator[](int source) const {
 template <int n>
 inline int NPerm<n>::preImageOf(int image) const {
     for (int i = 0; i < n; ++i)
-        if (((code_ >> (imageBits * i)) & imageMask_) == image)
+        if (static_cast<int>((code_ >> (imageBits * i)) & imageMask_) == image)
             return i;
     // We should never reach this point.
     return -1;

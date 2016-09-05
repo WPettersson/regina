@@ -358,7 +358,7 @@ class FaceNumberingImpl : public FaceNumberingAPI<dim, subdim> {
 
             unsigned val = 0;
             for (i=0; i<=subdim; i++) {
-              if (dim - v[subdim-i] >= i+1) {
+              if (dim - v[subdim-i] >= static_cast<int>(i+1)) {
                 val += binomSmall_[dim-v[subdim-i]][i+1];
               }
             }
@@ -466,9 +466,9 @@ class FaceNumberingImpl<dim, 0, true> : public FaceNumberingAPI<dim, 0> {
             p[0] = face;
 
             int i;
-            for (i = 0; i < face; ++i)
+            for (i = 0; i < static_cast<int>(face); ++i)
                 p[dim - i] = i;
-            for (i = face + 1; i <= dim; ++i)
+            for (i = face + 1; i <= static_cast<int>(dim); ++i)
                 p[dim - i + 1] = i;
 
             return NPerm<dim + 1>(p);
@@ -622,7 +622,7 @@ class REGINA_API FaceNumberingImpl<3, 1, true> : public FaceNumberingAPI<3, 1> {
          * \note Accessing <tt>edgeVertex[i][j]</tt> is equivalent to
          * calling <tt>ordering(i)[j]</tt>.
          */
-        static const int edgeVertex[6][2];
+        static const unsigned int edgeVertex[6][2];
 
     private:
         static const NPerm<4> ordering_[6];
@@ -740,7 +740,7 @@ class REGINA_API FaceNumberingImpl<4, 1, true> : public FaceNumberingAPI<4, 1> {
          * \note Accessing <tt>edgeVertex[i][j]</tt> is equivalent to
          * calling <tt>ordering(i)[j]</tt>.
          */
-        static const int edgeVertex[10][2];
+        static const unsigned int edgeVertex[10][2];
 
     private:
         static const NPerm<5> ordering_[10];
@@ -806,7 +806,7 @@ class REGINA_API FaceNumberingImpl<4, 2, false> : public FaceNumberingAPI<4, 2> 
          * \note Accessing <tt>triangleVertex[i][j]</tt> is equivalent to
          * calling <tt>ordering(i)[j]</tt>.
          */
-        static const int triangleVertex[10][3];
+        static const unsigned int triangleVertex[10][3];
 
     private:
         static const NPerm<5> ordering_[10];

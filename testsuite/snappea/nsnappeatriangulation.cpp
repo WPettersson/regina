@@ -521,7 +521,7 @@ class NSnapPeaTriangulationTest : public CppUnit::TestFixture {
 
             regina::NMatrixInt* m;
             bool found[4];
-            for (int i = 0; i < s->size(); ++i) {
+            for (unsigned int i = 0; i < s->size(); ++i) {
                 m = s->surface(i)->boundaryIntersections();
                 if (m->rows() != 1 || m->columns() != 2) {
                     CPPUNIT_FAIL(

@@ -118,10 +118,9 @@ void NHilbertCD::enumerateUsingBitmask(OutputIterator results,
     typename std::list<VecSpec<BitmaskType>*>::iterator bit;
 
     NRay** unitMatch = new NRay*[dim];
-    int i, j;
-    for (i = 0; i < dim; ++i) {
+    for (unsigned i = 0; i < dim; ++i) {
         unitMatch[i] = new NRay(nEqns);
-        for (j = 0; j < nEqns; ++j)
+        for (unsigned j = 0; j < nEqns; ++j)
             unitMatch[i]->setElement(j, subspace.entry(j, i));
     }
 
@@ -132,9 +131,9 @@ void NHilbertCD::enumerateUsingBitmask(OutputIterator results,
     NRay** match = new NRay*[dim];
     BitmaskType* frozen = new BitmaskType[dim];
 
-    for (i = 0; i < dim; ++i)
+    for (unsigned i = 0; i < dim; ++i)
         frozen[i].reset(dim); // All false.
-    
+
     // Push the zero vector.
     coord[0] = new VecSpec<BitmaskType>(dim);
     match[0] = new NRay(nEqns);
@@ -159,7 +158,7 @@ void NHilbertCD::enumerateUsingBitmask(OutputIterator results,
         // Do we have a non-zero solution?
         if (! first) {
             found = false;
-            for (i = 0; i < nEqns; ++i)
+            for (unsigned i = 0; i < nEqns; ++i)
                 if ((*m)[i] != 0) {
                     found = true;
                     break;
@@ -173,7 +172,7 @@ void NHilbertCD::enumerateUsingBitmask(OutputIterator results,
         }
 
         // Try incrementing along different coordinate axes.
-        for (i = 0; i < dim; ++i) {
+        for (unsigned i = 0; i < dim; ++i) {
             if (f.get(i))
                 continue; // This coordinate is frozen.
             if (! first) {
@@ -212,7 +211,7 @@ void NHilbertCD::enumerateUsingBitmask(OutputIterator results,
 
                     // Full check.
                     dom = true;
-                    for (j = 0; j < dim; ++j) {
+                    for (unsigned j = 0; j < dim; ++j) {
                         if (    (j != i && (*c)[j] < (**bit)[j]) ||
                                 (j == i && (*c)[j] + 1 < (**bit)[j])) {
                             dom = false;
@@ -255,7 +254,7 @@ void NHilbertCD::enumerateUsingBitmask(OutputIterator results,
     }
 
     // Clean up.
-    for (i = 0; i < dim; ++i)
+    for (unsigned i = 0; i < dim; ++i)
         delete unitMatch[i];
 
     delete[] unitMatch;

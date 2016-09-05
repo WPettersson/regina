@@ -469,7 +469,7 @@ class ConnectedSumDecompTest : public CppUnit::TestFixture {
                 return;
             }
 
-            if (ncomp != parent.countChildren()) {
+            if (ncomp != static_cast<long>(parent.countChildren())) {
                 std::ostringstream msg;
                 msg << "Triangulation " << tri->label()
                     << " reports a different number of connected sum "

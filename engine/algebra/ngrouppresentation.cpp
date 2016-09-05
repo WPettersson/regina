@@ -349,13 +349,13 @@ void NGroupPresentation::dehnAlgorithmSubMetric(
     reducer.reserve( that_length );
     std::list<NGroupExpressionTerm>::const_iterator it;
     for (it = this_word.terms().begin(); it!=this_word.terms().end(); it++) {
-        for (unsigned long i=0; i<std::abs((*it).exponent); i++)
+        for (long i=0; i<std::abs((*it).exponent); i++)
             this_word_vec.push_back( NGroupExpressionTerm( (*it).generator,
                                      ((*it).exponent>0) ? 1 : -1 ) );
     }
     for (it = that_word.terms().begin();
             it!=that_word.terms().end(); it++) {
-        for (unsigned long i=0; i<std::abs((*it).exponent); i++)
+        for (long i=0; i<std::abs((*it).exponent); i++)
             reducer.push_back( NGroupExpressionTerm( (*it).generator,
                                ((*it).exponent>0) ? 1 : -1 ) );
     }
@@ -435,13 +435,13 @@ void NGroupPresentation::applySubstitution( NGroupExpression& this_word,
     std::list<NGroupExpressionTerm>::const_iterator it;
     // start the splaying of terms
     for (it = this_word.terms().begin(); it!=this_word.terms().end(); it++) {
-        for (unsigned long i=0; i<std::abs((*it).exponent); i++)
+        for (long i=0; i<std::abs((*it).exponent); i++)
             this_word_vec.push_back( NGroupExpressionTerm( (*it).generator,
                                      ((*it).exponent>0) ? 1 : -1 ) );
     }
     // and that_word
     for (it = that_word.terms().begin(); it!=that_word.terms().end(); it++) {
-        for (unsigned long i=0; i<std::abs((*it).exponent); i++)
+        for (long i=0; i<std::abs((*it).exponent); i++)
             reducer.push_back( NGroupExpressionTerm( (*it).generator,
                                ((*it).exponent>0) ? 1 : -1 ) );
     }
@@ -1779,7 +1779,7 @@ NGroupPresentation::identifyExtensionOverZ()
                 I->second -= minLift; // adjust the lifts to have min lift 0
         }
         // cyclically permute lifts so that the max-weight rep appears first
-        while (lifts[l].front().second != cellWidth[l]) {
+        while (lifts[l].front().second != static_cast<long>(cellWidth[l])) {
             std::pair< NGroupExpressionTerm, signed long > temp(lifts[l].front());
             lifts[l].pop_front();
             lifts[l].push_back( temp );
@@ -2005,12 +2005,12 @@ namespace { // anonymous namespace
         second_word_vec.reserve( second->wordLength() );
         std::list<NGroupExpressionTerm>::const_iterator it;
         for (it = first->terms().begin(); it!=first->terms().end(); it++) {
-            for (unsigned long I=0; I<std::abs((*it).exponent); I++)
+            for (long I=0; I<std::abs((*it).exponent); I++)
                 first_word_vec.push_back( NGroupExpressionTerm( (*it).generator,
                                           ((*it).exponent>0) ? 1 : -1 ) );
         }
         for (it = second->terms().begin(); it!=second->terms().end(); it++) {
-            for (unsigned long I=0; I<std::abs((*it).exponent); I++)
+            for (long I=0; I<std::abs((*it).exponent); I++)
                 second_word_vec.push_back( NGroupExpressionTerm( (*it).generator,
                                            ((*it).exponent>0) ? 1 : -1 ) );
         }

@@ -458,10 +458,10 @@ class REGINA_API Dim4GluingPermSearcher : public Dim4GluingPerms {
                  The specific pentachoron facet stored in this array for each
                  edge of the underlying facet pairing graph will be the smaller
                  of the two identified pentachoron facets. */
-        int orderSize_;
+        unsigned int orderSize_;
             /**< The total number of edges in the facet pairing graph, i.e.,
                  the number of elements of interest in the order_[] array. */
-        int orderElt_;
+        unsigned int orderElt_;
             /**< Marks which element of order_[] we are currently examining
                  at this stage of the search. */
 

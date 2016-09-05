@@ -1461,7 +1461,7 @@ NPerm<dim + 1> FaceBase<dim, subdim>::faceMapping(int f) const {
             template faceMapping<lowerdim>(inSimp);
 
     // Ensure the images of lowerdim+1,...,dim are correct also.
-    for (unsigned i = subdim + 1; i <= dim; ++i)
+    for (int i = subdim + 1; i <= dim; ++i)
         if (p[i] != i) {
             // Suppose p maps x -> i -> y.
             //

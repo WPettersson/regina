@@ -520,7 +520,7 @@ class LPInitialTableaux {
                  ignored, since this column of the matrix is described by the
                  \a scaling_ member instead. */
 
-        int* columnPerm_;
+        unsigned* columnPerm_;
             /**< A permutation of 0,...,cols_-1 that maps column numbers
                  in the adjusted matrix to column numbers in the original
                  (unmodified) matrix of matching equations that was originally
@@ -680,7 +680,7 @@ class LPInitialTableaux {
          * @return details of the permutation describing how columns
          * were reordered.
          */
-        inline const int* columnPerm() const;
+        inline const unsigned* columnPerm() const;
 
         /**
          * Computes the inner product of (i) the given row of the given
@@ -1249,7 +1249,7 @@ class LPData {
          * one may pass \a type = 0, in which case this routine will
          * assume that \e every coordinate was constrained as positive.
          */
-        void extractSolution(NRay& v, const char* type) const;
+        void extractSolution(NRay& v, const unsigned char* type) const;
 
     private:
         /**
@@ -1582,7 +1582,7 @@ inline bool LPInitialTableaux<LPConstraint>::constraintsBroken() const {
 }
 
 template <class LPConstraint>
-inline const int* LPInitialTableaux<LPConstraint>::columnPerm() const {
+inline const unsigned* LPInitialTableaux<LPConstraint>::columnPerm() const {
     return columnPerm_;
 }
 
@@ -1697,7 +1697,7 @@ inline bool LPData<LPConstraint, Integer>::isActive(unsigned pos) const {
     //     is active and basic;
     //   - otherwise the variable is not active.
     return ! (basisRow_[pos] == 0 &&
-        (rank_ == 0 || basis_[0] != pos));
+        (rank_ == 0 || basis_[0] != static_cast<int>(pos)));
 }
 
 template <class LPConstraint, typename Integer>
@@ -1708,7 +1708,8 @@ inline int LPData<LPConstraint, Integer>::sign(unsigned pos) const {
     //   - if rank_ > 0 and basis_[0] == pos, then the variable
     //     is active and basic;
     //   - otherwise the variable is not active.
-    return ((basisRow_[pos] > 0 || (rank_ > 0 && basis_[0] == pos)) ?
+    return ((basisRow_[pos] > 0 ||
+                (rank_ > 0 && basis_[0] == static_cast<int>(pos))) ?
         rhs_[basisRow_[pos]].sign() : 0);
 }
 
@@ -1717,7 +1718,7 @@ inline Integer LPData<LPConstraint, Integer>::entry(unsigned row, unsigned col)
         const {
     // Remember to take into account any changes of variable due
     // to previous calls to constrainOct().
-    if (octPrimary_ != col)
+    if (octPrimary_ != static_cast<int>(col))
         return origTableaux_->multColByRow(rowOps_, row, col);
     else {
         Integer ans = origTableaux_->multColByRowOct(rowOps_, row, col);
@@ -1731,7 +1732,7 @@ inline void LPData<LPConstraint, Integer>::entry(unsigned row, unsigned col,
         Integer& ans) const {
     // Remember to take into account any changes of variable due
     // to previous calls to constrainOct().
-    if (octPrimary_ != col)
+    if (octPrimary_ != static_cast<int>(col))
         ans = origTableaux_->multColByRow(rowOps_, row, col);
     else {
         ans = origTableaux_->multColByRowOct(rowOps_, row, col);
@@ -1744,7 +1745,7 @@ inline int LPData<LPConstraint, Integer>::entrySign(unsigned row, unsigned col)
         const {
     // Remember to take into account any changes of variable due
     // to previous calls to constrainOct().
-    if (octPrimary_ != col)
+    if (octPrimary_ != static_cast<int>(col))
         return origTableaux_->multColByRow(rowOps_, row, col).sign();
     else {
         Integer ans = origTableaux_->multColByRowOct(rowOps_, row, col);

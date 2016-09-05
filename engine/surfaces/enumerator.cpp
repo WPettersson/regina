@@ -553,7 +553,6 @@ void NNormalSurfaceList::Enumerator::fillFundamentalFullCone() {
 
         bool broken;
         int nonZero;
-        int i;
         std::vector<std::vector<mpz_class> >::const_iterator hlit;
         NEnumConstraintList::const_iterator eit;
         std::set<unsigned long>::const_iterator sit;
@@ -590,7 +589,7 @@ void NNormalSurfaceList::Enumerator::fillFundamentalFullCone() {
                     list_->surfaces.clear();
                     break;
                 }
-                for (i = 0; i < dim; ++i) {
+                for (unsigned i = 0; i < dim; ++i) {
                     // Inefficiency: We make two copies of the GMP integer
                     // here instead of one, since NVector/NRay does not give
                     // us direct non-const access to its elements.

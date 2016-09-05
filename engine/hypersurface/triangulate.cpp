@@ -303,7 +303,7 @@ NTriangulation* NNormalHypersurface::triangulate() const {
         outerPent = outer->pentachoron(pent);
         for (type = 0; type < 5; ++type)
             for (pieceNumber = 0;
-                    pieceNumber < tetrahedra(pent, type).longValue();
+                    static_cast<int>(pieceNumber) < tetrahedra(pent, type).longValue();
                     ++pieceNumber) {
                 // Create a new tetrahedron for the final 3-manifold
                 // triangulation.
@@ -351,7 +351,8 @@ NTriangulation* NNormalHypersurface::triangulate() const {
             f1 = Dim4Triangle::triangleVertex[type][1];
             f2 = Dim4Triangle::triangleVertex[type][2];
 
-            for (pieceNumber = 0; pieceNumber < prisms(pent, type).longValue();
+            for (pieceNumber = 0;
+                    static_cast<int>(pieceNumber) < prisms(pent, type).longValue();
                     ++pieceNumber) {
                 // Triangulate the normal prism with three tetrahedra.
                 innerTet[0] = inner->newTetrahedron();

@@ -728,8 +728,8 @@ NClosedPrimeMinSearcher::NClosedPrimeMinSearcher(std::istream& in,
 #if PRUNE_HIGH_DEG_EDGE_SET
     in >> highDegLimit >> highDegSum >> highDegBound;
     if (highDegLimit < 3 || highDegLimit > 4 || highDegSum < 0 ||
-            highDegSum > 6 * static_cast<int>(nTets) || highDegBound !=
-                (6 - highDegLimit) * static_cast<int>(nTets) - highDegLimit) {
+            highDegSum > 6 * nTets || highDegBound !=
+                (6 - highDegLimit) * nTets - highDegLimit) {
         inputError_ = true; return;
     }
 #endif

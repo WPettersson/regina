@@ -254,9 +254,9 @@ bool Dim4Triangulation::simplifyToLocalMinimum(bool perform) {
 
                     // Run through facets of this boundary component looking
                     // for shell boundary moves.
-                    nTetrahedra = (*bit)->countTetrahedra();
+                    nTetrahedra = bc->countTetrahedra();
                     for (iTet = 0; iTet < nTetrahedra; ++iTet) {
-                        if (shellBoundary((*bit)->tetrahedron(iTet)->
+                        if (shellBoundary(bc->tetrahedron(iTet)->
                                 front().pentachoron(),
                                 true, perform)) {
                             changedNow = changed = true;

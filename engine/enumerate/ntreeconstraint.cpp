@@ -38,7 +38,7 @@ namespace regina {
 
 bool LPConstraintEuler::addRows(
         LPCol<regina::LPConstraintEuler>* col,
-        const int* columnPerm, const NTriangulation* tri) {
+        const unsigned* columnPerm, const NTriangulation* tri) {
     int* obj = new int[7 * tri->size()];
     unsigned tet, i;
     NPerm4 p;
@@ -74,7 +74,7 @@ bool LPConstraintEuler::addRows(
 
 bool LPConstraintNonSpun::addRows(
         LPCol<regina::LPConstraintNonSpun>* col,
-        const int* columnPerm, const NTriangulation* tri) {
+        const unsigned* columnPerm, const NTriangulation* tri) {
     // Regardless of whether the constraints are broken,
     // we need to ensure that the matrix has full rank.
     // Therefore add the coefficients for the two new variables now.
@@ -108,7 +108,7 @@ bool LPConstraintNonSpun::addRows(
     // SnapPy's get_cusp_equation(), which works in native
     // integers; therefore we will happily convert them back to
     // native integers now.
-    for (int i = 0; i < 3 * tri->size(); ++i) {
+    for (unsigned i = 0; i < 3 * tri->size(); ++i) {
         col[i].meridian = coeffs->entry(0, columnPerm[i]).longValue();
         col[i].longitude = coeffs->entry(1, columnPerm[i]).longValue();
     }
@@ -129,7 +129,7 @@ BanConstraintBase::BanConstraintBase(const NTriangulation* tri, int coords) :
     std::fill(marked_, marked_ + nCols, false);
 }
 
-void BanBoundary::init(const int* columnPerm) {
+void BanBoundary::init(const unsigned* columnPerm) {
     unsigned n = tri_->size();
     unsigned tet, type, i, k;
 
@@ -171,7 +171,7 @@ void BanBoundary::init(const int* columnPerm) {
         }
 }
 
-void BanTorusBoundary::init(const int* columnPerm) {
+void BanTorusBoundary::init(const unsigned* columnPerm) {
     unsigned n = tri_->size();
     unsigned tet, type, i, k;
 

@@ -612,13 +612,13 @@ namespace {
              * numQuadBlocks(\a face, \a fromVertex), where \a face is
              * the relevant face of the outer tetrahedron.
              */
-            Block* quadBlock(int fromVertex, unsigned long whichBlock);
+            Block* quadBlock(unsigned fromVertex, unsigned long whichBlock);
             /**
              * Returns the (unique) block that provides a hexagon
              * boundary on the given face of the outer tetrahedron, or
              * null if there is no such block.
              */
-            Block* hexBlock(int face);
+            Block* hexBlock(unsigned face);
 
             /**
              * Returns the small tetrahedron that contributes to the
@@ -1069,7 +1069,7 @@ namespace {
             else if (quadCount_ == 0)
                 truncTet_->attachVertexNbd(vertexNbd_[i], i);
             else if (i == 0 ||
-                    static_cast<int>(i) == NEdge::edgeVertex[quadType_][1])
+                    i == NEdge::edgeVertex[quadType_][1])
                 truncHalfTet_[0]->attachVertexNbd(vertexNbd_[i], i);
             else
                 truncHalfTet_[1]->attachVertexNbd(vertexNbd_[i], i);
@@ -1111,7 +1111,7 @@ namespace {
         return ans;
     }
 
-    Block* TetBlockSet::quadBlock(int fromVertex,
+    Block* TetBlockSet::quadBlock(unsigned fromVertex,
             unsigned long whichBlock) {
         // First come the triangular prisms.
         if (whichBlock < triCount_[fromVertex])
@@ -1134,7 +1134,7 @@ namespace {
                 quadCount_ - (whichBlock - triCount_[fromVertex]) - 1];
     }
 
-    Block* TetBlockSet::hexBlock(int face) {
+    Block* TetBlockSet::hexBlock(unsigned face) {
         if (quadCount_ == 0)
             return truncTet_;
 
@@ -1430,7 +1430,6 @@ namespace {
                 // Look for a normal disc or sphere to crush.
                 NNormalSurface* ans;
                 NTriangulation* crush;
-                unsigned nComp;
                 bool found;
                 while (true) {
                     t_[side]->intelligentSimplify();
@@ -1490,7 +1489,7 @@ namespace {
 
                     // Find the piece in the crushed triangulation with the
                     // right Euler characteristic on the boundary, if it exists.
-                    nComp = crush->splitIntoComponents();
+                    crush->splitIntoComponents();
                     t_[side] = static_cast<NTriangulation*>(
                         crush->firstChild());
                     while (t_[side]) {
